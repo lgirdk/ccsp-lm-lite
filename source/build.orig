@@ -1,0 +1,4 @@
+#!/bin/sh
+ armeb-unknown-linux-uclibcgnueabi-gcc -g -D CLIENT lm_api_test.c lm_api.c -o b.out
+cp b.out ../build/intel_usg_arm/
+#gcc -g  -D SERVER lm_api_test.c lm_api.c -o a.out
