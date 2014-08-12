@@ -178,7 +178,7 @@ Hosts_FindHostByIPv4Address
                 if(*hostListSize < len) return;
                 strcat(hostList, lmHosts.hostArray[i]->objectName);
                 *hostListSize -= len;
-                Host_SetExtensionParameters(lmHosts.hostArray[i], userData, userDataType);
+                //Host_SetExtensionParameters(lmHosts.hostArray[i], userData, userDataType);
                 break;
             }
         }
