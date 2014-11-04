@@ -120,7 +120,7 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 
 #define LM_HOST_AliasId                                 0
 #define LM_HOST_PhysAddressId                           1
-#define LM_HOST_IPAddressId                             2
+#define LM_HOST_Comments                                2
 #define LM_HOST_DHCPClientId                            3
 #define LM_HOST_AssociatedDeviceId                      4
 #define LM_HOST_Layer1InterfaceId                       5
@@ -136,14 +136,11 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_CISCO_COM_UserDefinedHardwareVendorId 15
 #define LM_HOST_X_CISCO_COM_UserDefinedSoftwareVendorId 16
 #define LM_HOST_AddressSource                           17
-#define LM_HOST_Comments                                18
-#define LM_HOST_NumStringPara                           19
+#define LM_HOST_NumStringPara                           20 
 
-#define LM_HOST_IPv4Address_IPAddressId     0
-#define LM_HOST_IPv4Address_NumStringPara   1
-
-#define LM_HOST_IPv6Address_IPAddressId     0
-#define LM_HOST_IPv6Address_NumStringPara   1
+#define LM_HOST_IPAddress_IPAddressId     0
+#define LM_HOST_IPAddress_IPAddressSourceId     1
+#define LM_HOST_IPAddress_NumStringPara   2
 
 #define LM_HOST_ARRAY_STEP                  20
 
@@ -168,26 +165,15 @@ _LmHostInfo
 }LmHostInfo,  *PLmHostInfo;
 
 typedef  struct
-_LmObjectHostIPv4Address
+_LmObjectHostIPAddress
 {
-    int     id;  /* index */
-    int     instanceNum;  /* instance number */
-    char    *pStringParaValue[LM_HOST_IPv4Address_NumStringPara];
-
-    //int     idBackup = -1;
+    int     active;
+    int     l3unReachableCnt; 
+    char    *pStringParaValue[LM_HOST_IPAddress_NumStringPara];
+    int     LeaseTime;
+    struct _LmObjectHostIPAddress *pNext;
 }
-LmObjectHostIPv4Address,  *PLmObjectHostIPv4Address;
-
-
-typedef  struct
-_LmObjectHostIPv6Address
-{
-    int     id;  /* index */
-    int     instanceNum;  /* instance number */
-    char    *pStringParaValue[LM_HOST_IPv6Address_NumStringPara];
-}
-LmObjectHostIPv6Address,  *PLmObjectHostIPv6Address;
-
+LmObjectHostIPAddress,  *PLmObjectHostIPAddress;
 
 typedef  struct
 _LmObjectHost
@@ -210,23 +196,14 @@ _LmObjectHost
     /* Activity change time: the moment Active is changed, 
      * either from inactive to active, or from active to inactive. 
      * It is shown current time in seconds. */
-    ULONG   activityChangeTime;
+    time_t   activityChangeTime;
 
-    int availableInstanceNumIPv4Address;
-    PLmObjectHostIPv4Address *ipv4AddrArray;
-    int sizeIPv4Addr;
+    PLmObjectHostIPAddress ipv4AddrArray;
     int numIPv4Addr;
-    //PLmObjectHostIPv4AddressBackup *ipv4AddrArrayBackup;
-    //int sizeIPv4AddrBackup = 0;
-    //int numIPv4AddrBackup = 0;
 
-    int availableInstanceNumIPv6Address;
-    PLmObjectHostIPv6Address *ipv6AddrArray;
-    int sizeIPv6Addr;
+    PLmObjectHostIPAddress ipv6AddrArray;
     int numIPv6Addr;
-    //PLmObjectHostIPv6AddressBackup *ipv6AddrArrayBackup;
-    //int sizeIPv6AddrBackup = 0;
-    //int numIPv6AddrBackup = 0;
+
 }
 LmObjectHost,  *PLmObjectHost;
 
@@ -240,33 +217,14 @@ enum DeviceType
 };
 
 typedef  struct
-_LmObjectHostBackup
-{
-    /* Mark if the parameter has been set during latest setParameterValue. */
-    unsigned char bSetBoolParaValue[LM_HOST_NumBoolPara];
-    unsigned char bSetIntParaValue[LM_HOST_NumIntPara];
-    unsigned char bSetUlongParaValue[LM_HOST_NumUlongPara];
-    unsigned char bSetStringParaValue[LM_HOST_NumStringPara];
-    /* Save new value to a temporary place before commit, bSetStringParaValue = BackupNewValue. 
-     * Backup old value during commit, bSetStringParaValue = BackupOldValue.
-     * If commit succeeds, it should not roll back, bSetStringParaValue = NoBackup. 
-     * If commit fails, it roll backs by set all bSetStringParaValue = BackupOldValue values back.*/
-    BOOL  bBoolParaValue[LM_HOST_NumBoolPara];
-    int   iIntParaValue[LM_HOST_NumIntPara];
-    ULONG ulUlongParaValue[LM_HOST_NumUlongPara];
-    char  *pStringParaValue[LM_HOST_NumStringPara];
-}
-LmObjectHostBackup,  *PLmObjectHostBackup;
-
-typedef  struct
 _LmObjectHosts
 {
     char *pHostBoolParaName[LM_HOST_NumBoolPara]; 
     char *pHostIntParaName[LM_HOST_NumIntPara];
     char *pHostUlongParaName[LM_HOST_NumUlongPara]; 
     char *pHostStringParaName[LM_HOST_NumStringPara]; 
-    char *pIPv4AddressStringParaName[LM_HOST_IPv4Address_NumStringPara]; 
-    char *pIPv6AddressStringParaName[LM_HOST_IPv6Address_NumStringPara]; 
+    char *pIPv4AddressStringParaName[LM_HOST_IPAddress_NumStringPara]; 
+    char *pIPv6AddressStringParaName[LM_HOST_IPAddress_NumStringPara]; 
     int   availableInstanceNum;
 
     PLmObjectHost *hostArray;
@@ -291,5 +249,27 @@ Hosts_SynchronizeHost();
 
 void Hosts_SyncDhcp();
 
+#define Host_AddIPv6Address(x, y) Host_AddIPAddress(x,y,6)
+#define Host_AddIPv4Address(x, y) Host_AddIPAddress(x,y,4)
+PLmObjectHostIPAddress
+Host_AddIPAddress
+    (
+        PLmObjectHost pHost,
+        char * ipAddress,
+        int version
+    );
+
+
+void
+Hosts_PollHost();
+
+void 
+Hosts_FreeHost(PLmObjectHost pHost);
+
+PLmObjectHost 
+Hosts_AddHost(int instanceNum);
+
+
+void Hosts_RmHosts();
 
 #endif

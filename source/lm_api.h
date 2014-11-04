@@ -18,7 +18,9 @@
 #define _LM_API_H_
 
 #include <sys/un.h>
-#define LM_MAX_IP_AMOUNT 16 
+#include <time.h>
+
+#define LM_MAX_IP_AMOUNT 24 
 #define LM_GEN_STR_SIZE    64 
 #define LM_MAX_COMMENT_SIZE 64
 #define LM_MAX_HOSTS_NUM 256
@@ -65,7 +67,10 @@ enum LM_MEDIA_TYPE{
 
 typedef struct{
 	unsigned char	addr[16];
+    int active;
+    int LeaseTime;
 	enum LM_ADDR_SOURCE	addrSource;
+    unsigned int priFlg; 
 }LM_ip_addr_t;
 
 typedef struct{
@@ -78,6 +83,8 @@ typedef struct{
 	char	hostName[LM_GEN_STR_SIZE];
 	char	l1IfName[LM_GEN_STR_SIZE];
 	char	l3IfName[LM_GEN_STR_SIZE];
+    char    AssociatedDevice[LM_GEN_STR_SIZE];//Only works if this is a wifi host. 
+    time_t  activityChangeTime;
 	LM_ip_addr_t	ipv4AddrList[LM_MAX_IP_AMOUNT];	
 	LM_ip_addr_t	ipv6AddrList[LM_MAX_IP_AMOUNT];
     unsigned char   comments[LM_MAX_COMMENT_SIZE];

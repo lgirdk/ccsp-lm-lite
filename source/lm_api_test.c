@@ -48,18 +48,21 @@ void printf_host(LM_host_t *pHost){
     char str[100];
 
     printf("Device %s Mac %02x:%02x:%02x:%02x:%02x:%02x -> \n\t%s meidaType:%d \n", pHost->hostName, pHost->phyAddr[0], pHost->phyAddr[1], pHost->phyAddr[2], pHost->phyAddr[3], pHost->phyAddr[4], pHost->phyAddr[5],(pHost->online == 1 ? "Online" : "offline"), pHost->mediaType);
-    printf("\tL1interface %s, L3interface %s comments %s RSSI %d\n", pHost->l1IfName, pHost->l3IfName, pHost->comments, pHost->RSSI);
+    printf("\tL1interface %s, L3interface %s comments %s RSSI %d \n", pHost->l1IfName, pHost->l3IfName, pHost->comments, pHost->RSSI);
+    printf("\tActive change time %s %d\n", ctime(&(pHost->activityChangeTime)), pHost->activityChangeTime);
+    if(strstr(pHost->l1IfName, "WiFi"))
+        printf("\tAssociatedDevice %s\n", pHost->AssociatedDevice);
     printf("\tIPv4 address list:\n");
     for(i = 0; i < pHost->ipv4AddrAmount ;i++){
         pIp = &(pHost->ipv4AddrList[i]);
         inet_ntop(AF_INET, pIp->addr, str, 100);
-        printf("\t\t%d. %s %d\n", i+1, str, pIp->addrSource);
+        printf("\t\t%d. %s %d pri %d leaseTime %s %d\n", i+1, str, pIp->addrSource, pIp->priFlg,ctime(&(pIp->LeaseTime)), pIp->LeaseTime);
     }
-    printf("IPv6 address list:\n");
+    printf("\tIPv6 address list:\n");
     for(i = 0; i < pHost->ipv6AddrAmount ;i++){
         pIp = &(pHost->ipv6AddrList[i]);
         inet_ntop(AF_INET6, pIp->addr, str, 100);
-        printf("\t\t%d. %s %d\n", i+1, str, pIp->addrSource);
+        printf("\t\t%d. %s %d pri %d leaseTime %s %d\n", i+1, str, pIp->addrSource, pIp->priFlg,ctime(&(pIp->LeaseTime)), pIp->LeaseTime);
     }
 }
 

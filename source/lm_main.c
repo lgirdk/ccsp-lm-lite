@@ -54,6 +54,7 @@
 
 **************************************************************************/
 
+#include <time.h>
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_main.h"
@@ -117,10 +118,19 @@ LmObjectHosts lmHosts = {
 
 /* It may be updated by different threads at the same time? */
 ULONG HostsUpdateTime = 0;
-
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
 
+#define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
+inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
+    if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
+        pHost->bBoolParaValue[LM_HOST_ActiveId] = state;
+        pHost->activityChangeTime = time((time_t*)NULL);
+		PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
+    }
+} 
+
+#define LM_SET_PSTRINGPARAVALUE(var, val) if((var)) LanManager_Free(var);var = LanManager_CloneString(val);
 
 /***********************************************************************
 
@@ -150,7 +160,7 @@ static inline BOOL _isIPv6Addr(const char* ipAddr)
         return FALSE;
     }
 }
-
+#if 0
 void
 Hosts_FindHostByIPv4Address
 (
@@ -167,7 +177,7 @@ Hosts_FindHostByIPv4Address
     {
         for(j=0; j<lmHosts.hostArray[i]->numIPv4Addr; j++)
         {
-            if(AnscEqualString(ipv4Addr, lmHosts.hostArray[i]->ipv4AddrArray[j]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId], FALSE))
+            if(AnscEqualString(ipv4Addr, lmHosts.hostArray[i]->ipv4AddrArray[j]->pStringParaValue[LM_HOST_IPAddress_IPAddressId], FALSE))
             {
                 if(!firstOne){
                     strcat(hostList, ",");
@@ -178,13 +188,13 @@ Hosts_FindHostByIPv4Address
                 if(*hostListSize < len) return;
                 strcat(hostList, lmHosts.hostArray[i]->objectName);
                 *hostListSize -= len;
-                //Host_SetExtensionParameters(lmHosts.hostArray[i], userData, userDataType);
+                Host_SetExtensionParameters(lmHosts.hostArray[i], userData, userDataType);
                 break;
             }
         }
     }
 }
-
+#endif
 void Hosts_FreeHost(PLmObjectHost pHost){
     int i;
     if(pHost == NULL)
@@ -194,35 +204,12 @@ void Hosts_FreeHost(PLmObjectHost pHost){
             LanManager_Free(pHost->pStringParaValue[i]);
     if(pHost->objectName != NULL)
         LanManager_Free(pHost->objectName);
-    if(pHost->ipv4AddrArray != NULL){
-        for(i = 0; i < pHost->numIPv4Addr; i++){
-            if(pHost->ipv4AddrArray[i] == NULL)
-                continue;
-            if (pHost->ipv4AddrArray[i]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId])
-            {
-                LanManager_Free(pHost->ipv4AddrArray[i]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-            }
-            LanManager_Free(pHost->ipv4AddrArray[i]);
-        }
-        LanManager_Free(pHost->ipv4AddrArray);
-    }
-    if(pHost->ipv6AddrArray != NULL){
-        for(i = 0; i < pHost->numIPv4Addr; i++){
-            if(pHost->ipv6AddrArray[i] == NULL)
-                continue;
-            if (pHost->ipv6AddrArray[i]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId])
-            {
-                LanManager_Free(pHost->ipv6AddrArray[i]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-            }
-            LanManager_Free(pHost->ipv6AddrArray[i]);
-        }
-      LanManager_Free(pHost->ipv6AddrArray);
-    }
-    LanManager_Free(pHost);
+    Host_FreeIPAddress(pHost, 4);
+    Host_FreeIPAddress(pHost, 6);
 }
 
 void Hosts_RmHosts(){
-    int i;
+    int i;  
 
     if(lmHosts.numHost == 0)
         return;
@@ -258,21 +245,15 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
     pHost->l3unReachableCnt = 0;
     pHost->l1unReachableCnt = 0;
     pHost->ipv4AddrArray = NULL;
-    pHost->sizeIPv4Addr = 0;
     pHost->numIPv4Addr = 0;
     pHost->ipv6AddrArray = NULL;
-    pHost->sizeIPv6Addr = 0;
     pHost->numIPv6Addr = 0;
 
     /* Default it is inactive. */
     pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
     pHost->ipv4Active = FALSE;
     pHost->ipv6Active = FALSE;
-    pHost->availableInstanceNumIPv4Address = 1;
-    pHost->availableInstanceNumIPv6Address = 1;
-    ANSC_UNIVERSAL_TIME currentTime = {0};
-    AnscGetLocalTime(&currentTime);
-    pHost->activityChangeTime  = AnscCalendarToSecond(&currentTime);
+    pHost->activityChangeTime  = time(NULL);
 
     pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
     pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = INT_MAX;
@@ -294,6 +275,12 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
     lmHosts.hostArray[pHost->id] = pHost;
     lmHosts.numHost++;
     return pHost;
+}
+
+void Host_SetIPAddress(PLmObjectHostIPAddress pIP, int l3unReachableCnt, char *source)
+{
+    pIP->l3unReachableCnt = l3unReachableCnt;
+    LM_SET_PSTRINGPARAVALUE(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId], source); 
 }
 
 PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress)
@@ -332,49 +319,76 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
     }
     return pHost;
 }
-PLmObjectHostIPv4Address
-Host_AddIPv4Address
-    (
-        PLmObjectHost pHost,
-        int instanceNum,
-        char * ipv4Address
-    )
+void Host_FreeIPAddress(PLmObjectHost pHost, int version)
 {
-/* USGv2 only support one IPv4 address */
-    if(pHost->numIPv4Addr != 0){
-        if(AnscEqualString(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId], ipv4Address, FALSE)){
-            return pHost->ipv4AddrArray[0];
-        }
-        instanceNum = pHost->availableInstanceNumIPv4Address;
-        pHost->availableInstanceNumIPv4Address++;
-        if (pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId])
-        {
-            LanManager_Free(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-        }
-        LanManager_Free(pHost->ipv4AddrArray[0]);
-        LanManager_Free(pHost->ipv4AddrArray);
-        pHost->ipv4AddrArray = NULL;
-        pHost->numIPv4Addr = 0;
+    int *num;
+    PLmObjectHostIPAddress pIpAddrList, pCur, *ppHeader;
+
+    if(version == 4){
+        num = &(pHost->numIPv4Addr);
+        pIpAddrList = pHost->ipv4AddrArray;
+        ppHeader = &(pHost->ipv4AddrArray);
+    }else{
+        num = &(pHost->numIPv6Addr);
+        pIpAddrList = pHost->ipv6AddrArray;
+        ppHeader = &(pHost->ipv6AddrArray);
     }
 
-    PLmObjectHostIPv4Address pIPv4Address = LanManager_Allocate(sizeof(LmObjectHostIPv4Address));
-    if(pIPv4Address == NULL)
-        return NULL;
-    pHost->ipv4AddrArray = LanManager_Allocate(sizeof(PLmObjectHostIPv4Address));
-    if(pHost->ipv4AddrArray == NULL){
-        LanManager_Free(pIPv4Address);
-        return NULL;
+    *num = 0;
+    while(pIpAddrList != NULL)
+    {
+        LanManager_Free(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
+        pCur = pIpAddrList;
+        pIpAddrList = pIpAddrList->pNext;
+        LanManager_Free(pIpAddrList);
+        *ppHeader = NULL;
     }
-
-    pIPv4Address->instanceNum = instanceNum;
-    pIPv4Address->pStringParaValue[LM_HOST_IPv4Address_IPAddressId] = LanManager_CloneString(ipv4Address);
-
-    pIPv4Address->id = 0;
-    pHost->ipv4AddrArray[0] = pIPv4Address;
-    pHost->numIPv4Addr++;
-    return pIPv4Address;
 }
 
+
+PLmObjectHostIPAddress
+Host_AddIPAddress
+    (
+        PLmObjectHost pHost,
+        char * ipAddress,
+        int version
+    )
+{
+    int *num;
+    PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader;
+
+    if(version == 4){
+        num = &(pHost->numIPv4Addr);
+        pIpAddrList = pHost->ipv4AddrArray;
+        ppHeader = &(pHost->ipv4AddrArray);
+    }else{
+        num = &(pHost->numIPv6Addr);
+        pIpAddrList = pHost->ipv6AddrArray;
+        ppHeader = &(pHost->ipv6AddrArray);
+    }
+
+    for(pCur = pIpAddrList; pCur != NULL; pPre = pCur, pCur = pCur->pNext){
+        if(AnscEqualString(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)){
+            if(pCur != pIpAddrList){
+                pPre->pNext = pCur->pNext;
+                pCur->pNext = pIpAddrList;
+                *ppHeader = pCur;
+            }
+            return pCur;
+        }
+    }
+    pCur = LanManager_Allocate(sizeof(LmObjectHostIPAddress));
+    if(pCur == NULL)
+        return NULL;
+
+    pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(ipAddress);
+    pCur->pNext = pIpAddrList;
+    *ppHeader = pCur;
+    (*num)++;
+    return pCur;
+}
+
+#if 0
 PLmObjectHostIPv6Address
 Host_AddIPv6Address
     (
@@ -420,6 +434,7 @@ Host_AddIPv6Address
     pHost->numIPv6Addr++;
     return pIPv6Address;
 }
+#endif
 
 #ifdef LM_IPC_SUPPORT
 
@@ -452,21 +467,29 @@ inline enum LM_ADDR_SOURCE _get_addr_source(char *source)
 
 inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
 {
-    int i;
+    int i;   
+    PLmObjectHostIPAddress pIpSrc; 
     pDestHost->ipv4AddrAmount = pHost->numIPv4Addr;
     pDestHost->ipv6AddrAmount = pHost->numIPv6Addr;
     LM_ip_addr_t *pIp;
-    for(i = 0; i < pHost->numIPv4Addr && i < LM_MAX_IP_AMOUNT;i++){
+    for(i=0, pIpSrc = pHost->ipv4AddrArray; pIpSrc != NULL && i < LM_MAX_IP_AMOUNT;i++, pIpSrc = pIpSrc->pNext){
         pIp = &(pDestHost->ipv4AddrList[i]);
-        inet_pton(AF_INET, pHost->ipv4AddrArray[i]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId],pIp->addr);
-        // !!!!!!!!!!!!!!!! Lm struct not support mutli address source
-        pIp->addrSource = _get_addr_source(pHost->pStringParaValue[LM_HOST_AddressSource]);
-    }
-    for(i = 0; i < pHost->numIPv6Addr && i < LM_MAX_IP_AMOUNT ;i++){
+        inet_pton(AF_INET, pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressId],pIp->addr);
+        pIp->addrSource = _get_addr_source(pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
+        pIp->priFlg = pIpSrc->l3unReachableCnt;
+        if(pIp->addrSource == LM_ADDRESS_SOURCE_DHCP)
+            pIp->LeaseTime = pIpSrc->LeaseTime;
+        else
+            pIp->LeaseTime = 0;
+   }
+    
+    
+    for(i = 0, pIpSrc = pHost->ipv6AddrArray;pIpSrc != NULL && i < LM_MAX_IP_AMOUNT;i++, pIpSrc = pIpSrc->pNext){
         pIp = &(pDestHost->ipv6AddrList[i]);
-        inet_pton(AF_INET6, pHost->ipv6AddrArray[i]->pStringParaValue[LM_HOST_IPv6Address_IPAddressId],pIp->addr);
-        // !!!!!!!!!!!!!!!! Lm struct not support mutli address source
-        pIp->addrSource = _get_addr_source(pHost->pStringParaValue[LM_HOST_AddressSource]);
+        inet_pton(AF_INET6, pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressId],pIp->addr);
+        pIp->addrSource = _get_addr_source(pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]); 
+        //Not support yet
+        pIp->LeaseTime = 0;
     }
 }
 
@@ -474,13 +497,15 @@ inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
 {
         mac_string_to_array(pHost->pStringParaValue[LM_HOST_PhysAddressId], pDestHost->phyAddr);
         pDestHost->online = (unsigned char)pHost->bBoolParaValue[LM_HOST_ActiveId];
-        _get_host_mediaType(&(pDestHost->mediaType), pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+        pDestHost->activityChangeTime = pHost->activityChangeTime;
+        _get_host_mediaType(&(pDestHost->mediaType), pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]); 
         STRNCPY_NULL_CHK(pDestHost->hostName, pHost->pStringParaValue[LM_HOST_HostNameId], sizeof(pDestHost->comments)-1);
         STRNCPY_NULL_CHK(pDestHost->l3IfName, pHost->pStringParaValue[LM_HOST_Layer3InterfaceId], sizeof(pDestHost->l3IfName)-1);
         STRNCPY_NULL_CHK(pDestHost->l1IfName, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], sizeof(pDestHost->l1IfName)-1);
         STRNCPY_NULL_CHK(pDestHost->comments, pHost->pStringParaValue[LM_HOST_Comments], sizeof(pDestHost->comments)-1);
+        STRNCPY_NULL_CHK(pDestHost->AssociatedDevice, pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], sizeof(pDestHost->AssociatedDevice)-1);
         pDestHost->RSSI = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
-        _get_host_ipaddress(pDestHost, pHost);
+        _get_host_ipaddress(pDestHost, pHost); 
 }
 
 inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
@@ -573,16 +598,20 @@ inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
+    PLmObjectHostIPAddress pIP4;
     memset(&result, 0, sizeof(result));
     pthread_mutex_lock(&LmHostObjectMutex);
     for(i = 0; i < lmHosts.numHost; i++){
         if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
             /* Do NOT count TrueStaticIP client */
-            if ( 0 == strncmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], "192.168", 7) ||
-                 0 == strncmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], "10.", 3) ||
-                 0 == strncmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], "172.", 4)
-               )
-            num++;
+            for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
+                if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
+                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) ||
+                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4)
+                   )
+                num++;
+                break;
+            }
         }
     }
     pthread_mutex_unlock(&LmHostObjectMutex);
@@ -675,16 +704,20 @@ void Hosts_SyncWifi()
             if ( pHost )
             {
                 if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-                }
+                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                    
+                
                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(hosts[i].ssid);
-
+                
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
 
-                pHost->l1unReachableCnt = 1;
+                if(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] )
+                    LanManager_Free(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]);
+                
+                pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] = LanManager_CloneString(hosts[i].AssociatedDevice);
 
-                pHost->bBoolParaValue[LM_HOST_ActiveId] = TRUE;
+                pHost->l1unReachableCnt = 1;
+                
+                LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
             }
         }
         pthread_mutex_unlock(&LmHostObjectMutex);
@@ -706,7 +739,7 @@ void Hosts_SyncArp()
 
     PLmObjectHost pHost = NULL;
     LM_host_entry_t *hosts = NULL;
-
+    PLmObjectHostIPAddress pIP;
     lm_wrapper_get_arp_entries("brlan[02]", &count, &hosts);
 
     if (count > 0)
@@ -723,7 +756,15 @@ void Hosts_SyncArp()
             {
                 if ( _isIPv6Addr((char *)hosts[i].ipAddr) )
                 {
-                    Host_AddIPv6Address(pHost, 1, hosts[i].ipAddr);
+                    pIP = Host_AddIPv6Address(pHost, hosts[i].ipAddr);
+                    if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
+                    {
+                        Host_SetIPAddress(pIP, 0, "NONE"); 
+                    }
+                    else
+                    {
+                        Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
+                    }
                     continue;
                 }
 
@@ -735,33 +776,20 @@ void Hosts_SyncArp()
 
                 if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                 {
-                    pHost->bBoolParaValue[LM_HOST_ActiveId] = TRUE;
+                    LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 
-                    pHost->l3unReachableCnt = 0;
-
-                    Host_AddIPv4Address
+                    pIP = Host_AddIPv4Address
                     (
                         pHost,
-                        1,
                         hosts[i].ipAddr
                     );
 
-                    if ( pHost->pStringParaValue[LM_HOST_AddressSource] )
-                    {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
-                    }
-                    pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("NONE");
-
-                    if( pHost->pStringParaValue[LM_HOST_IPAddressId] )
-                    {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-                    }
-                    if(pHost->numIPv4Addr)
-                    {
-                        pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
+                    if(pIP != NULL){
+                        Host_SetIPAddress(pIP, 0, "NONE"); 
                     }
 
-                    _getLanHostComments((char*)hosts[i].phyAddr, comments);
+
+                    _getLanHostComments(hosts[i].phyAddr, comments);
                     if ( comments[0] != 0 )
                     {
                         if ( pHost->pStringParaValue[LM_HOST_Comments] )
@@ -773,27 +801,16 @@ void Hosts_SyncArp()
                 }
                 else if(pHost->numIPv4Addr == 0)
                 {
-                    Host_AddIPv4Address
+
+                    pIP = Host_AddIPv4Address
                     (
                         pHost,
-                        1,
                         hosts[i].ipAddr
                     );
 
-                    if( pHost->pStringParaValue[LM_HOST_IPAddressId] )
-                    {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_IPAddressId]);
+                    if(pIP != NULL){
+                        Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
                     }
-                    if(pHost->numIPv4Addr)
-                    {
-                        pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-                    }
-
-                    if ( pHost->pStringParaValue[LM_HOST_AddressSource] )
-                    {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
-                    }
-                    pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
                 }
             }
         }
@@ -840,13 +857,13 @@ void Hosts_SyncMoCA()
             {
                 if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                 {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                    
                 }
-                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("MoCA");
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(hosts[i].ncId);
 
                 pHost->l1unReachableCnt = 1;
 
-                pHost->bBoolParaValue[LM_HOST_ActiveId] = TRUE;
+                LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
             }
         }
         pthread_mutex_unlock(&LmHostObjectMutex);
@@ -860,6 +877,34 @@ void Hosts_SyncMoCA()
     return;
 }
 
+void Hosts_SyncEthernetPort()
+{
+    int i;
+    int port;
+    char tmp[20];
+    PLmObjectHost pHost;
+//    pthread_mutex_lock(&LmHostObjectMutex);
+    for ( i = 0; i < lmHosts.numHost; i++ )
+    {
+
+
+        pHost = lmHosts.hostArray[i];
+        if ( !pHost )
+            continue;
+        if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL &&\
+                NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Ethernet") && \
+                pHost->bBoolParaValue[LM_HOST_ActiveId] == TRUE)
+        {
+            port = lm_wrapper_priv_getEthernetPort(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+            if(port != -1){
+                sprintf(tmp, "Ethernet.%d", port);
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(tmp);
+            }
+        }
+    }
+//    pthread_mutex_unlock(&LmHostObjectMutex);
+}
+
 void Hosts_StatSyncThreadFunc()
 {
     int i,count;
@@ -870,7 +915,8 @@ void Hosts_StatSyncThreadFunc()
     LM_host_entry_t *hosts     = NULL;
     LM_wifi_wsta_t  *wifiHosts = NULL;
     LM_moca_cpe_t   *mocaHosts = NULL;
-
+    PLmObjectHostIPAddress pIP;
+    
     while (1)
     {
         PRINTD("\n%s start\n", __FUNCTION__);
@@ -895,34 +941,45 @@ void Hosts_StatSyncThreadFunc()
                 if ( pHost->l1unReachableCnt != 0 )
                 {
                     (pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT)?
-                    (pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE):(pHost->l1unReachableCnt++);
+                    (LM_SET_ACTIVE_STATE_TIME(pHost, FALSE)):(pHost->l1unReachableCnt++);
                     continue;
                 }
 
                 /* The left hosts are from ethernet.
                  * We will send arping to this host.
                  * When we see the host as STALE in arp table for 3 times,
-                 * we think the host is offline.
+                 * we think the host'IP is offline.
                  */
-                (pHost->l3unReachableCnt + 1 >= LM_HOST_RETRY_LIMIT)?
-                     (pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE):(pHost->l3unReachableCnt++);
-
-                /* Send arping to hosts which are from ethernet */
-                if (pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] &&
-                    pHost->pStringParaValue[LM_HOST_PhysAddressId]     &&
-                    pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId])
+                int offline = 1;
+                for(pIP = pHost->ipv4AddrArray; pIP != NULL; pIP = pIP->pNext)
                 {
+                    if(pIP->l3unReachableCnt + 1 >= LM_HOST_RETRY_LIMIT)
+                        offline &= 1;
+                    else
+                    {
+                        pIP->l3unReachableCnt++;
+                        offline &=0;
+                    }
 
-                    ret = lm_arping_v4_send(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
-                    pHost->pStringParaValue[LM_HOST_PhysAddressId],
-                    pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-                    PRINTD("%s: arping %s, %s, %s, ret %d\n",
-                        __FUNCTION__,
-                        pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
-                        pHost->pStringParaValue[LM_HOST_PhysAddressId],
-                        pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId],
-                        ret);
+                    /* Send arping to hosts which are from ethernet */
+                    if (pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] &&
+                        pHost->pStringParaValue[LM_HOST_PhysAddressId]     &&
+                        pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
+                    {
+
+                        ret = lm_arping_v4_send(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
+                                      pHost->pStringParaValue[LM_HOST_PhysAddressId],
+                                      pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
+                        PRINTD("%s: arping %s, %s, %s, ret %d\n",
+                            __FUNCTION__,
+                            pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
+                            pHost->pStringParaValue[LM_HOST_PhysAddressId],
+                            pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId],
+                            ret);
+                    }
                 }
+                if(offline)LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+
             }
             pthread_mutex_unlock(&LmHostObjectMutex);
 
@@ -936,22 +993,23 @@ void Hosts_StatSyncThreadFunc()
                 for (i=0;i<count;i++)
                 {
                     pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
-
+     
                     if ( pHost && pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT )
                     {
                         /* This is very tricky. Sometime a mac, which is originally from WiFi or MoCA,
                         *  maybe moved to ethernet later. Its Layer1 unreachable counter will be
-                        *  greater than LM_HOST_RETRY_LIMIT. But at the sametime, it is REACHABLE in
+                        *  greater than LM_HOST_RETRY_LIMIT. But at the sametime, it is REACHABLE in 
                         *  arp table. We must mark this kind of host's Connection as Etherenet.
                         */
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
                             if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                             {
-                                LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                                LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                            
                             }
-                            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
 
+                            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+                            
                             pHost->l1unReachableCnt = 0;
                         }
                     }
@@ -959,8 +1017,13 @@ void Hosts_StatSyncThreadFunc()
                     {
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
-                            pHost->bBoolParaValue[LM_HOST_ActiveId] = TRUE;
-                            pHost->l3unReachableCnt = 0;
+                            LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+                            if(_isIPv6Addr(hosts[i].ipAddr))
+                                pIP = Host_AddIPv6Address(pHost, hosts[i].ipAddr);
+                            else
+                                pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
+                            if(pIP != NULL)
+                                pIP->l3unReachableCnt = 0;
                         }
                     }
                     else if ( !pHost )
@@ -969,21 +1032,10 @@ void Hosts_StatSyncThreadFunc()
 
                         if ( pHost )
                         {
-                            Host_AddIPv4Address
-                            (
-                                pHost,
-                                1,
-                                hosts[i].ipAddr
-                            );
-
-                            if( pHost->pStringParaValue[LM_HOST_IPAddressId] )
-                            {
-                                LanManager_Free(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-                            }
-                            if(pHost->numIPv4Addr)
-                            {
-                                pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-                            }
+                            if(_isIPv6Addr(hosts[i].ipAddr))
+                                pIP = Host_AddIPv6Address ( pHost, hosts[i].ipAddr);
+                            else
+                                pIP = Host_AddIPv4Address ( pHost, hosts[i].ipAddr);
 
                             if ( pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] )
                             {
@@ -1012,12 +1064,12 @@ void
 Hosts_PollHost()
 {
     pthread_mutex_lock(&PollHostMutex);
-
     Hosts_SyncArp();
+
     Hosts_SyncDHCP();
     Hosts_SyncWifi();
     Hosts_SyncMoCA();
-
+    Hosts_SyncEthernetPort(); 
     pthread_mutex_unlock(&PollHostMutex);
 }
 
