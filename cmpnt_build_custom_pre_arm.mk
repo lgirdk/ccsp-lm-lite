@@ -30,20 +30,13 @@
 
 include $(SDK_PATH)/.config
 
-#ifneq ($(wildcard $(SDK_PATH)/ti/include), )
-#INCPATH += $(SDK_PATH)/ti/netdk/src/ti_udhcp
-#endif
-
 LDFLAGS += -L$(SDK_PATH)/ti/netdk/src/uipc
-LDFLAGS += -L$(SDK_PATH)/ti/netdk/src/ti_udhcp
-LDFLAGS += -L$(SDK_PATH)/ti/netdk/src/ti_dhcpv6
-LDFLAGS += $(ldflags-y) -luipc -lpthread -ldhcp4cApi -ldhcp6cApi -lswctl -lprimary_ds_freq_override_db
+LDFLAGS += $(ldflags-y) -luipc -lpthread -lapi_dhcpv4c
 
 UTOPIA_LDFLAGS = -lutapi -lutctx -lsyscfg -lsysevent -lulog
 LDFLAGS += $(UTOPIA_LDFLAGS)
 
 ifeq ($(CONFIG_SYSTEM_MOCA), y)
    LDFLAGS += -lmoca_mgnt
-   LDFLAGS += -lmoca_api
    CFLAGS += -DCONFIG_SYSTEM_MOCA
 endif

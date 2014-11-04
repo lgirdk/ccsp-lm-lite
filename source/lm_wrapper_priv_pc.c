@@ -62,3 +62,7 @@ int lm_wrapper_priv_set_lan_host_comments(LM_cmd_comment_t *cmd)
     return 0;	// return SUCCESS = 0
 }
 
+int lm_wrapper_priv_getEthernetPort(char *mac)
+{
+    return 0;
+}

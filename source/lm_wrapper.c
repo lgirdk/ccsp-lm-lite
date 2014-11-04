@@ -30,8 +30,9 @@
 #include "lm_main.h"
 #include "lm_util.h"
 
+
 #define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63s"
-#define LM_DHCP_CLIENT_FORMAT   "%63s %17s %63s %63s"
+#define LM_DHCP_CLIENT_FORMAT   "%63d %17s %63s %63s"      
 #define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
 
 ANSC_HANDLE bus_handle;
@@ -210,7 +211,7 @@ int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount
     LM_moca_cpe_t *pMoca = NULL;
 
 #ifdef CONFIG_SYSTEM_MOCA
-    ret = moca_GetMocaCPEs(cpes, &n);
+    ret = moca_GetMocaCPEs(0, cpes, &n);
 #endif
 
     if(n <= 0){
@@ -229,7 +230,7 @@ int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount
 
     for(i = 0; i < n;i++){
          sprintf(pMoca->phyAddr, "%02x:%02x:%02x:%02x:%02x:%02x",cpes[i].mac_addr[0],cpes[i].mac_addr[1],cpes[i].mac_addr[2],cpes[i].mac_addr[3],cpes[i].mac_addr[4],cpes[i].mac_addr[5]);
-         strncpy(pMoca->ncId, "Device.MoCA.Interface.1.", LM_GEN_STR_SIZE);
+         strncpy(pMoca->ncId, "Device.MoCA.Interface.1", LM_GEN_STR_SIZE);
          pMoca++;
     }
 
@@ -268,7 +269,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     int interface_number = 0;
     int AssociatedDevice_number[LM_MAX_INTERFACE_NUMBER];
     parameterInfoStruct_t **interfaceInfo;
-    int i, j;
+    int i, j, itmp;
     int ret;
     LM_wifi_wsta_t *pwifi_wsta = NULL;
     char *field[2] = {"MACAddress", "SignalStrength"};
@@ -365,9 +366,9 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
         printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, pAssociatedDeviceName[0], ret);
         goto RET6;
     }
-    for(i = 0; i < num_size; i++){
-        PRINTD("%s %s \n",parametervalAssociatedDeviceNum[i]->parameterName, parametervalAssociatedDeviceNum[i]->parameterValue);
-    }
+    //for(i = 0; i < num_size; i++){
+    //    PRINTD("%s %s \n",parametervalAssociatedDeviceNum[i]->parameterName, parametervalAssociatedDeviceNum[i]->parameterValue);
+    //}
 
 
     field_num = _get_field_pos(field, 2, pos, parametervalAssociatedDeviceNum, num_size - interface_number);
@@ -389,11 +390,16 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     for(i = 0, j = 0; i < *pCount; i++)
     {
         strncpy(pwifi_wsta->phyAddr, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterValue, 18);
+        itmp = strlen(parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterName) - strlen(".MACAddress");
+        itmp = (itmp > LM_GEN_STR_SIZE - 1) ? LM_GEN_STR_SIZE-1 : itmp;
+        memcpy(pwifi_wsta->AssociatedDevice, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterName, itmp);
+        pwifi_wsta->AssociatedDevice[itmp] = '\0';
         pwifi_wsta->RSSI = atoi(parametervalAssociatedDeviceNum[i * field_num + pos[1]]->parameterValue);
         if((AssociatedDevice_number[j]--) == 0){
             j++;
         }
-        strncpy(pwifi_wsta->ssid, parametervalSSIDRef[j]->parameterValue, LM_GEN_STR_SIZE);
+        strncpy(pwifi_wsta->ssid, parametervalSSIDRef[j]->parameterValue, LM_GEN_STR_SIZE-1);
+        pwifi_wsta->ssid[strlen(pwifi_wsta->ssid) - 1] = '\0';
         pwifi_wsta++;
     }
     rVal = 0;
@@ -507,6 +513,7 @@ void lm_wrapper_get_dhcpv4_client()
     char buf[200] = {0};
     char stub[64];
     int ret;
+    PLmObjectHostIPAddress pIP;
 
     LM_host_entry_t dhcpHost;
     PLmObjectHost pHost;
@@ -524,7 +531,7 @@ void lm_wrapper_get_dhcpv4_client()
         6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
         */
         ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
-                 stub,
+                 &(dhcpHost.LeaseTime),
                  dhcpHost.phyAddr,
                  dhcpHost.ipAddr,
                  dhcpHost.hostName
@@ -547,26 +554,17 @@ void lm_wrapper_get_dhcpv4_client()
             }else
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
 
-            if ( pHost->pStringParaValue[LM_HOST_AddressSource] )
-            {
-                LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
-            }
-            pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
-
-            Host_AddIPv4Address
+            pIP = Host_AddIPv4Address
             (
                 pHost,
-                1,
                 dhcpHost.ipAddr
             );
-
-            if( pHost->pStringParaValue[LM_HOST_IPAddressId] )
+            if(pIP != NULL)
             {
-                LanManager_Free(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-            }
-            if(pHost->numIPv4Addr)
-            {
-                pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
+                if(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId])
+                    LanManager_Free(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
+                pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId] = LanManager_CloneString("DHCP");
+                pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
             }
         }
     }
@@ -584,6 +582,7 @@ void lm_wrapper_get_dhcpv4_reserved()
     char stub[64];
     int ret;
 
+    PLmObjectHostIPAddress pIP;
     LM_host_entry_t dhcpHost;
     PLmObjectHost pHost;
 
@@ -620,21 +619,7 @@ void lm_wrapper_get_dhcpv4_reserved()
                     pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
                 }
 
-                Host_AddIPv4Address
-                (
-                    pHost,
-                    1,
-                    dhcpHost.ipAddr
-                );
 
-                if( pHost->pStringParaValue[LM_HOST_IPAddressId] )
-                {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-                }
-                if(pHost->numIPv4Addr)
-                {
-                    pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(pHost->ipv4AddrArray[0]->pStringParaValue[LM_HOST_IPv4Address_IPAddressId]);
-                }
             }
         }
 
@@ -652,11 +637,19 @@ void lm_wrapper_get_dhcpv4_reserved()
             }else
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
 
-            if ( pHost->pStringParaValue[LM_HOST_AddressSource] )
+            pIP = Host_AddIPv4Address
+                (
+                    pHost,
+                    dhcpHost.ipAddr
+                );
+            if(pIP != NULL)
             {
-                LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
+                if(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId])
+                    LanManager_Free(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
+                pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId] = LanManager_CloneString("Static");
+                pIP->LeaseTime = 0;
             }
-            pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("Static");
+
         }
     }
 

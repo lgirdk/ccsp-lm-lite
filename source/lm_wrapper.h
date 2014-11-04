@@ -19,6 +19,7 @@
 
 #include <sys/socket.h>
 #include <lm_api.h>
+#include "moca_hal.h"
 /*****************
  *
  */
@@ -48,8 +49,6 @@ typedef struct _moca_cpe_list
 {
    unsigned char mac_addr[6];
 } moca_cpe_list;
-
-STATUS moca_GetMocaCPEs(moca_cpe_list * cpes, int * num_cpes);
 
 /*****************
  *
@@ -82,6 +81,7 @@ struct arp_pkt {
 typedef struct {
     unsigned char phyAddr[18];
     unsigned char ssid[LM_GEN_STR_SIZE];
+    unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
     int RSSI;
 }LM_wifi_wsta_t;
 
@@ -96,6 +96,7 @@ typedef struct{
 	enum LM_NEIGHBOR_STATE status;
     unsigned char hostName[LM_GEN_STR_SIZE];
     unsigned char ifName[LM_GEN_STR_SIZE];
+    int LeaseTime;
 }LM_host_entry_t;
 
 /******************

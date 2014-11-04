@@ -51,6 +51,7 @@
 #include <utapi.h>
 #include <utapi_util.h>
 
+#include "libswctl.h"
 #include "lm_api.h"
 
 
@@ -117,6 +118,17 @@ int lm_wrapper_priv_set_lan_host_comments( LM_cmd_comment_t *cmd)
     Utopia_Free(&ctx, 1);
 
     return SUCCESS;
+}
+
+int lm_wrapper_priv_getEthernetPort(char *mac)
+{
+        int port;
+        char tmp[6];
+        mac_string_to_array(mac, tmp);
+        if(SWCTL_OK == swctl_findMacAddress(tmp, &port))
+            return port;
+        else
+            return -1;
 }
 
 

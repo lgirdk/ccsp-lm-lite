@@ -51,6 +51,6 @@
 int lm_wrapper_priv_stop_scan();
 void lm_wrapper_priv_getLanHostComments(char *physAddress, char *pComments);
 int lm_wrapper_priv_set_lan_host_comments( LM_cmd_comment_t *cmd);
-
+int lm_wrapper_priv_getEthernetPort(char *mac);
 
 #endif		// _LM_WRAPPER_PRIV_H_
