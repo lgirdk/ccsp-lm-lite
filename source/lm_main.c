@@ -1025,6 +1025,11 @@ void Hosts_StatSyncThreadFunc()
                             if(pIP != NULL)
                                 pIP->l3unReachableCnt = 0;
                         }
+			if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                        {
+                            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+                        }
+                       	       	
                     }
                     else if ( !pHost )
                     {
