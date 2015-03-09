@@ -47,8 +47,8 @@
 **************************************************************************/
 
 #include <utctx/utctx.h>
-#include <utctx_api.h>
-#include <utapi.h>
+#include <utctx/utctx_api.h>
+#include <utapi/utapi.h>
 #include <utapi_util.h>
 
 #include "lm_api.h"
