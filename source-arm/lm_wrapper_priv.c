@@ -49,7 +49,7 @@
 #include <utctx/utctx.h>
 #include <utctx/utctx_api.h>
 #include <utapi/utapi.h>
-#include <utapi_util.h>
+#include <utapi/utapi_util.h>
 
 #include "lm_api.h"
 
