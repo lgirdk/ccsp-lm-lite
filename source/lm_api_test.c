@@ -16,6 +16,7 @@
 
 #include <arpa/inet.h>
 
+#include <stdio.h>
 #include "lm_api.h"
 
 

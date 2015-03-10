@@ -31,7 +31,30 @@
 include $(SDK_PATH)/.config
 
 LDFLAGS += -L$(SDK_PATH)/ti/netdk/src/uipc
+
 LDFLAGS += $(ldflags-y) -luipc -lpthread -lapi_dhcpv4c
+
+# SDK_VERSION comes from intel_usg
+
+ifeq ($(SDK_VERSION),)
+SDK_VERSION = 4.2
+
+$(info ***  SDK_VERSION not set ***)
+endif
+
+sdk_version := v$(SDK_VERSION)
+ifneq (,$(findstring v4.2,$(sdk_version)))
+# v4.2 and below
+$(info *** v4.2 and below ***)
+   LDFLAGS += -lswctl
+else
+# intel SDK v4.3 and above
+$(info *** intel SDK v4.3 and above ***)
+   LDFLAGS += -L$(SDK_PATH)/ti/netdk/src/ti_udhcp
+   LDFLAGS += -L$(SDK_PATH)/ti/netdk/src/ti_dhcpv6
+   LDFLAGS += -ldhcp4cApi
+endif
+
 
 UTOPIA_LDFLAGS = -lutapi -lutctx -lsyscfg -lsysevent -lulog
 LDFLAGS += $(UTOPIA_LDFLAGS)
