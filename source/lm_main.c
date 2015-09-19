@@ -122,7 +122,7 @@ pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
-inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
+static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
         pHost->bBoolParaValue[LM_HOST_ActiveId] = state;
         pHost->activityChangeTime = time((time_t*)NULL);
@@ -438,7 +438,7 @@ Host_AddIPv6Address
 
 #ifdef LM_IPC_SUPPORT
 
-inline void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Interfce)
+static inline void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Interfce)
 {
     if(l1Interfce == NULL){
         *m_type = LM_MEDIA_TYPE_UNKNOWN;
@@ -450,7 +450,7 @@ inline void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Interfce)
         *m_type = LM_MEDIA_TYPE_ETHERNET;
 }
 
-inline enum LM_ADDR_SOURCE _get_addr_source(char *source)
+static inline enum LM_ADDR_SOURCE _get_addr_source(char *source)
 {
     if(source == NULL)
         return LM_ADDRESS_SOURCE_NONE;
@@ -465,7 +465,7 @@ inline enum LM_ADDR_SOURCE _get_addr_source(char *source)
         return LM_ADDRESS_SOURCE_NONE;
 }
 
-inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
+static inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
 {
     int i;   
     PLmObjectHostIPAddress pIpSrc; 
@@ -493,7 +493,7 @@ inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
     }
 }
 
-inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
+static inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
 {
         mac_string_to_array(pHost->pStringParaValue[LM_HOST_PhysAddressId], pDestHost->phyAddr);
         pDestHost->online = (unsigned char)pHost->bBoolParaValue[LM_HOST_ActiveId];
@@ -508,7 +508,7 @@ inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
         _get_host_ipaddress(pDestHost, pHost); 
 }
 
-inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
+static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
 {
     int i, len = 0;
     PLmObjectHost pHost = NULL;
@@ -535,7 +535,7 @@ inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
     write(fd, &hosts, len);
 }
 
-inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
+static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
 {
     LM_cmd_get_host_by_mac_t *cmd = recv_buf;
     LM_cmd_common_result_t result;
@@ -558,7 +558,7 @@ inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
     write(fd, &result, sizeof(result));
 }
 
-inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
+static inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
 {
 
     LM_cmd_comment_t *cmd = recv_buf;
@@ -594,7 +594,7 @@ inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
 END:
     write(fd, &result, sizeof(result));
 }
-inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
+static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
@@ -620,7 +620,7 @@ inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
     write(fd, &result, sizeof(result));
 }
 
-inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
+static inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
 
 }
 
