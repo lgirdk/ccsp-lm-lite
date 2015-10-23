@@ -83,6 +83,7 @@
 #include "lm_wrapper_priv.h"
 
 #define LM_IPC_SUPPORT
+extern char*                                pComponentName;
 /***********************************************************************
  IMPORTANT NOTE:
 
@@ -137,14 +138,51 @@ LmObjectHosts lmHosts = {
 
 /* It may be updated by different threads at the same time? */
 ULONG HostsUpdateTime = 0;
+
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
+
+int logOnlineDevicesCount()
+{
+	PLmObjectHost   pHost      = NULL;
+	int NumOfOnlineDevices = 0;
+	int i;
+	for ( i = 0; i < lmHosts.numHost; i++ )
+	{               
+		pHost = lmHosts.hostArray[i];
+
+		if(pHost->bBoolParaValue[LM_HOST_ActiveId])
+		{
+			NumOfOnlineDevices ++;
+		}
+	}
+	CcspTraceWarning(("CONNECTED_CLIENTS_COUNT : %d \n",NumOfOnlineDevices));
+}
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
+		if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
+			if(state) {
+				CcspWifiTrace(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: Wifi client mac-%s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+			}  else {
+				CcspWifiTrace(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: Wifi client mac-%s gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+
+			}
+		}
+
+		else
+		{
+		      if(state) {
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Connected client mac-%s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+			}  else {
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Connected client mac-%s gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+
+			}
+		}
         pHost->bBoolParaValue[LM_HOST_ActiveId] = state;
         pHost->activityChangeTime = time((time_t*)NULL);
+		logOnlineDevicesCount();
 		PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
     }
 } 
@@ -228,7 +266,7 @@ void Hosts_FreeHost(PLmObjectHost pHost){
 }
 
 void Hosts_RmHosts(){
-    int i;  
+    int i;
 
     if(lmHosts.numHost == 0)
         return;
@@ -320,6 +358,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 
     if(!physAddress || \
        0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
+
     if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
     PLmObjectHost pHost = Hosts_FindHostByPhysAddress(physAddress);
     if(pHost) return pHost;
@@ -1034,6 +1073,7 @@ void Hosts_StatSyncThreadFunc()
                     }
                     else if ( pHost && pHost->l1unReachableCnt == 0 )
                     {
+
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
                             LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
@@ -1050,7 +1090,7 @@ void Hosts_StatSyncThreadFunc()
                         }
                        	       	
                     }
-                    else if ( !pHost )
+		    else if ( !pHost ) 
                     {
                         pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
 
@@ -1089,7 +1129,6 @@ Hosts_PollHost()
 {
     pthread_mutex_lock(&PollHostMutex);
     Hosts_SyncArp();
-
     Hosts_SyncDHCP();
     Hosts_SyncWifi();
     Hosts_SyncMoCA();
@@ -1114,6 +1153,7 @@ Hosts_PollHostThreadFunc()
     }
 }
 
+const char compName[25]="LOG.RDK.LM";
 void main()
 {
     int res;
@@ -1125,6 +1165,15 @@ void main()
     lmHosts.sizeHost = LM_HOST_ARRAY_STEP;
     lmHosts.numHost = 0;
     lmHosts.availableInstanceNum = 1;
+
+
+    pComponentName = compName;
+
+
+	#ifdef FEATURE_SUPPORT_RDKLOG
+		rdk_logger_init("/fss/gw/lib/debug.ini");
+	#endif
+    CcspTraceWarning(("LMLite:rdk initialzed!\n"));
 
     Hosts_PollHost();
 

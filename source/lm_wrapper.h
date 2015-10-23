@@ -39,6 +39,7 @@
 #include <sys/socket.h>
 #include <lm_api.h>
 #include "moca_hal.h"
+#include "ccsp_custom_logs.h"
 /*****************
  *
  */
@@ -117,6 +118,25 @@ typedef struct{
     unsigned char ifName[LM_GEN_STR_SIZE];
     int LeaseTime;
 }LM_host_entry_t;
+
+ANSC_HANDLE bus_handle;
+
+#define  CcspTraceBaseStr(arg ...)                                                             \
+            do {                                                                            \
+                snprintf(pTempChar1, 4095, arg);                                         	\
+            } while (FALSE)
+			
+#define  CcspWifiTrace(msg)                         \
+{\
+	                char*   pTempChar1 = (char*)malloc(4096);                                     \
+                if ( pTempChar1 )                                                             \
+                {                                                                            \
+					char	sfn[32];														 \
+                    CcspTraceBaseStr msg;                                                       \
+				    WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.WifiLogMsg"); \
+                    free(pTempChar1);                                                         \
+                }\
+}
 
 /******************
  *
