@@ -50,14 +50,23 @@
 #include "lm_util.h"
 
 
-#define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63s"
+/* Fix RDKB-499 */
+#define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63[^,]"
 #define LM_DHCP_CLIENT_FORMAT   "%63d %17s %63s %63s"      
 #define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
 
-ANSC_HANDLE bus_handle;
+extern ANSC_HANDLE bus_handle;
 char *pERTPAMComponentName = NULL;
 char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
+#define WIFI_DM_CHANNEL      "Device.WiFi.Radio.%d.Channel"
+#define WIFI_DM_AUTOCHAN     "Device.WiFi.Radio.%d.AutoChannelEnable"
+#define WIFI_DM_BSS_SECURITY_MODE "Device.WiFi.AccessPoint.%d.Security.ModeEnabled"
+#define WIFI_DM_BSS_SECURITY_ENCRYMODE "Device.WiFi.AccessPoint.%d.Security.X_CISCO_COM_EncryptionMethod"
+#define WIFI_DM_SSID         "Device.WiFi.SSID.%d.SSID"
+
+
+
 
 static int fd;
 pthread_mutex_t GetARPEntryMutex;
@@ -286,6 +295,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     char *pComponentName = pERTPAMComponentName;
     char *pComponentPath = pERTPAMComponentPath;
     int interface_number = 0;
+    int bkup_ifaceNumber = 0;
     int AssociatedDevice_number[LM_MAX_INTERFACE_NUMBER];
     parameterInfoStruct_t **interfaceInfo;
     int i, j, itmp;
@@ -312,12 +322,15 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
         pComponentPath,
         tblName,
         1,
-        &interface_number,
+        &bkup_ifaceNumber,
         &interfaceInfo);
     if(ret != CCSP_Message_Bus_OK) {
         CcspTraceError(("%s CcspBaseIf_getParameterNames %s error %d!\n", __FUNCTION__, tblName, ret));
         return -1;
     }
+
+    /* if netName is "brlan0",  need to update only private network.*/
+        interface_number = 2 ;
 
     char *(*pReferenceParaNameArray)[] = malloc(sizeof(char*) * interface_number);
     if(pReferenceParaNameArray == NULL)
@@ -406,6 +419,12 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
         goto RET7;
 
     *ppWstaArray = pwifi_wsta;
+
+
+	/*Below lines are commented out and rewritten as with this logic  XHS and xfinity wifi devices are not copied with correct WIFI SSID ref and these  gets logged with wrong interface .
+		This is observed when there are no devices connected over private wifi and devices are connected over other interfaces */
+
+/*
     for(i = 0, j = 0; i < *pCount; i++)
     {
         strncpy(pwifi_wsta->phyAddr, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterValue, 18);
@@ -421,7 +440,161 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
         pwifi_wsta->ssid[strlen(pwifi_wsta->ssid) - 1] = '\0';
         pwifi_wsta++;
     }
+	*/
+	int k = 0;
+	int device_no= 0;
+	int device_count= 0;
+	for(k = 0; k < interface_number ; k++)
+	{
+		device_no = AssociatedDevice_number[k];
+	    if(device_no > 0)
+		{
+			for(i = device_count, j = 1; i < *pCount && j <=device_no ; i++,device_count++,j++)
+			{
+				strncpy(pwifi_wsta->phyAddr, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterValue, 18);
+				itmp = strlen(parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterName) - strlen(".MACAddress");
+				itmp = (itmp > LM_GEN_STR_SIZE - 1) ? LM_GEN_STR_SIZE-1 : itmp;
+				memcpy(pwifi_wsta->AssociatedDevice, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterName, itmp);
+				pwifi_wsta->AssociatedDevice[itmp] = '\0';
+				pwifi_wsta->RSSI = atoi(parametervalAssociatedDeviceNum[i * field_num + pos[1]]->parameterValue);
+				strncpy(pwifi_wsta->ssid, parametervalSSIDRef[k]->parameterValue, LM_GEN_STR_SIZE-1);
+				pwifi_wsta->ssid[strlen(pwifi_wsta->ssid) - 1] = '\0';
+				pwifi_wsta++;
+			}
+		}
+	}
+
     rVal = 0;
+
+    parameterValStruct_t **valStrchannel;
+	parameterValStruct_t **valStrsecmode;
+	parameterValStruct_t **valStrsecencrymode;
+	parameterValStruct_t **valStrssid;
+	int nval, retval;
+	char str[2][80];
+	char * name[2] = {(char*) str[0], (char*) str[1]};  
+	int interface ;
+	char secMode[128]  = {'\0'};
+	char secEncMode[128] = {'\0'};
+	char ssid[128] = {'\0'};
+        char  *paramNames[1] ;
+	int radioInt = 0;
+	int currentChannel = 0;
+        LM_wifi_wsta_t *hosts = *ppWstaArray;
+	time_t     now;
+	int activityTimeChangeDiff = 0;
+	for (i = 0; i < *pCount ; i++)
+        {
+		PLmObjectHost pHost;
+		char index;
+  		index = hosts[i].ssid[strlen(hosts[i].ssid)-1];
+		interface = index - '0';
+		/* SSID index check. Disabling logging for xfinity wifi devices and XHS clients. As these devices are not getting saved, whenever this loop runs , everytime these devices are getting logged as New Client.
+			TODO: Need to figure out the way to idenify new client. 
+		1 and 2 private wifi - Log is enabled
+	    3 - Home-security, 5 & 6 - hotspot index - Log is disabled.*/
+		if(interface > 2) {
+			//printf(" It is not private wifi Device. \n");
+			continue;
+		}
+		/* disable logic ends */
+		pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
+		if(pHost) {
+		    if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) {
+			     if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
+				 continue;
+			     } 
+		    } 
+		} else {
+		   CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client connected. Mac is %s \n",hosts[i].phyAddr));
+		}
+		
+		if(interface%2 == 0)
+			radioInt = 1;
+		else
+			radioInt = 0;
+
+		snprintf(str[0], sizeof(str[0]),WIFI_DM_AUTOCHAN,radioInt+1);
+		snprintf(str[1], sizeof(str[1]),WIFI_DM_CHANNEL,radioInt+1);
+		ret = CcspBaseIf_getParameterValues(
+		    bus_handle,
+		    pComponentName,
+		    pComponentPath,
+		    &name,
+		    2,
+		    &nval,
+		    &valStrchannel);
+
+		if(ret != CCSP_Message_Bus_OK){
+			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, name, ret));
+			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, name, ret);
+			goto RET1;
+		}
+
+		if(strncmp("true", valStrchannel[0]->parameterValue, 5)==0)
+			retval = 0;
+
+		currentChannel = atoi(valStrchannel[1]->parameterValue);
+		
+		snprintf(secMode, sizeof(secMode), WIFI_DM_BSS_SECURITY_MODE,interface);
+		paramNames[0] = LanManager_CloneString(secMode);;
+		ret = CcspBaseIf_getParameterValues(
+		    bus_handle,
+		    pComponentName,
+		    pComponentPath,
+		    paramNames,
+		    1,
+		    &nval,
+		    &valStrsecmode);
+		if(ret != CCSP_Message_Bus_OK){
+			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, secMode, ret));
+			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, secMode, ret);
+		        goto RET1;
+		} 
+
+		snprintf(secEncMode, sizeof(secEncMode),WIFI_DM_BSS_SECURITY_ENCRYMODE,interface);
+                paramNames[0] = LanManager_CloneString(secEncMode);
+		ret = CcspBaseIf_getParameterValues(
+		    bus_handle,
+		    pComponentName,
+		    pComponentPath,
+		    paramNames,
+		    1,
+		    &nval,
+		    &valStrsecencrymode);
+		if(ret != CCSP_Message_Bus_OK){
+			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, secEncMode, ret));
+			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, secEncMode, ret);
+			goto RET1;
+		} 
+
+		snprintf(ssid, sizeof(ssid),WIFI_DM_SSID,interface);
+	        paramNames[0] = LanManager_CloneString(ssid);
+		ret = CcspBaseIf_getParameterValues(
+		    bus_handle,
+		    pComponentName,
+		    pComponentPath,
+		    paramNames,
+		    1,
+		    &nval,
+		    &valStrssid);
+		if(ret != CCSP_Message_Bus_OK){
+			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, ssid, ret));
+			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, ssid, ret);
+			goto RET1;
+		}
+		CcspWifiTrace(("RDK_LOG_WARN, No of Wifi clients connected : %d \n",*pCount));
+		CcspWifiTrace(("RDK_LOG_WARN, Device No : %d MAC - %s interface : ath%d \n",i+1,hosts[i].phyAddr,interface-1));
+		if(!retval){	
+		  CcspWifiTrace(("RDK_LOG_WARN, ssid : %s Auto channel enabled, channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
+		}else {
+		 CcspWifiTrace(("RDK_LOG_WARN, ssid : %s  channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
+		}	
+		CcspWifiTrace(("RDK_LOG_WARN, Security Mode : %s , Security Encryptionmode : %s \n",valStrsecmode[0]->parameterValue,valStrsecencrymode[0]->parameterValue));
+
+	}
+
+
 RET7:
     free_parameterValStruct_t(bus_handle, num_size, parametervalAssociatedDeviceNum);
 RET6:
@@ -435,7 +608,7 @@ RET3:
 RET2:
     free(pReferenceParaNameArray);
 RET1:
-    free_parameterInfoStruct_t (bus_handle, interface_number, interfaceInfo);
+    free_parameterInfoStruct_t (bus_handle, bkup_ifaceNumber, interfaceInfo);
 
     PRINTD("EXT %s\n", __FUNCTION__);
     return rVal;
