@@ -83,6 +83,8 @@
 #include "lm_wrapper_priv.h"
 
 #define LM_IPC_SUPPORT
+
+#define DEBUG_INI_NAME  "/etc/debug.ini"
 extern char*                                pComponentName;
 /***********************************************************************
  IMPORTANT NOTE:
@@ -1171,7 +1173,7 @@ void main()
 
 
 	#ifdef FEATURE_SUPPORT_RDKLOG
-		rdk_logger_init("/fss/gw/lib/debug.ini");
+		rdk_logger_init(DEBUG_INI_NAME);
 	#endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
 
