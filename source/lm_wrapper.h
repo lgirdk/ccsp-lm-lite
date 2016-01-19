@@ -151,5 +151,7 @@ void lm_wrapper_get_dhcpv4_reserved();
 
 int mac_string_to_array(char *pStr, unsigned char array[6]);
 int ip_string_to_arrary(char* pStr, unsigned char array[4]);
+void getAddressSource(char *physAddress, char *pAddressSource);
+int getIPAddress(char *physAddress,char *IPAddress);
 
 #endif

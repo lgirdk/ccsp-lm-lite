@@ -139,7 +139,7 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 
 #define LM_HOST_AliasId                                 0
 #define LM_HOST_PhysAddressId                           1
-#define LM_HOST_Comments                                2
+#define LM_HOST_IPAddressId                             2
 #define LM_HOST_DHCPClientId                            3
 #define LM_HOST_AssociatedDeviceId                      4
 #define LM_HOST_Layer1InterfaceId                       5
@@ -155,6 +155,7 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_CISCO_COM_UserDefinedHardwareVendorId 15
 #define LM_HOST_X_CISCO_COM_UserDefinedSoftwareVendorId 16
 #define LM_HOST_AddressSource                           17
+#define LM_HOST_Comments                                18
 #define LM_HOST_NumStringPara                           20 
 
 #define LM_HOST_IPAddress_IPAddressId     0

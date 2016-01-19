@@ -164,21 +164,62 @@ int logOnlineDevicesCount()
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
+
+        char addressSource[20] = {0};
+	char IPAddress[50] = {0};
+	memset(addressSource,0,sizeof(addressSource));
+	memset(IPAddress,0,sizeof(IPAddress));
+		if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )	
+		{
+			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
+      			 pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(IPAddress);
+		}
+
+		if ( ! pHost->pStringParaValue[LM_HOST_AddressSource] )	
+		{
+    		        getAddressSource(pHost->pStringParaValue[LM_HOST_PhysAddressId], addressSource);	
+   		        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString(addressSource);
+		}
+
 		if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
 			if(state) {
-				CcspWifiTrace(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: Wifi client mac-%s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
 			}  else {
-				CcspWifiTrace(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: Wifi client mac-%s gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 			}
 		}
 
-		else
+		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 		{
 		      if(state) {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Connected client mac-%s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
 			}  else {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Connected client mac-%s gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MoCA client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+
+			}
+		}
+
+		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
+		{
+		      if(state) {
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+			}  else {
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+
+			}
+		}
+
+		else 
+		{
+		      if(state) {
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+			}  else {
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: %s client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 			}
 		}
@@ -315,7 +356,7 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
     pHost->activityChangeTime  = time(NULL);
 
     pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
-    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = INT_MAX;
+    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
 
     int i;
     for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
@@ -836,6 +877,9 @@ void Hosts_SyncArp()
 
                 if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                 {
+
+                pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
+         
                     LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 
                     pIP = Host_AddIPv4Address
@@ -1069,22 +1113,26 @@ void Hosts_StatSyncThreadFunc()
                             }
 
                             pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
-                            
+                            pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
                             pHost->l1unReachableCnt = 0;
                         }
                     }
                     else if ( pHost && pHost->l1unReachableCnt == 0 )
                     {
 
+                       pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
+
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
-                            LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
                             if(_isIPv6Addr(hosts[i].ipAddr))
                                 pIP = Host_AddIPv6Address(pHost, hosts[i].ipAddr);
                             else
                                 pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
                             if(pIP != NULL)
                                 pIP->l3unReachableCnt = 0;
+
+     
+                            LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
                         }
 			if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                         {
@@ -1108,6 +1156,7 @@ void Hosts_StatSyncThreadFunc()
                                 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]);
                             }
                             pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] = LanManager_CloneString(hosts[i].ifName);
+			    pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
                         }
                     }
                 }

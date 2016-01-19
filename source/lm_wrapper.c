@@ -699,6 +699,104 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     return 0;
 }
 
+
+void getAddressSource(char *physAddress, char *pAddressSource)
+{
+
+    FILE *fp = NULL;
+    char buf[200] = {0};
+    int ret;
+    LM_host_entry_t dhcpHost;
+    if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
+    {
+        return;
+    }
+
+    while ( fgets(buf, sizeof(buf), fp)!= NULL )
+    {
+        /*
+        Sample:
+        6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
+        6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
+        */
+        ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
+                 &(dhcpHost.LeaseTime),
+                 dhcpHost.phyAddr,
+                 dhcpHost.ipAddr,
+                 dhcpHost.hostName
+              );
+
+
+        if(ret != 4)
+            continue;
+
+	if (!strcasecmp(physAddress,dhcpHost.phyAddr))
+	{
+		strcpy(pAddressSource,"DHCP");
+		break;
+	}
+
+   }
+
+    fclose(fp);
+memset(buf,0,sizeof(buf));
+   if ( (fp=fopen(DNSMASQ_RESERVED_FILE, "r")) == NULL )
+    {
+        return;
+    }
+
+    while ( fgets(buf, sizeof(buf), fp)!= NULL )
+    {
+        /*
+        Sample:
+        02:10:18:01:00:02,10.0.0.91,*
+        */
+        ret = sscanf(buf, DHCPV4_RESERVED_FORMAT,
+                 dhcpHost.phyAddr,
+                 dhcpHost.ipAddr,
+                 dhcpHost.hostName
+              );
+        if(ret != 3)
+            continue;
+
+	if (!strcasecmp(physAddress,dhcpHost.phyAddr))
+	{
+		strcpy(pAddressSource,"Static");
+		break;
+	}
+
+   }
+    fclose(fp);
+
+   return;
+}
+
+int getIPAddress(char *physAddress,char *IPAddress)
+{
+
+    FILE *fp = NULL;
+    char buf[200] = {0};
+    char output[50] = {0};
+
+    system("ip nei show | grep brlan0");
+    snprintf(buf, sizeof(buf), "ip nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}'", physAddress);
+    system(buf);
+
+        if(!(fp = popen(buf, "r")))
+		{
+	        return -1;
+        }
+	while(fgets(output, sizeof(output), fp)!=NULL)
+	{
+		output[strlen(output) - 1] = '\0';
+	}
+	strcpy(IPAddress,output);
+    fclose(fp);
+
+    return 0;
+
+}
+
 void lm_wrapper_get_dhcpv4_client()
 {
     FILE *fp = NULL;
