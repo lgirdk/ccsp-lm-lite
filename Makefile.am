@@ -19,7 +19,20 @@
 SUBDIRS = source
 
 lib_LTLIBRARIES=liblmapi.la
-liblmapi_la_CPPFLAGS= -D_ANSC_LINUX -D_ANSC_USER -D_ANSC_LITTLE_ENDIAN_ -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/http/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/ansc/include -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/common/MessageBusHelper/include -I$(top_srcdir)/../hal/include
+liblmapi_la_CPPFLAGS= -D_ANSC_LINUX -D_ANSC_USER -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/http/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/ansc/include -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/common/MessageBusHelper/include -I$(top_srcdir)/../hal/include
+
+if CCSP_ARCH_ARM
+liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
+endif
+
+if CCSP_ARCH_ATOM
+liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
+endif
+
+if CCSP_ARCH_PC
+liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
+endif
+
 liblmapi_la_LDFLAGS= -lccsp_common
 liblmapi_la_SOURCES= \
 	source/lm_api.c
