@@ -292,7 +292,7 @@ OUT:
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
     char *tblName = DEVICE_WIFI_ACCESS_POINT;
-    char *pComponentName = pERTPAMComponentName;
+    char *pWiFiComponentName = pERTPAMComponentName;
     char *pComponentPath = pERTPAMComponentPath;
     int interface_number = 0;
     int bkup_ifaceNumber = 0;
@@ -308,17 +308,17 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
     *pCount = 0;
     PRINTD("ENT %s\n", __FUNCTION__);
-    if(pComponentPath == NULL || pComponentName == NULL)
+    if(pComponentPath == NULL || pWiFiComponentName == NULL)
     {
         if(-1 == LanManager_DiscoverComponent()){
-            CcspTraceError(("%s ComponentPath or pComponentName is NULL\n", __FUNCTION__));
+            CcspTraceError(("%s ComponentPath or pWiFiComponentName is NULL\n", __FUNCTION__));
             return rVal;
         }
     }
     /* Get parameter name of Device.WiFi.AccessPoint. */
     ret = CcspBaseIf_getParameterNames(
         bus_handle,
-        pComponentName,
+        pWiFiComponentName,
         pComponentPath,
         tblName,
         1,
@@ -369,7 +369,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     int ref_size = 0 ;
     ret = CcspBaseIf_getParameterValues(
             bus_handle,
-            pComponentName,
+            pWiFiComponentName,
             pComponentPath,
             *pReferenceParaNameArray,
             interface_number,
@@ -387,7 +387,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     int num_size = 0;
     ret = CcspBaseIf_getParameterValues(
             bus_handle,
-            pComponentName,
+            pWiFiComponentName,
             pComponentPath,
             *pAssociatedDeviceNameArray,
             interface_number * 2,
@@ -518,7 +518,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		snprintf(str[1], sizeof(str[1]),WIFI_DM_CHANNEL,radioInt+1);
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
-		    pComponentName,
+		    pWiFiComponentName,
 		    pComponentPath,
 		    &name,
 		    2,
@@ -540,7 +540,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		paramNames[0] = LanManager_CloneString(secMode);;
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
-		    pComponentName,
+		    pWiFiComponentName,
 		    pComponentPath,
 		    paramNames,
 		    1,
@@ -556,7 +556,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
                 paramNames[0] = LanManager_CloneString(secEncMode);
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
-		    pComponentName,
+		    pWiFiComponentName,
 		    pComponentPath,
 		    paramNames,
 		    1,
@@ -572,7 +572,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 	        paramNames[0] = LanManager_CloneString(ssid);
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
-		    pComponentName,
+		    pWiFiComponentName,
 		    pComponentPath,
 		    paramNames,
 		    1,
