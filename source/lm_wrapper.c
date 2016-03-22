@@ -64,6 +64,8 @@ extern pthread_mutex_t LmHostObjectMutex;
 #define WIFI_DM_BSS_SECURITY_MODE "Device.WiFi.AccessPoint.%d.Security.ModeEnabled"
 #define WIFI_DM_BSS_SECURITY_ENCRYMODE "Device.WiFi.AccessPoint.%d.Security.X_CISCO_COM_EncryptionMethod"
 #define WIFI_DM_SSID         "Device.WiFi.SSID.%d.SSID"
+char *pAtomBRMac = NULL;
+#define WIFI_DM_BSSID         "Device.WiFi.SSID.1.BSSID"
 
 
 
@@ -308,6 +310,12 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
     *pCount = 0;
     PRINTD("ENT %s\n", __FUNCTION__);
+
+     char  *paramAtomMacName[1] ;
+     parameterValStruct_t    **valStructs = NULL;
+     int valNum = 0;
+     char br0Mac[128]  = {'\0'};
+
     if(pComponentPath == NULL || pWiFiComponentName == NULL)
     {
         if(-1 == LanManager_DiscoverComponent()){
@@ -315,6 +323,28 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
             return rVal;
         }
     }
+
+   if(pAtomBRMac == NULL)
+    {
+		snprintf(br0Mac, sizeof(br0Mac), WIFI_DM_BSSID);
+    		paramAtomMacName[0] = LanManager_CloneString(br0Mac);  
+
+		ret = CcspBaseIf_getParameterValues(
+		    bus_handle,
+		    pWiFiComponentName,
+		    pComponentPath,
+		    paramAtomMacName,
+		    1,
+		    &valNum,
+		    &valStructs);
+		if(ret != CCSP_Message_Bus_OK){
+			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, br0Mac, ret));
+			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__,br0Mac, ret);
+		        goto RET1;
+		} 
+		pAtomBRMac = LanManager_CloneString(valStructs[0]->parameterValue);
+    }
+		
     /* Get parameter name of Device.WiFi.AccessPoint. */
     ret = CcspBaseIf_getParameterNames(
         bus_handle,
@@ -626,7 +656,14 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     pthread_mutex_lock(&GetARPEntryMutex);
 
     unlink(ARP_CACHE_FILE);
-    snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10 > %s", netName, ARP_CACHE_FILE);
+   // snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10 > %s", netName, ARP_CACHE_FILE);
+
+    if(pAtomBRMac != NULL) {
+    	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > %s", netName,pAtomBRMac,ARP_CACHE_FILE);
+    } else {
+    	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  > %s", netName,ARP_CACHE_FILE);
+    }	
+
     system(buf);
 
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
