@@ -64,7 +64,7 @@ extern pthread_mutex_t LmHostObjectMutex;
 #define WIFI_DM_BSS_SECURITY_MODE "Device.WiFi.AccessPoint.%d.Security.ModeEnabled"
 #define WIFI_DM_BSS_SECURITY_ENCRYMODE "Device.WiFi.AccessPoint.%d.Security.X_CISCO_COM_EncryptionMethod"
 #define WIFI_DM_SSID         "Device.WiFi.SSID.%d.SSID"
-char *pAtomBRMac = NULL;
+static char pAtomBRMac[32] = {0};
 #define WIFI_DM_BSSID         "Device.WiFi.SSID.1.BSSID"
 
 
@@ -324,27 +324,6 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
         }
     }
 
-   if(pAtomBRMac == NULL)
-    {
-		snprintf(br0Mac, sizeof(br0Mac), WIFI_DM_BSSID);
-    		paramAtomMacName[0] = LanManager_CloneString(br0Mac);  
-
-		ret = CcspBaseIf_getParameterValues(
-		    bus_handle,
-		    pWiFiComponentName,
-		    pComponentPath,
-		    paramAtomMacName,
-		    1,
-		    &valNum,
-		    &valStructs);
-		if(ret != CCSP_Message_Bus_OK){
-			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, br0Mac, ret));
-			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__,br0Mac, ret);
-		        goto RET1;
-		} 
-		pAtomBRMac = LanManager_CloneString(valStructs[0]->parameterValue);
-    }
-		
     /* Get parameter name of Device.WiFi.AccessPoint. */
     ret = CcspBaseIf_getParameterNames(
         bus_handle,
@@ -644,6 +623,22 @@ RET1:
     return rVal;
 }
 
+void _get_shell_output(char * cmd, char * out, int len)
+{
+    FILE * fp;
+    char   buf[256] = {0};
+    char * p;
+    fp = popen(cmd, "r");
+    if (fp)
+    {
+        fgets(buf, sizeof(buf), fp);
+        /*we need to remove the \n char in buf*/
+        if ((p = strchr(buf, '\n'))) *p = 0;
+        strncpy(out, buf, len-1);
+        pclose(fp);        
+    }
+}
+
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray)
 {
     FILE *fp = NULL;
@@ -658,7 +653,18 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     unlink(ARP_CACHE_FILE);
    // snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10 > %s", netName, ARP_CACHE_FILE);
 
-    if(pAtomBRMac != NULL) {
+	// This is added to remove atom mac from the connected device list.
+    char            cmd[256]         = {0};
+    char            out[32]         = {0};
+    
+     if(pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
+		_ansc_sprintf(cmd, "ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14\n" );
+		_get_shell_output(cmd, out, sizeof(out));
+		 strncpy(pAtomBRMac,out,sizeof(out));
+		CcspTraceWarning(("Atom mac is %s \n",pAtomBRMac));
+   	} 
+ 
+    if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
     	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > %s", netName,pAtomBRMac,ARP_CACHE_FILE);
     } else {
     	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  > %s", netName,ARP_CACHE_FILE);
