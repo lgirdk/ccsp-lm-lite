@@ -656,13 +656,16 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 	// This is added to remove atom mac from the connected device list.
     char            cmd[256]         = {0};
     char            out[32]         = {0};
-    
+	
+	// XB6 Doesn't have this interface. Remove constant warnings.
+#ifndef INTEL_PUMA7
      if(pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
 		_ansc_sprintf(cmd, "ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14\n" );
 		_get_shell_output(cmd, out, sizeof(out));
 		 strncpy(pAtomBRMac,out,sizeof(out));
 		CcspTraceWarning(("Atom mac is %s \n",pAtomBRMac));
-   	} 
+   	}
+#endif
  
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
     	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > %s", netName,pAtomBRMac,ARP_CACHE_FILE);
