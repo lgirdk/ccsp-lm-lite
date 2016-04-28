@@ -73,6 +73,11 @@ static char pAtomBRMac[32] = {0};
 static int fd;
 pthread_mutex_t GetARPEntryMutex;
 
+#ifdef USE_NOTIFY_COMPONENT
+LM_wifi_hosts_t hosts;
+pthread_mutex_t Wifi_Hosts_mutex;
+#endif
+
 int LanManager_DiscoverComponent
     (
     )
@@ -231,6 +236,9 @@ int lm_wrapper_init(){
     }
 
     LanManager_DiscoverComponent();
+#ifdef USE_NOTIFY_COMPONENT
+    pthread_mutex_init(&Wifi_Hosts_mutex,0);
+#endif
     return 0;
 }
 
@@ -289,8 +297,107 @@ OUT:
     }
     return (i);
 }
+#ifdef USE_NOTIFY_COMPONENT
+void Wifi_Server_Thread_func()
+{
+
+	int sockfd, newsockfd;
+	socklen_t clilen;
+	struct sockaddr_in serv_addr, cli_addr;
+	int n,i;
+	char name[8]= {0};
 
 
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) 
+	{		
+		CcspTraceWarning(("WIFI-CLIENT <%s> <%d> : ERROR opening socket\n",__FUNCTION__, __LINE__));
+		return;
+	}
+
+	bzero((char *) &serv_addr, sizeof(serv_addr));
+	
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_addr.sin_port = htons(5001);
+	
+	if (bind(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
+	{		
+		CcspTraceWarning(("WIFI-CLIENT <%s> <%d> : ERROR on binding  \n",__FUNCTION__, __LINE__));
+	}
+
+	
+	listen(sockfd,10);
+	clilen = sizeof(cli_addr);
+	
+    while(1){
+        newsockfd = accept(sockfd,(struct sockaddr *) &cli_addr,&clilen);
+        if(newsockfd < 0 )
+           continue;
+       	
+		
+		pthread_mutex_lock(&Wifi_Hosts_mutex);
+
+		if ( recv(newsockfd, &hosts, sizeof(LM_wifi_hosts_t), MSG_WAITALL) <= 0)
+		{
+			CcspTraceWarning(("WIFI-CLIENT <%s> <%d> : Data recv failed from WiFi-Agent \n",__FUNCTION__, __LINE__));
+		}
+		else
+		{
+			hosts.count = ntohl(hosts.count);
+			
+			
+			for(i = 0; i < hosts.count ; i++)
+			{
+				hosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
+				hosts.host[i].Status = ntohl(hosts.host[i].Status);
+				
+			}
+			
+		}
+		pthread_mutex_unlock(&Wifi_Hosts_mutex);
+        close(newsockfd);
+		sleep(1);
+    }
+
+}
+
+int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
+{
+	LM_wifi_wsta_t *pwifi_wsta = NULL;
+	int i;
+	
+	/*TODO : Receive Data from WIFI Agent via Socket*/
+	pthread_mutex_lock(&Wifi_Hosts_mutex);
+
+	*pCount = hosts.count;
+	
+	
+	pwifi_wsta = (LM_wifi_wsta_t *) malloc(sizeof(LM_wifi_wsta_t) * (*pCount));
+    if(pwifi_wsta == NULL )
+    {
+		pthread_mutex_unlock(&Wifi_Hosts_mutex);
+        return -1;
+    }	
+
+    *ppWstaArray = pwifi_wsta;
+
+	for(i=0 ; i < *pCount ; i++)
+	{
+		strcpy(pwifi_wsta[i].AssociatedDevice,hosts.host[i].AssociatedDevice);
+		strncpy(pwifi_wsta[i].phyAddr,hosts.host[i].phyAddr,17);
+		pwifi_wsta[i].phyAddr[17] = '\0';
+		strcpy(pwifi_wsta[i].ssid,hosts.host[i].ssid);
+		pwifi_wsta[i].RSSI = hosts.host[i].RSSI;
+		pwifi_wsta[i].Status = hosts.host[i].Status;
+		
+	}
+	pthread_mutex_unlock(&Wifi_Hosts_mutex);
+
+	return 0;
+}
+
+#else
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
     char *tblName = DEVICE_WIFI_ACCESS_POINT;
@@ -622,7 +729,7 @@ RET1:
     PRINTD("EXT %s\n", __FUNCTION__);
     return rVal;
 }
-
+#endif
 void _get_shell_output(char * cmd, char * out, int len)
 {
     FILE * fp;

@@ -103,7 +103,17 @@ typedef struct {
     unsigned char ssid[LM_GEN_STR_SIZE];
     unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
     int RSSI;
+#ifdef USE_NOTIFY_COMPONENT
+	int Status;
+}__attribute__((packed, aligned(1))) LM_wifi_wsta_t;
+
+typedef struct{
+    int count;
+    LM_wifi_wsta_t   host[LM_MAX_HOSTS_NUM];
+}__attribute__((packed, aligned(1))) LM_wifi_hosts_t;
+#else
 }LM_wifi_wsta_t;
+#endif
 
 typedef struct {
     unsigned char phyAddr[18];
@@ -152,6 +162,9 @@ void lm_wrapper_get_dhcpv4_reserved();
 int mac_string_to_array(char *pStr, unsigned char array[6]);
 int ip_string_to_arrary(char* pStr, unsigned char array[4]);
 void getAddressSource(char *physAddress, char *pAddressSource);
+#ifdef USE_NOTIFY_COMPONENT
+void Wifi_Server_Thread_func();
+#endif
 int getIPAddress(char *physAddress,char *IPAddress);
 
 #endif

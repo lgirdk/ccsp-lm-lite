@@ -84,6 +84,7 @@
 
 #define LM_IPC_SUPPORT
 
+#define DNS_LEASE "/nvram/dnsmasq.leases"
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 extern char*                                pComponentName;
 /***********************************************************************
@@ -143,7 +144,82 @@ ULONG HostsUpdateTime = 0;
 
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
+#ifdef USE_NOTIFY_COMPONENT
 
+extern ANSC_HANDLE bus_handle;
+
+void Send_Notification(char* interface, char*mac , BOOL status)
+{
+
+	char  str[500] = {0};
+	parameterValStruct_t notif_val[1];
+	char param_name[256] = "Device.NotifyComponent.SetNotifi_ParamName";
+	char compo[256] = "eRT.com.cisco.spvtg.ccsp.notifycomponent";
+	char bus[256] = "/com/cisco/spvtg/ccsp/notifycomponent";
+	char* faultParam = NULL;
+	int ret = 0;
+	char status_str[16]={0};
+	
+
+	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+	if(status)
+		strcpy(status_str,"Conneceted");
+	else
+		strcpy(status_str,"Disconnected");
+		
+	sprintf(str,"Connected-Client,%s,%s,%s",interface,mac,status_str);
+	notif_val[0].parameterName =  param_name ;
+	notif_val[0].parameterValue = str;
+	notif_val[0].type = ccsp_string;
+
+	ret = CcspBaseIf_setParameterValues(
+		  bus_handle,
+		  compo,
+		  bus,
+		  0,
+		  0,
+		  notif_val,
+		  1,
+		  TRUE,
+		  &faultParam
+		  );
+
+	if(ret != CCSP_SUCCESS)
+		printf("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret);
+
+}
+int FindHostInLeases(char *Temp, char *FileName)
+{
+	FILE *fp = NULL;
+	char buf[200] = {0};
+	int ret = 0;
+	
+	if ( (fp=fopen(FileName, "r")) == NULL )
+	{
+		return 1;
+	}
+
+	while ( fgets(buf, sizeof(buf), fp)!= NULL )
+	{
+	
+		if(strstr(buf,Temp))
+		{
+			
+			ret = 0;
+			
+			break;
+		}
+		else
+		{
+			ret = 1;
+		}
+
+
+	}
+	fclose(fp);
+	return ret; 
+}
+#endif
 int logOnlineDevicesCount()
 {
 	PLmObjectHost   pHost      = NULL;
@@ -163,12 +239,14 @@ int logOnlineDevicesCount()
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
+	char interface[32] = {0};
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
 
         char addressSource[20] = {0};
 	char IPAddress[50] = {0};
 	memset(addressSource,0,sizeof(addressSource));
 	memset(IPAddress,0,sizeof(IPAddress));
+	memset(interface,0,sizeof(interface));
 		if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )	
 		{
 			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
@@ -189,6 +267,8 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 			}
+			strcpy(interface,"WiFi");
+			
 		}
 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
@@ -200,6 +280,7 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MoCA client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 			}
+			strcpy(interface,"MoCA");
 		}
 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
@@ -211,23 +292,69 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 			}
+			strcpy(interface,"Ethernet");
 		}
 
 		else 
 		{
 		      if(state) {
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-				CcspTraceWarning(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+				CcspTraceWarning(("RDK_LOG_WARN,RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s\n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
 			}  else {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: %s client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 			}
+			strcpy(interface,"Other");
 		}
         pHost->bBoolParaValue[LM_HOST_ActiveId] = state;
         pHost->activityChangeTime = time((time_t*)NULL);
 		logOnlineDevicesCount();
-		PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
+
+		
+	PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
     }
+	#ifdef USE_NOTIFY_COMPONENT
+	if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
+		strcpy(interface,"WiFi");
+	}
+	else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
+	{
+		strcpy(interface,"MoCA");
+	}
+	else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
+	{
+		strcpy(interface,"Ethernet");
+	}
+	else
+	{
+		strcpy(interface,"Other");
+	}
+		if(state == FALSE)
+		{
+			if(FindHostInLeases(pHost->pStringParaValue[LM_HOST_PhysAddressId], DNS_LEASE))
+			{
+				
+				if(pHost->bNotify == TRUE)
+				{
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+					pHost->bNotify = FALSE;
+				}
+				
+			}
+		}
+		else
+		{
+			{
+				if(pHost->bNotify == FALSE)
+				{
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+				pHost->bNotify = TRUE;
+				}
+			}
+		}
+#endif
 } 
 
 #define LM_SET_PSTRINGPARAVALUE(var, val) if((var)) LanManager_Free(var);var = LanManager_CloneString(val);
@@ -418,6 +545,11 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
         lmHosts.availableInstanceNum++;
     }
+#ifdef USE_NOTIFY_COMPONENT
+	
+	printf("LMlite-CLIENT <%s> <%d> : Connected Mac = %s \n",__FUNCTION__,__LINE__ ,pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+	pHost->bNotify = FALSE;
+#endif
     return pHost;
 }
 void Host_FreeIPAddress(PLmObjectHost pHost, int version)
@@ -817,8 +949,23 @@ void Hosts_SyncWifi()
                 pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] = LanManager_CloneString(hosts[i].AssociatedDevice);
 
                 pHost->l1unReachableCnt = 1;
-                
+#ifdef USE_NOTIFY_COMPONENT
+            
+			    if(hosts[i].Status)
+				{
+					LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+				}
+				else
+				{
+						pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");
+						pHost->l1unReachableCnt = LM_HOST_RETRY_LIMIT;
+						pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
+						pHost->activityChangeTime = time((time_t*)NULL);
+						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+				}
+#else
                 LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+#endif
             }
         }
         pthread_mutex_unlock(&LmHostObjectMutex);
@@ -1242,7 +1389,21 @@ void main()
         CcspTraceError(("Create lm_cmd_thread_func error %d\n", res));
     }
 #endif
+#ifdef USE_NOTIFY_COMPONENT
+	printf("\n WIFI-CLIENT : Creating Wifi_Server_Thread \n");
 
+	pthread_t Wifi_Server_Thread;
+	res = pthread_create(&Wifi_Server_Thread, NULL, Wifi_Server_Thread_func, "Wifi_Server_Thread_func");
+	if(res != 0){
+		CcspTraceWarning(("\n WIFI-CLIENT : Create Wifi_Server_Thread error %d \n",res));
+	}
+	else
+	{
+		CcspTraceWarning(("\n WIFI-CLIENT : Create Wifi_Server_Thread success %d \n",res));
+	}
+	pthread_join(Wifi_Server_Thread, &status);
+
+#endif
     pthread_join(Hosts_StatSyncThread, &status);
     pthread_join(Hosts_CmdThread, &status);
     return 0;
