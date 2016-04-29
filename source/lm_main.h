@@ -74,7 +74,7 @@
 
 #include "lm_api.h"
 
-#define LM_HOST_POLLINGINTERVAL                 30 
+#define LM_HOST_POLLINGINTERVAL                 10 
 
 #define LM_HOST_ActiveId                        0
 #define LM_HOST_NumBoolPara                     1
@@ -223,6 +223,9 @@ _LmObjectHost
 
     PLmObjectHostIPAddress ipv6AddrArray;
     int numIPv6Addr;
+#ifdef USE_NOTIFY_COMPONENT
+	BOOL    bNotify;
+#endif	
 
 }
 LmObjectHost,  *PLmObjectHost;
