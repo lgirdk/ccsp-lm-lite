@@ -16,7 +16,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
+if CCSP_ARCH_PC
+SUBDIRS = source-pc
+else
 SUBDIRS = source
+endif
 
 lib_LTLIBRARIES=liblmapi.la
 liblmapi_la_CPPFLAGS= -D_ANSC_LINUX -D_ANSC_USER -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/http/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/ansc/include -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/common/MessageBusHelper/include -I$(top_srcdir)/../hal/include
@@ -34,7 +38,11 @@ liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
 endif
 
 liblmapi_la_LDFLAGS= -lccsp_common
-liblmapi_la_SOURCES= \
-	source/lm_api.c
+
+if CCSP_ARCH_PC
+liblmapi_la_SOURCES= ${SUBDIRS}/lm_api.c
+else
+liblmapi_la_SOURCES= ${SUBDIRS}/lm_api.c
+endif
 liblmapi_la_DEPENDENCIES=
 liblmapi_la_LIBADD=$(liblmapi_la_DEPENDENCIES)
