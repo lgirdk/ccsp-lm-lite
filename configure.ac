@@ -109,6 +109,7 @@ PKG_CHECK_MODULES([DBUS],[dbus-1])
 
 AC_CONFIG_FILES(
 	source/Makefile
+	source-pc/Makefile
 	Makefile
 )
 
