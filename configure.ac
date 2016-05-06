@@ -22,7 +22,7 @@
 
 AC_PREREQ([2.65])
 AC_INIT([lmapi], [1.0], [BUG-REPORT-ADDRESS])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 LT_INIT
 
 AC_PREFIX_DEFAULT(`pwd`)
@@ -109,6 +109,8 @@ PKG_CHECK_MODULES([DBUS],[dbus-1])
 
 AC_CONFIG_FILES(
 	source/Makefile
+	source/lm/Makefile
+	source/Ssp/Makefile
 	source-pc/Makefile
 	Makefile
 )

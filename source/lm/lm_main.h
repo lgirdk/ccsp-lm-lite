@@ -88,7 +88,8 @@
 #define LM_HOST_X_CISCO_COM_NetworkInterfaceId  1
 #define LM_HOST_X_CISCO_COM_ConnectionStatusId  2
 #define LM_HOST_X_CISCO_COM_OSType              3
-#define LM_HOST_NumUlongPara                    4
+#define LM_HOST_X_COMCAST-COM_LastChange        4 
+#define LM_HOST_NumUlongPara                    5
 
 //Unknown(1),Airport Base Station(2),AirTunes(3),AppleTV(4),Apple Device(5),Workstation(6),Network Storage(7),Set-Top Box(8),Router(9),Media Player(10), Printer(11)
 #define LM_HOST_X_CISCO_COM_DeviceType_Unkown               1
@@ -117,6 +118,9 @@
 #define LM_HOST_X_CISCO_COM_OSType_Linux                    4
 #define LM_HOST_X_CISCO_COM_OSType_iOS                      5
 #define LM_HOST_X_CISCO_COM_OSType_Android                  6
+
+#define IP_V6 6
+#define IP_V4 4
 
 typedef  struct
 _LmObjectHostPossibleDeviceTypeKeyWords
@@ -162,7 +166,14 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_IPAddress_IPAddressSourceId     1
 #define LM_HOST_IPAddress_NumStringPara   2
 
+#define LM_HOST_IPv4Address_IPAddressId     0
+#define LM_HOST_IPv4Address_NumStringPara   1
+
+#define LM_HOST_IPv6Address_IPAddressId     0
+#define LM_HOST_IPv6Address_NumStringPara   1
+
 #define LM_HOST_ARRAY_STEP                  20
+#define  COSA_HOSTS_Extension1_Name                 "X_COMCAST-COM_LastChange"
 
 #define CISCO_SYSTEMS_ENTERPRISE_NUMBER     9
 #define LM_SubOPT_Manaufacturer_OUI         1
@@ -173,6 +184,8 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_ADDRESS_SOURCE_STATIC_STR        "Static"
 #define LM_ADDRESS_SOURCE_RESERVED_STR      "ReservedIP"
 #define LM_ADDRESS_SOURCE_AUTOIP_STR        "AUTOIP"
+
+#define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
 
 typedef  struct
 _LmHostInfo
@@ -191,6 +204,7 @@ _LmObjectHostIPAddress
     int     l3unReachableCnt; 
     char    *pStringParaValue[LM_HOST_IPAddress_NumStringPara];
     int     LeaseTime;
+	int     instanceNum;  /* instance number */
     struct _LmObjectHostIPAddress *pNext;
 }
 LmObjectHostIPAddress,  *PLmObjectHostIPAddress;
@@ -218,6 +232,7 @@ _LmObjectHost
      * It is shown current time in seconds. */
     time_t   activityChangeTime;
 
+    ULONG   LeaseTime;  
     PLmObjectHostIPAddress ipv4AddrArray;
     int numIPv4Addr;
 
@@ -226,6 +241,9 @@ _LmObjectHost
 #ifdef USE_NOTIFY_COMPONENT
 	BOOL    bNotify;
 #endif	
+    BOOL    bTrueStaticIPClient;
+	char	*Layer3Interface;
+	char backupHostname[64];
 
 }
 LmObjectHost,  *PLmObjectHost;
@@ -253,6 +271,7 @@ _LmObjectHosts
     PLmObjectHost *hostArray;
     int sizeHost;
     int numHost;
+    ULONG lastActivity; 
 }
 LmObjectHosts,  *PLmObjectHosts;
 
@@ -294,5 +313,6 @@ Hosts_AddHost(int instanceNum);
 
 
 void Hosts_RmHosts();
+void LM_main();
 
 #endif

@@ -42,7 +42,7 @@ liblmapi_la_LDFLAGS= -lccsp_common
 if CCSP_ARCH_PC
 liblmapi_la_SOURCES= ${SUBDIRS}/lm_api.c
 else
-liblmapi_la_SOURCES= ${SUBDIRS}/lm_api.c
+liblmapi_la_SOURCES= ${SUBDIRS}/lm/lm_api.c
 endif
 liblmapi_la_DEPENDENCIES=
 liblmapi_la_LIBADD=$(liblmapi_la_DEPENDENCIES)
