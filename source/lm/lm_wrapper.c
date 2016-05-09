@@ -42,6 +42,7 @@
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <netpacket/packet.h>
+#include <sys/un.h>
 
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
@@ -215,6 +216,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
 int lm_wrapper_init(){
     int ret, i = 0;
     pthread_mutex_init(&GetARPEntryMutex, 0);
+/*
     ret = CCSP_Message_Bus_Init(
                 "ccsp.lmbusclient",
                 CCSP_MSG_BUS_CFG,
@@ -228,7 +230,7 @@ int lm_wrapper_init(){
         CcspTraceError((" !!! SSD Message Bus Init ERROR !!!\n"));
         return -1;
     }
-
+*/
     fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if(fd < 0){
         printf(("LM %s create socket erro\nr", __FUNCTION__));
@@ -303,11 +305,10 @@ void Wifi_Server_Thread_func()
 
 	int sockfd, newsockfd;
 	socklen_t clilen;
-	struct sockaddr_in serv_addr, cli_addr;
 	int n,i;
+#ifdef DUAL_CORE_XB3
+	struct sockaddr_in serv_addr, cli_addr;
 	char name[8]= {0};
-
-
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) 
 	{		
@@ -320,7 +321,18 @@ void Wifi_Server_Thread_func()
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(5001);
-	
+#else
+	#define WIFI_SERVER_FILE_NAME  "/tmp/wifi.sock"
+    	struct sockaddr_un serv_addr, cli_addr;
+	sockfd=socket(PF_UNIX,SOCK_STREAM,0);
+	if(sockfd<0)
+		return;
+
+	serv_addr.sun_family=AF_UNIX;
+	unlink(WIFI_SERVER_FILE_NAME);
+	strcpy(serv_addr.sun_path,WIFI_SERVER_FILE_NAME);
+
+#endif
 	if (bind(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
 	{		
 		CcspTraceWarning(("WIFI-CLIENT <%s> <%d> : ERROR on binding  \n",__FUNCTION__, __LINE__));
