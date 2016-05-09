@@ -1,0 +1,146 @@
+{
+  "doc": "Contains a list of zero of more reports for each device connected to a network interface (Ethernet/Moca/WiFi). Each report contains device status and L2 counters",
+  "type": "record",
+  "namespace": "com.comcast.kestrel.reports",
+  "name": "NetworkDevicesStatus",
+  "fields": [
+    {
+      "type": {
+        "doc": "Indicates the creation timestamp and report interval of a report generated on a gateway. Header which should be included in the top level of all reports initiating on a gateway.",
+        "type": "record",
+        "namespace": "com.comcast.kestrel.reports",
+        "name": "CPEReportHeader",
+        "fields": [
+          {
+            "doc": "Canonical identifier for the gateway. (Eg, may be CM Mac for cable modems)",
+            "type": {
+              "doc": "Unique identifying fields for a gateway. All fields are optional, but at least one field should be populated with a non null value",
+              "type": "record",
+              "namespace": "com.comcast.kestrel.common",
+              "name": "CPEIdentifier",
+              "fields": [
+                {
+                  "default": null,
+                  "doc": "Canonical (Identifying) MAC address for the gateway. (Eg, may be CM Mac for cable modems)",
+                  "type": [
+                    "null",
+                    {
+                      "type": "fixed",
+                      "namespace": "com.comcast.kestrel.common",
+                      "name": "MacAddress",
+                      "size": 6
+                    }
+                  ],
+                  "name": "mac_address"
+                }
+              ]
+            },
+            "name": "cpe_id"
+          },
+          {
+            "doc": "Timestamp indicating when this report was generated. The number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC",
+            "type": "long",
+            "name": "timestamp"
+          },
+          {
+            "default": null,
+            "doc": "Source of this report - generally the application or process generating the report",
+            "type": [
+              "null",
+              "string"
+            ],
+            "name": "report_source"
+          }
+        ]
+      },
+      "name": "report_header"
+    },
+    {
+      "default": null,
+      "doc": "Version Number after the latest change (add/delete/hostname update) was done to the Device.Hosts. table",
+      "type": [
+        "null",
+        "long"
+      ],
+      "name": "host_table_version"
+    },
+    {
+      "type": {
+        "items": {
+          "doc": "Contains gateway network and L3 data for a network related to a specific connected device at a point in time",
+          "type": "record",
+          "namespace": "com.comcast.kestrel.reports",
+          "name": "NetworkDeviceStatus",
+          "fields": [
+            {
+              "type": {
+                "doc": "Indicates the creation timestamp, data collection (polling) interval and device associated with a specific device report",
+                "type": "record",
+                "namespace": "com.comcast.kestrel.reports",
+                "name": "DeviceReportHeader",
+                "fields": [
+                  {
+                    "doc": "MAC address of the conected device the report is related to",
+                    "type": "com.comcast.kestrel.common.MacAddress",
+                    "name": "device_mac"
+                  },
+                  {
+                    "doc": "Timestamp indicating when the data for this report was gathered (not when the report was sent). The number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC",
+                    "type": "long",
+                    "name": "timestamp"
+                  }
+                ]
+              },
+              "name": "report_header"
+            },
+            {
+              "default": null,
+              "doc": "Network and Status data from the gateway, related to a single connected devices.",
+              "type": [
+                "null",
+                {
+                  "doc": "Contains status data collected about a single device",
+                  "type": "record",
+                  "namespace": "com.comcast.kestrel.common",
+                  "name": "NetworkDeviceStatusData",
+                  "fields": [
+                    {
+                      "default": null,
+                      "doc": "Indicates the name of the interface the device is connected. TR-181 object Device.Hosts.Host.{i}.Layer1Interface",
+                      "type": [
+                        "null",
+                        "string"
+                      ],
+                      "name": "interface_name"
+                    },
+                    {
+                      "default": null,
+                      "doc": "Indicates the current status of the 'connected' device. [TR-181: Commonly found in Device.WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Active, OR Device.(InterfaceType).Interface.{i}.AssociatedDevice.{i}.Active]",
+                      "type": [
+                        "null",
+                        {
+                          "symbols": [
+                            "ONLINE",
+                            "OFFLINE"
+                          ],
+                          "type": "enum",
+                          "namespace": "com.comcast.kestrel.common",
+                          "name": "DeviceStatus",
+                          "doc": "Status of the connected device"
+                        }
+                      ],
+                      "name": "status"
+                    }
+                  ]
+                }
+              ],
+              "name": "network_data"
+            }
+          ]
+        },
+        "type": "array"
+      },
+      "name": "data"
+    }
+  ]
+}

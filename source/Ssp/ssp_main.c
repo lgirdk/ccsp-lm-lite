@@ -27,6 +27,8 @@
 #define DEBUG_INI_NAME "/etc/debug.ini"
 extern char*                                pComponentName;
 char                                        g_Subsystem[32]         = {0};
+int consoleDebugEnable = 0;
+FILE* debugLogFile;
 
 int  cmd_dispatch(int  command)
 {
@@ -212,6 +214,28 @@ int main(int argc, char* argv[])
         {
             bRunAsDaemon = FALSE;
         }
+        else if ( (strcmp(argv[idx], "-DEBUG") == 0) )
+        {
+            consoleDebugEnable = 1;
+            fprintf(stderr, "DEBUG ENABLE ON \n");
+        }
+        else if ( (strcmp(argv[idx], "-LOGFILE") == 0) )
+        {
+            // We assume argv[1] is a filename to open
+            debugLogFile = fopen( argv[idx + 1], "a+" );
+
+            /* fopen returns 0, the NULL pointer, on failure */
+            if ( debugLogFile == 0 )
+            {
+                debugLogFile = stderr;
+                fprintf(debugLogFile, "Invalid Entry for -LOGFILE input \n" );
+            }
+            else 
+            {
+                fprintf(debugLogFile, "Log File [%s] Opened for Writing in Append Mode \n",  argv[idx+1]);
+            }
+
+        }        
     }
 
     pComponentName          = CCSP_COMPONENT_NAME_LMLITE;
@@ -290,6 +314,11 @@ int main(int argc, char* argv[])
 
 	ssp_cancel();
 
+    if(debugLogFile)
+    {
+        fclose(debugLogFile);
+    }
+    
     return 0;
 }
 
