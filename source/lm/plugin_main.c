@@ -30,8 +30,11 @@
 #include "cosa_plugin_api.h"
 #include "plugin_main.h"
 #include "cosa_hosts_dml.h"
+#include "cosa_ndstatus_dml.h"
+#include "cosa_ndstatus_internal.h"
 
 #define THIS_PLUGIN_VERSION                         1
+COSA_DATAMODEL_LMLITE* g_pLMLite = NULL;
 
 int ANSC_EXPORT_API
 COSA_Init
@@ -80,6 +83,27 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamIntValue",  Host_IPv6Address_GetParamIntValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamUlongValue",  Host_IPv6Address_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamStringValue",  Host_IPv6Address_GetParamStringValue);
+
+
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_GetParamUlongValue",  NetworkDevicesStatus_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_GetParamBoolValue",  NetworkDevicesStatus_GetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_GetParamStringValue",  NetworkDevicesStatus_GetParamStringValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_SetParamBoolValue",  NetworkDevicesStatus_SetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_SetParamUlongValue",  NetworkDevicesStatus_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Validate",  NetworkDevicesStatus_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Commit",  NetworkDevicesStatus_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Rollback",  NetworkDevicesStatus_Rollback);
+
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_GetParamUlongValue",  NetworkDevicesStatus_Default_GetParamUlongValue);
+    
+     /* Create LMLite Object for Settings */
+    g_pLMLite = (PCOSA_DATAMODEL_LMLITE)CosaLMLiteCreate();
+
+    if ( g_pLMLite )
+    {
+        // print success
+        CosaLMLiteInitialize(g_pLMLite);
+    }
     return  0;
 }
 
