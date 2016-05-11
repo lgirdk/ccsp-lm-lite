@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
     extern ANSC_HANDLE bus_handle;
     char *subSys            = NULL;  
     DmErr_t    err;
-   
+    debugLogFile = stderr;
 
     for (idx = 1; idx < argc; idx++)
     {

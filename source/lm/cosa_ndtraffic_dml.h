@@ -12,7 +12,7 @@
 #include "slap_definitions.h"
 
 BOOL
-NetworkDevicesStatus_Default_GetParamUlongValue
+NetworkDevicesTraffic_Default_GetParamUlongValue
     (
                 ANSC_HANDLE                 hInsContext,
                 char*                       ParamName,
@@ -21,7 +21,7 @@ NetworkDevicesStatus_Default_GetParamUlongValue
 
 
 BOOL
-NetworkDevicesStatus_GetParamUlongValue
+NetworkDevicesTraffic_GetParamUlongValue
     (
 		ANSC_HANDLE                 hInsContext,
 		char*                       ParamName,
@@ -29,7 +29,7 @@ NetworkDevicesStatus_GetParamUlongValue
     );
 
 BOOL
-NetworkDevicesStatus_SetParamUlongValue
+NetworkDevicesTraffic_SetParamUlongValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -37,7 +37,7 @@ NetworkDevicesStatus_SetParamUlongValue
     );
 
 BOOL
-NetworkDevicesStatus_GetParamStringValue
+NetworkDevicesTraffic_GetParamStringValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -46,7 +46,7 @@ NetworkDevicesStatus_GetParamStringValue
     );
     
 BOOL
-NetworkDevicesStatus_GetParamBoolValue
+NetworkDevicesTraffic_GetParamBoolValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -54,7 +54,7 @@ NetworkDevicesStatus_GetParamBoolValue
     );
 
 BOOL
-NetworkDevicesStatus_SetParamBoolValue
+NetworkDevicesTraffic_SetParamBoolValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -63,13 +63,13 @@ NetworkDevicesStatus_SetParamBoolValue
 
 
 ULONG
-NetworkDevicesStatus_Commit
+NetworkDevicesTraffic_Commit
     (
         ANSC_HANDLE                 hInsContext
     );
 
 BOOL
-NetworkDevicesStatus_Validate
+NetworkDevicesTraffic_Validate
     (
         ANSC_HANDLE                 hInsContext,
         char*                       pReturnParamName,
@@ -77,13 +77,13 @@ NetworkDevicesStatus_Validate
     );
 
 ULONG
-NetworkDevicesStatus_Rollback
+NetworkDevicesTraffic_Rollback
     (
         ANSC_HANDLE                 hInsContext
     );
 
 ANSC_STATUS
-CosaDmlNetworkDevicesStatusInit
+CosaDmlNetworkDevicesTrafficInit
     (
         ANSC_HANDLE                 hThisObject
     );

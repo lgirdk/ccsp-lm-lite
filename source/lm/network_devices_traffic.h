@@ -9,8 +9,8 @@
 
 ******************************************************************************/
 
-#ifndef  NETWORK_DEVICES_STATUS_H
-#define  NETWORK_DEVICES_STATUS_H
+#ifndef  NETWORK_DEVICES_TRAFFIC_H
+#define  NETWORK_DEVICES_TRAFFIC_H
 
 #include "ansc_platform.h"
 
@@ -20,14 +20,14 @@
  * @param[in] status New Harvesting Status.
  * @return status 0 for success and 1 for failure
  */
-int SetNDSHarvestingStatus(BOOL status);
+int SetNDTHarvestingStatus(BOOL status);
 
 /**
  * @brief Gets the Harvesting Status for Network Devices.
  *
  * @return status true if enabled and false if disabled
  */
-BOOL GetNDSHarvestingStatus();
+BOOL GetNDTHarvestingStatus();
 
 /**
  * @brief Set the Reporting Period for Network Devices Scan.
@@ -35,14 +35,14 @@ BOOL GetNDSHarvestingStatus();
  * @param[in] period Time in Seconds.
  * @return status 0 for success and 1 for failure
  */
-int SetNDSReportingPeriod(ULONG period);
+int SetNDTReportingPeriod(ULONG period);
 
 /**
  * @brief Gets the Network Devices Reporting Period
  *
  * @return period : The Current Reporting Period
  */
-ULONG GetNDSReportingPeriod();
+ULONG GetNDTReportingPeriod();
 
 /**
  * @brief Set the Polling Period for Network Devices Scan.
@@ -50,35 +50,35 @@ ULONG GetNDSReportingPeriod();
  * @param[in] period Time in Seconds.
  * @return status 0 for success and 1 for failure
  */
-int SetNDSPollingPeriod(ULONG period);
+int SetNDTPollingPeriod(ULONG period);
 
 /**
  * @brief Gets the Network Devices Polling Period
  *
  * @return period : The Current Polling Period
  */
-ULONG GetNDSPollingPeriod();
+ULONG GetNDTPollingPeriod();
 
 /**
  * @brief Gets the Default Network Devices Reporting Period
  *
  * @return period : The Current Reporting Period
  */
-ULONG GetNDSReportingPeriodDefault();
+ULONG GetNDTReportingPeriodDefault();
 
 /**
  * @brief Gets the Default Network Devices Polling Period
  *
  * @return period : The Current Reporting Period
  */
-ULONG GetNDSPollingPeriodDefault();
+ULONG GetNDTPollingPeriodDefault();
 
 /**
  * @brief Gets the Default timeout for Accelerated Scans
  *
  * @return period : The default timeout
  */
-ULONG GetNDSOverrideTTLDefault();
+ULONG GetNDTOverrideTTLDefault();
 
 /**
  * @brief Validated the Period Values for ND Scan and makes sure they are 
@@ -87,6 +87,6 @@ ULONG GetNDSOverrideTTLDefault();
  * @param[in] period period to be validated.
  * @return status 0 for success and 1 for failure
  */
-BOOL ValidateNDSPeriod(ULONG period);
+BOOL ValidateNDTPeriod(ULONG period);
 
 #endif 
