@@ -18,73 +18,70 @@
 
 #include "base64.h"
 #include "webpa_interface.h"
-#include "network_devices_status_avropack.h"
+#include "network_devices_traffic_avropack.h"
 #include "ccsp_lmliteLog_wrapper.h"
-#include "lm_main.h"
 
 #define MAGIC_NUMBER      0x85
 #define MAGIC_NUMBER_SIZE 1
 #define SCHEMA_ID_LENGTH  32
 #define WRITER_BUF_SIZE   1024 * 30 // 30K
 
-//      "schemaTypeUUID" : "d9823986-8092-4ee9-b1f6-cf808486f186",
-//      "schemaMD5Hash" : "8e2a859d6ef44610423f559296565635",
+//      "schemaTypeUUID" : "8323ce6e-25e0-4d23-bdb3-51a541128261",
+//      "schemaMD5Hash" : "2ecd240b79ad7c13de765fd891e692b7",
 
-uint8_t HASH[16] = {0x8e, 0x2a, 0x85, 0x9d, 0x6e, 0xf4, 0x46, 0x10,
-                    0x42, 0x3f, 0x55, 0x92, 0x96, 0x56, 0x56, 0x35
+uint8_t HASH_NDT[16] = {0x2e, 0xcd, 0x24, 0x0b, 0x79, 0xad, 0x7c, 0x13,
+                    0xde, 0x76, 0x5f, 0xd8, 0x91, 0xe6, 0x92, 0xb7
                    };
 
-uint8_t UUID[16] = {0xd9, 0x82, 0x39, 0x86, 0x80, 0x92, 0x4e, 0xe9,
-                    0xb1, 0xf6, 0xcf, 0x80, 0x84, 0x86, 0xf1, 0x86
+uint8_t UUID_NDT[16] = {0x83, 0x23, 0xce, 0x6e, 0x25, 0xe0, 0x4d, 0x23,
+                    0xbd, 0xb3, 0x51, 0xa5, 0x41, 0x12, 0x82, 0x61
                    };
 
 
 static char *macStr = NULL;
 static char CpemacStr[ 32 ];
-BOOL schema_file_parsed = FALSE;
-char *ndsschemabuffer = NULL;
-char *nds_schemaidbuffer = "d9823986-8092-4ee9-b1f6-cf808486f186/8e2a859d6ef44610423f559296565635";
+BOOL ndt_schema_file_parsed = FALSE;
+char *ndtschemabuffer = NULL;
+char *ndtschemaidbuffer = "8323ce6e-25e0-4d23-bdb3-51a541128261/2ecd240b79ad7c13de765fd891e692b7";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
-extern LmObjectHosts lmHosts;
-extern pthread_mutex_t LmHostObjectMutex;
 
 // local data, load it with real data if necessary
-char ReportSource[] = "LMLite";
+char ReportSourceNDT[] = "LMLite";
 
-char* GetNDStatusSchemaBuffer()
+char* GetNDTrafficSchemaBuffer()
 {
-  return ndsschemabuffer;
+  return ndtschemabuffer;
 }
 
-int GetNDStatusSchemaBufferSize()
+int GetNDTrafficSchemaBufferSize()
 {
 int len = 0;
-if(ndsschemabuffer)
-	len = strlen(ndsschemabuffer);
+if(ndtschemabuffer)
+	len = strlen(ndtschemabuffer);
   
 return len;
 }
 
-char* GetNDStatusSchemaIDBuffer()
+char* GetNDTrafficSchemaIDBuffer()
 {
-  return nds_schemaidbuffer;
+  return ndtschemaidbuffer;
 }
 
-int GetNDStatusSchemaIDBufferSize()
+int GetNDTrafficSchemaIDBufferSize()
 {
 int len = 0;
-if(nds_schemaidbuffer)
-        len = strlen(nds_schemaidbuffer);
+if(ndtschemaidbuffer)
+        len = strlen(ndtschemaidbuffer);
 
 return len;
 }
 
-int NumberofElementsinLinkedList(struct networkdevicestatusdata* head)
+int NumberofElementsinNDTLinkedList(struct networkdevicetrafficdata* head)
 {
   int numelements = 0;
-  struct networkdevicestatusdata* ptr  = head;
+  struct networkdevicetrafficdata* ptr  = head;
   while (ptr != NULL)
   {
     numelements++;
@@ -94,7 +91,7 @@ int NumberofElementsinLinkedList(struct networkdevicestatusdata* head)
 }
 
 
-avro_writer_t prepare_writer_status()
+avro_writer_t prepare_writer()
 {
   avro_writer_t writer;
   long lSize = 0;
@@ -103,13 +100,13 @@ avro_writer_t prepare_writer_status()
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Avro prepares to serialize data\n"));
 
-  if ( schema_file_parsed == FALSE )
+  if ( ndt_schema_file_parsed == FALSE )
   {
     FILE *fp;
 
     /* open schema file */
-    fp = fopen ( NETWORK_DEVICE_STATUS_AVRO_FILENAME , "rb" );
-    if ( !fp ) perror( NETWORK_DEVICE_STATUS_AVRO_FILENAME " doesn't exist."), exit(1);
+    fp = fopen ( NETWORK_DEVICE_TRAFFIC_AVRO_FILENAME , "rb" );
+    if ( !fp ) perror( NETWORK_DEVICE_TRAFFIC_AVRO_FILENAME " doesn't exist."), exit(1);
 
     /* seek through file and get file size*/
     fseek( fp , 0L , SEEK_END);
@@ -119,31 +116,31 @@ avro_writer_t prepare_writer_status()
     rewind( fp );
 
     /* allocate memory for entire content */
-    ndsschemabuffer = calloc( 1, lSize + 1 );
+    ndtschemabuffer = calloc( 1, lSize + 1 );
 
-    if ( !ndsschemabuffer ) fclose(fp), fputs("memory alloc fails", stderr), exit(1);
+    if ( !ndtschemabuffer ) fclose(fp), fputs("memory alloc fails", stderr), exit(1);
 
     /* copy the file into the buffer */
-    if ( 1 != fread( ndsschemabuffer , lSize, 1 , fp) )
-      fclose(fp), free(ndsschemabuffer), fputs("entire read fails", stderr), exit(1);
+    if ( 1 != fread( ndtschemabuffer , lSize, 1 , fp) )
+      fclose(fp), free(ndtschemabuffer), fputs("entire read fails", stderr), exit(1);
 
     fclose(fp);
 
-    schema_file_parsed = TRUE; // parse schema file once only
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Read Avro schema file ONCE, lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)ndsschemabuffer ));
+    ndt_schema_file_parsed = TRUE; // parse schema file once only
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Read Avro schema file ONCE, lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)ndtschemabuffer ));
   }
   else
   {
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Stored lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)ndsschemabuffer ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Stored lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)ndtschemabuffer ));
   }
 
   memset(&AvroSerializedBuf[0], 0, sizeof(AvroSerializedBuf));
 
   AvroSerializedBuf[0] = MAGIC_NUMBER; /* fill MAGIC number = Empty, i.e. no Schema ID */
 
-  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE ], UUID, sizeof(UUID));
+  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE ], UUID_NDT, sizeof(UUID_NDT));
 
-  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID) ], HASH, sizeof(HASH));
+  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID_NDT) ], HASH_NDT, sizeof(HASH_NDT));
 
   writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH],
                                sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH );
@@ -155,35 +152,35 @@ avro_writer_t prepare_writer_status()
 
 
 /* function call from lmlite with parameters */
-void network_devices_status_report(struct networkdevicestatusdata *head)
+void network_devices_traffic_report(struct networkdevicetrafficdata *head)
 {
   int i, j, k = 0;
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
-  struct networkdevicestatusdata* ptr = head;
+  struct networkdevicetrafficdata* ptr = head;
   avro_writer_t writer;
   char * serviceName = "lmlite";
-  char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesStatus";
+  char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesTraffic";
   char * trans_id = "abcd"; // identifier for each message, if required. If NULL msgpack will fail
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-  numElements = NumberofElementsinLinkedList(head);
+  numElements = NumberofElementsinNDTLinkedList(head);
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, numElements = %d\n", numElements ));
 
   OneAvroSerializedSize = 0;
 
   /* goes thru total number of elements in link list */
-  writer = prepare_writer_status();
+  writer = prepare_writer();
   //schemas
   avro_schema_error_t  error = NULL;
 
   //Master report/datum
   avro_schema_t network_device_report_schema = NULL;
-  avro_schema_from_json(ndsschemabuffer, strlen(ndsschemabuffer),
+  avro_schema_from_json(ndtschemabuffer, strlen(ndtschemabuffer),
                         &network_device_report_schema, &error);
 
   //generate an avro class from our schema and get a pointer to the value interface
@@ -196,7 +193,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   avro_value_t  adr;
   avro_generic_value_new(iface, &adr);
 
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, GatewayNetworkDeviceTrafficReport\tType: %d\n", avro_value_get_type(&adr)));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, GatewayNetworkDeviceStatusReport\tType: %d\n", avro_value_get_type(&adr)));
 
   avro_value_t  adrField;
 
@@ -250,7 +247,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   avro_value_get_by_name(&adr, "report_header", &adrField, NULL);
   avro_value_get_by_name(&adrField, "report_source", &adrField, NULL);
   avro_value_set_branch(&adrField, 1, &optional);
-  avro_value_set_string(&optional, ReportSource);
+  avro_value_set_string(&optional, ReportSourceNDT);
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, report_source\tType: %d\n", avro_value_get_type(&adrField)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
@@ -307,25 +304,33 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, network_data\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_get_by_name(&optional, "interface_name", &drField, NULL);
+      avro_value_get_by_name(&optional, "ip_address", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, interface_name\tType: %d\n", avro_value_get_type(&drField)));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, ip_address\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_set_string(&optional, ptr->interface_name );
+      avro_value_set_string(&optional, ptr->ip_address );
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-      // status
+      // external_bytes_up
       avro_value_get_by_name(&dr, "network_data", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_get_by_name(&optional, "status", &drField, NULL);
+      avro_value_get_by_name(&optional, "external_bytes_up", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, status\tType: %d\n", avro_value_get_type(&drField)));
+      avro_value_set_branch(&adrField, 1, &optional);
+      avro_value_set_long(&optional, ptr->external_bytes_up);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      // external_bytes_down
+      avro_value_get_by_name(&dr, "network_data", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       avro_value_set_branch(&drField, 1, &optional);
-      if ( ptr->is_active )
-          avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "ONLINE"));
-      else
-          avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "OFFLINE"));
+      avro_value_get_by_name(&optional, "external_bytes_down", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, status\tType: %d\n", avro_value_get_type(&drField)));
+      avro_value_set_branch(&adrField, 1, &optional);
+      avro_value_set_long(&optional, ptr->external_bytes_down);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
     }

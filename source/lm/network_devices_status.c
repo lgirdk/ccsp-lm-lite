@@ -31,33 +31,33 @@ static sem_t mutex;
 static int ThreadStarted;
 static struct timespec ts;
 extern LmObjectHosts lmHosts;
-ULONG NetworkDevicePeriods[10] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
+ULONG NetworkDeviceStatusPeriods[10] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
 
-ULONG NDPollingPeriodDefault = 300;
-ULONG NDReportingPeriodDefault = 300;
+ULONG NDSPollingPeriodDefault = 300;
+ULONG NDSReportingPeriodDefault = 300;
 
-ULONG NDPollingPeriod = 300;
-ULONG NDReportingPeriod = 300;
+ULONG NDSPollingPeriod = 300;
+ULONG NDSReportingPeriod = 300;
 
 ULONG MinimumAPPollingPeriod = 5;
 ULONG currentPollingPeriod = 0;
 ULONG currentReportingPeriod = 0;
-BOOL NDLMLiteStatus = FALSE;
+BOOL NDSReportStatus = FALSE;
 
-ULONG NDOverrideTTL = 300;
-ULONG NDOverrideTTLDefault = 300;
+ULONG NDSOverrideTTL = 300;
+ULONG NDSOverrideTTLDefault = 300;
 
 int tm_offset = 0;
 bool isvalueinarray(ULONG val, ULONG *arr, int size);
 
-void* StartNetworkDeviceHarvesting( void *arg );
+void* StartNetworkDeviceStatusHarvesting( void *arg );
 int _syscmd(char *cmd, char *retBuf, int retBufSize);
 void add_to_list(PLmObjectHost host);
 void print_list();
 void delete_list();
 
-static struct networkdevicedata *headnode = NULL;
-static struct networkdevicedata *currnode = NULL;
+static struct networkdevicestatusdata *headnode = NULL;
+static struct networkdevicestatusdata *currnode = NULL;
 
 extern pthread_mutex_t LmHostObjectMutex;
 
@@ -138,23 +138,23 @@ bool isvalueinarray(ULONG val, ULONG *arr, int size)
 }
 
 
-int SetNDHarvestingStatus(BOOL status)
+int SetNDSHarvestingStatus(BOOL status)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Old[%d] New[%d] \n", __FUNCTION__, NDLMLiteStatus, status ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Old[%d] New[%d] \n", __FUNCTION__, NDSReportStatus, status ));
 
-    if (NDLMLiteStatus != status)
-        NDLMLiteStatus = status;
+    if (NDSReportStatus != status)
+        NDSReportStatus = status;
     else
         return 0;
 
-    if (NDLMLiteStatus)
+    if (NDSReportStatus)
     {
         pthread_t tid;
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Starting Thread to start DeviceData Harvesting  \n", __FUNCTION__ ));
 
-        if (pthread_create(&tid, NULL, StartNetworkDeviceHarvesting, NULL))
+        if (pthread_create(&tid, NULL, StartNetworkDeviceStatusHarvesting, NULL))
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Failed to Start Thread to start DeviceData Harvesting  \n", __FUNCTION__ ));
             return ANSC_STATUS_FAILURE;
@@ -166,91 +166,91 @@ int SetNDHarvestingStatus(BOOL status)
     return 0;
 }
 
-BOOL GetNDHarvestingStatus()
+BOOL GetNDSHarvestingStatus()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDLMLiteStatus ));
-    return NDLMLiteStatus;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSReportStatus ));
+    return NDSReportStatus;
 }
 
-int SetNDReportingPeriod(ULONG period)
+int SetNDSReportingPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDReportingPeriod, period ));
-    NDReportingPeriod = period;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDSReportingPeriod, period ));
+    NDSReportingPeriod = period;
     return 0;
 }
 
-ULONG GetNDReportingPeriod()
+ULONG GetNDSReportingPeriod()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDReportingPeriod ));
-    return NDReportingPeriod;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSReportingPeriod ));
+    return NDSReportingPeriod;
 }
 
-int SetNDPollingPeriod(ULONG period)
+int SetNDSPollingPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDPollingPeriod, period ));
-    NDPollingPeriod = period;
-    if(NDPollingPeriod > 5)
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDSPollingPeriod, period ));
+    NDSPollingPeriod = period;
+    if(NDSPollingPeriod > 5)
         MinimumAPPollingPeriod = 5;
     else
-        MinimumAPPollingPeriod = NDPollingPeriod;
+        MinimumAPPollingPeriod = NDSPollingPeriod;
 
     return 0;
 }
 
-BOOL ValidateNDPeriod(ULONG period)
+BOOL ValidateNDSPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     BOOL ret = FALSE;
-    ret = isvalueinarray(period, NetworkDevicePeriods, 10);
+    ret = isvalueinarray(period, NetworkDeviceStatusPeriods, 10);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__ , ret ));
     return ret;
 } 
 
-ULONG GetNDPollingPeriod()
+ULONG GetNDSPollingPeriod()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDPollingPeriod ));
-    return NDPollingPeriod;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSPollingPeriod ));
+    return NDSPollingPeriod;
 }
 
 
-ULONG GetNDReportingPeriodDefault()
+ULONG GetNDSReportingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDReportingPeriodDefault ));
-    return NDReportingPeriodDefault;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSReportingPeriodDefault ));
+    return NDSReportingPeriodDefault;
 }
 
-ULONG GetNDPollingPeriodDefault()
+ULONG GetNDSPollingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDPollingPeriodDefault ));
-    return NDPollingPeriodDefault;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSPollingPeriodDefault ));
+    return NDSPollingPeriodDefault;
 }
 
-ULONG GetNDOverrideTTLDefault()
+ULONG GetNDSOverrideTTLDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDOverrideTTLDefault ));
-    return NDOverrideTTLDefault;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSOverrideTTLDefault ));
+    return NDSOverrideTTLDefault;
 }
 
-ULONG GetNDOverrideTTL()
+ULONG GetNDSOverrideTTL()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDOverrideTTL ));
-    return NDOverrideTTL;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSOverrideTTL ));
+    return NDSOverrideTTL;
 }
 
-int SetNDOverrideTTL(ULONG ttl)
+int SetNDSOverrideTTL(ULONG ttl)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDOverrideTTL ));
-    NDOverrideTTL = ttl;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSOverrideTTL ));
+    NDSOverrideTTL = ttl;
     return 0;
 }
 
@@ -295,7 +295,7 @@ void add_to_list(PLmObjectHost host)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    struct networkdevicedata *ptr = malloc(sizeof(*ptr));
+    struct networkdevicestatusdata *ptr = malloc(sizeof(*ptr));
     if (ptr == NULL)
     {
         CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s :  Linked List Allocation Failed \n", __FUNCTION__ ));
@@ -304,15 +304,15 @@ void add_to_list(PLmObjectHost host)
     else
     {
         ptr->device_mac = strdup(host->pStringParaValue[LM_HOST_PhysAddressId]);
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->device_mac ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->device_mac ));
         ptr->interface_name = strdup(host->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->interface_name ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->interface_name ));
         ptr->is_active = host->bBoolParaValue[LM_HOST_ActiveId];
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Active[%d] \n",ptr->is_active ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Active[%d] \n",ptr->is_active ));
         ptr->next = NULL;
         gettimeofday(&(ptr->timestamp), NULL);
-	ptr->timestamp.tv_sec -= tm_offset;
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+        ptr->timestamp.tv_sec -= tm_offset;
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
         if (headnode == NULL)
         {
             headnode = currnode = ptr;
@@ -333,7 +333,7 @@ void print_list()
 {
     int z = 0;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    struct networkdevicedata  *ptr = headnode;
+    struct networkdevicestatusdata  *ptr = headnode;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Head Ptr [%lx]\n", (ulong)headnode));
     while (ptr != NULL)
     {
@@ -351,7 +351,7 @@ void delete_list()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
     currnode = headnode;
-    struct networkdevicedata* next = NULL;
+    struct networkdevicestatusdata* next = NULL;
 
     while (currnode != NULL)
     {
@@ -395,7 +395,7 @@ void GetLMHostData()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 }
 
-void* StartNetworkDeviceHarvesting( void *arg )
+void* StartNetworkDeviceStatusHarvesting( void *arg )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
@@ -403,7 +403,7 @@ void* StartNetworkDeviceHarvesting( void *arg )
     sem_init(&mutex, 0, 0);      /* initialize mutex - binary semaphore */
     clock_gettime(CLOCK_REALTIME, &ts);    // get current time
     ts.tv_sec += MinimumAPPollingPeriod; // next trigger time
-    currentReportingPeriod = GetNDReportingPeriod();
+    currentReportingPeriod = GetNDSReportingPeriod();
     getTimeOffsetFromUtc();
 
     do 
@@ -411,30 +411,30 @@ void* StartNetworkDeviceHarvesting( void *arg )
         GetLMHostData();
         currentReportingPeriod = currentReportingPeriod + currentPollingPeriod;
         currentPollingPeriod = 0;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentReportingPeriod [%ld] GetNDReportingPeriod()[%ld]  \n", currentReportingPeriod, GetNDReportingPeriod()));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentReportingPeriod [%ld] GetNDSReportingPeriod()[%ld]  \n", currentReportingPeriod, GetNDSReportingPeriod()));
 
-        if (currentReportingPeriod >= GetNDReportingPeriod())
+        if (currentReportingPeriod >= GetNDSReportingPeriod())
         {
-            struct networkdevicedata* ptr = headnode;
+            struct networkdevicestatusdata* ptr = headnode;
             if(ptr)
                 {
-                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDReportingPeriod()));
-                    lmlite_report_networkdevices(ptr);
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
+                    network_devices_status_report(ptr);
                     delete_list();
                 }
             currentReportingPeriod = 0;
         }
 
-        if(GetNDOverrideTTL())
+        if(GetNDSOverrideTTL())
         {
-            SetNDOverrideTTL(GetNDOverrideTTL() - GetNDPollingPeriod());
+            SetNDSOverrideTTL(GetNDSOverrideTTL() - GetNDSPollingPeriod());
         }
         
-        if(!GetNDOverrideTTL())
+        if(!GetNDSOverrideTTL())
         {
-            SetNDPollingPeriod(GetNDPollingPeriodDefault());
-            SetNDReportingPeriod(GetNDReportingPeriodDefault());
-            SetNDOverrideTTL(GetNDOverrideTTLDefault());
+            SetNDSPollingPeriod(GetNDSPollingPeriodDefault());
+            SetNDSReportingPeriod(GetNDSReportingPeriodDefault());
+            SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
         }
 
         do
@@ -444,11 +444,11 @@ void* StartNetworkDeviceHarvesting( void *arg )
             clock_gettime(CLOCK_REALTIME, &ts);    // Triggered, get current time
             ts.tv_sec += MinimumAPPollingPeriod; // setup next trigger time
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Sleeping Inside ND Loop for currentPollingPeriod[%ld] MinimumAPPollingPeriod[%ld] \n", currentPollingPeriod, MinimumAPPollingPeriod));
-        } while (currentPollingPeriod < GetNDPollingPeriod() && GetNDHarvestingStatus());
+        } while (currentPollingPeriod < GetNDSPollingPeriod() && GetNDSHarvestingStatus());
 
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, currentPollingPeriod [%ld] GetNDPollingPeriod[%ld]\n", currentPollingPeriod, GetNDPollingPeriod()));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, currentPollingPeriod [%ld] GetNDSPollingPeriod[%ld]\n", currentPollingPeriod, GetNDSPollingPeriod()));
 
-    } while (GetNDHarvestingStatus());
+    } while (GetNDSHarvestingStatus());
     
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 

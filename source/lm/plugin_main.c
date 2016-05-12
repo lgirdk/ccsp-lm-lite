@@ -31,10 +31,12 @@
 #include "plugin_main.h"
 #include "cosa_hosts_dml.h"
 #include "cosa_ndstatus_dml.h"
-#include "cosa_ndstatus_internal.h"
+#include "cosa_ndtraffic_dml.h"
+
+#include "cosa_reports_internal.h"
 
 #define THIS_PLUGIN_VERSION                         1
-COSA_DATAMODEL_LMLITE* g_pLMLite = NULL;
+COSA_DATAMODEL_REPORTS* g_pReports = NULL;
 
 int ANSC_EXPORT_API
 COSA_Init
@@ -96,13 +98,26 @@ COSA_Init
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_GetParamUlongValue",  NetworkDevicesStatus_Default_GetParamUlongValue);
     
-     /* Create LMLite Object for Settings */
-    g_pLMLite = (PCOSA_DATAMODEL_LMLITE)CosaLMLiteCreate();
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_GetParamUlongValue",  NetworkDevicesTraffic_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_GetParamBoolValue",  NetworkDevicesTraffic_GetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_GetParamStringValue",  NetworkDevicesTraffic_GetParamStringValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_SetParamBoolValue",  NetworkDevicesTraffic_SetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_SetParamUlongValue",  NetworkDevicesTraffic_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Validate",  NetworkDevicesTraffic_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Commit",  NetworkDevicesTraffic_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Rollback",  NetworkDevicesTraffic_Rollback);
 
-    if ( g_pLMLite )
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_GetParamUlongValue",  NetworkDevicesTraffic_Default_GetParamUlongValue);
+
+
+    
+     /* Create LMLite Object for Settings */
+    g_pReports = (PCOSA_DATAMODEL_REPORTS)CosaReportsCreate();
+
+    if ( g_pReports )
     {
         // print success
-        CosaLMLiteInitialize(g_pLMLite);
+        CosaReportsInitialize(g_pReports);
     }
     return  0;
 }

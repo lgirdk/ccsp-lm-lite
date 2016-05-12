@@ -52,7 +52,11 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						webpa_interface.c \
 						cosa_ndstatus_dml.c \ 
 						network_devices_status.c \
-						cosa_ndstatus_internal.c
+						cosa_reports_internal.c \
+						network_devices_traffic_avropack.c  \
+						cosa_ndtraffic_dml.c \ 
+						network_devices_traffic.c
+
 
 libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpack -lbase64
 

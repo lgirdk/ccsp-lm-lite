@@ -1,0 +1,137 @@
+{
+  "doc": "Contains a list of zero of more reports for each device connected to a network interface (Ethernet/Moca/WiFi). Each report contains device status and L2 counters",
+  "type": "record",
+  "namespace": "com.comcast.kestrel.reports",
+  "name": "NetworkDevicesTraffic",
+  "fields": [
+    {
+      "type": {
+        "doc": "Indicates the creation timestamp and report interval of a report generated on a gateway. Header which should be included in the top level of all reports initiating on a gateway.",
+        "type": "record",
+        "namespace": "com.comcast.kestrel.reports",
+        "name": "CPEReportHeader",
+        "fields": [
+          {
+            "doc": "Canonical identifier for the gateway. (Eg, may be CM Mac for cable modems)",
+            "type": {
+              "doc": "Unique identifying fields for a gateway. All fields are optional, but at least one field should be populated with a non null value",
+              "type": "record",
+              "namespace": "com.comcast.kestrel.common",
+              "name": "CPEIdentifier",
+              "fields": [
+                {
+                  "default": null,
+                  "doc": "Canonical (Identifying) MAC address for the gateway. (Eg, may be CM Mac for cable modems)",
+                  "type": [
+                    "null",
+                    {
+                      "type": "fixed",
+                      "namespace": "com.comcast.kestrel.common",
+                      "name": "MacAddress",
+                      "size": 6
+                    }
+                  ],
+                  "name": "mac_address"
+                }
+              ]
+            },
+            "name": "cpe_id"
+          },
+          {
+            "doc": "Timestamp indicating when this report was generated. The number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC",
+            "type": "long",
+            "name": "timestamp"
+          },
+          {
+            "default": null,
+            "doc": "Source of this report - generally the application or process generating the report",
+            "type": [
+              "null",
+              "string"
+            ],
+            "name": "report_source"
+          }
+        ]
+      },
+      "name": "report_header"
+    },
+    {
+      "type": {
+        "items": {
+          "doc": "Contains gateway network and L3 data for a network related to a specific connected device at a point in time",
+          "type": "record",
+          "namespace": "com.comcast.kestrel.reports",
+          "name": "NetworkDeviceTraffic",
+          "fields": [
+            {
+              "type": {
+                "doc": "Indicates the creation timestamp, data collection (polling) interval and device associated with a specific device report",
+                "type": "record",
+                "namespace": "com.comcast.kestrel.reports",
+                "name": "DeviceReportHeader",
+                "fields": [
+                  {
+                    "doc": "MAC address of the conected device the report is related to",
+                    "type": "com.comcast.kestrel.common.MacAddress",
+                    "name": "device_mac"
+                  },
+                  {
+                    "doc": "Timestamp indicating when the data for this report was gathered (not when the report was sent). The number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC",
+                    "type": "long",
+                    "name": "timestamp"
+                  }
+                ]
+              },
+              "name": "report_header"
+            },
+            {
+              "default": null,
+              "doc": "Network and Status data from the gateway, related to a single connected devices.",
+              "type": [
+                "null",
+                {
+                  "doc": "Contains network traffic data collected about a single device",
+                  "type": "record",
+                  "namespace": "com.comcast.kestrel.common",
+                  "name": "NetworkDeviceTrafficData",
+                  "fields": [
+                    {
+                      "default": null,
+                      "doc": "ip address associated with the device on this network",
+                      "type": [
+                        "null",
+			"string"
+                      ],
+                      "name": "ip_address"
+                    },
+                    {
+                      "default": null,
+                      "doc": "number of bytes sent from this device to the 'internet' - (or xfinitywifi tunnel, etc)",
+                      "type": [
+                        "null",
+                        "long"
+                      ],
+                      "name": "external_bytes_up"
+                    },
+                    {
+                      "default": null,
+                      "doc": "number of bytes sent to this device from the 'internet' - (or xfinitywifi tunnel, etc)",
+                      "type": [
+                        "null",
+                        "long"
+                      ],
+                      "name": "external_bytes_down"
+                    }
+                  ]
+                }
+              ],
+              "name": "network_data"
+            }
+          ]
+        },
+        "type": "array"
+      },
+      "name": "data"
+    }
+  ]
+}

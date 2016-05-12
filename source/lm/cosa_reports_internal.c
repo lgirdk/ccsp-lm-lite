@@ -32,7 +32,7 @@
 
 **************************************************************************/
 
-#include "cosa_ndstatus_internal.h"
+#include "cosa_reports_internal.h"
 #include "cosa_ndstatus_dml.h"
 //extern void* g_pDslhDmlAgent;
 
@@ -58,17 +58,17 @@
 **********************************************************************/
 
 ANSC_HANDLE
-CosaLMLiteCreate
+CosaReportsCreate
     (
         VOID
     )
 {
-	PCOSA_DATAMODEL_LMLITE       pMyObject    = (PCOSA_DATAMODEL_LMLITE)NULL;
+	PCOSA_DATAMODEL_REPORTS       pMyObject    = (PCOSA_DATAMODEL_REPORTS)NULL;
 
     /*
      * We create object by first allocating memory for holding the variables and member functions.
      */
-    pMyObject = (PCOSA_DATAMODEL_LMLITE)AnscAllocateMemory(sizeof(COSA_DATAMODEL_LMLITE));
+    pMyObject = (PCOSA_DATAMODEL_REPORTS)AnscAllocateMemory(sizeof(COSA_DATAMODEL_REPORTS));
 
     if ( !pMyObject )
     {
@@ -104,22 +104,29 @@ CosaLMLiteCreate
 **********************************************************************/
 
 ANSC_STATUS
-CosaLMLiteInitialize
+CosaReportsInitialize
     (
         ANSC_HANDLE                 hThisObject
     )
 {
     ANSC_STATUS                     returnStatus        = ANSC_STATUS_SUCCESS;
-    PCOSA_DATAMODEL_LMLITE       pMyObject           = (PCOSA_DATAMODEL_LMLITE)hThisObject;
+    PCOSA_DATAMODEL_REPORTS       pMyObject           = (PCOSA_DATAMODEL_REPORTS)hThisObject;
    
 
-    returnStatus = CosaDmlLMLiteInit((ANSC_HANDLE)pMyObject);
+    returnStatus = CosaDmlNetworkDevicesStatusInit((ANSC_HANDLE)pMyObject);
     
     if ( returnStatus != ANSC_STATUS_SUCCESS )
     {        
         return  returnStatus;
     }
     
+    returnStatus = CosaDmlNetworkDevicesTrafficInit((ANSC_HANDLE)pMyObject);
+    
+    if ( returnStatus != ANSC_STATUS_SUCCESS )
+    {        
+        return  returnStatus;
+    }
+
     return returnStatus;
 }
 
@@ -148,17 +155,16 @@ CosaLMLiteInitialize
 
 **********************************************************************/
 ANSC_STATUS
-CosaLMLiteRemove
+CosaReportsRemove
     (
         ANSC_HANDLE                 hThisObject
     )
 {
     ANSC_STATUS                     returnStatus = ANSC_STATUS_SUCCESS;
-    PCOSA_DATAMODEL_LMLITE            pMyObject    = (PCOSA_DATAMODEL_LMLITE)hThisObject;    
+    PCOSA_DATAMODEL_REPORTS            pMyObject    = (PCOSA_DATAMODEL_REPORTS)hThisObject;    
         
     /* Remove self */
     AnscFreeMemory((ANSC_HANDLE)pMyObject);
 
 	return returnStatus;
 }
-
