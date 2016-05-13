@@ -64,24 +64,89 @@
         06/20/2014    initial revision.
 
 **************************************************************************/
+
+#include <utctx/utctx.h>
+#include <utctx/utctx_api.h>
+#include <utapi/utapi.h>
+#include <utapi/utapi_util.h>
+
 #include "lm_api.h"
+
 
 int lm_wrapper_priv_stop_scan()
 {
-    return 0;
+    UtopiaContext ctx = {0};
+    bridgeInfo_t bridge_info;
+    
+    if (Utopia_Init(&ctx))
+    {
+        Utopia_GetBridgeSettings(&ctx, &bridge_info);
+        Utopia_Free(&ctx, 0);
+        if(bridge_info.mode == BRIDGE_MODE_OFF)
+            return 0;
+        else
+            return 1;
+    }else
+        return SUCCESS;
 }
+
+
 
 void lm_wrapper_priv_getLanHostComments(char *physAddress, char *pComments)
 {
+
+    char buffer[256] = {0};
+    UtopiaContext ctx;
+
+	pComments[0] = 0;
+
+    if ( physAddress == NULL && pComments == NULL)
+        return;
+
+    if( !Utopia_Init(&ctx) )
+        return;
+
+    Utopia_GetNamed(&ctx, UtopiaValue_USGv2_Lan_Clients_Mac, physAddress, buffer, sizeof(buffer));
+
+    Utopia_Free(&ctx, 0);
+
+	if(buffer[0])
+    {
+		char *p;
+
+		p = strchr(buffer, '+');
+		if(p!=NULL)
+        {
+			strcpy(pComments,p+1);
+		}
+	}
+
     return;
 }
 
-int lm_wrapper_priv_set_lan_host_comments(LM_cmd_comment_t *cmd)
+// return 0 if success 
+int lm_wrapper_priv_set_lan_host_comments( LM_cmd_comment_t *cmd)
 {
-    return 0;	// return SUCCESS = 0
+    UtopiaContext ctx;
+
+    if(!Utopia_Init(&ctx))
+        return 1;
+
+    Utopia_set_lan_host_comments(&ctx, cmd->mac, cmd->comment);
+    Utopia_Free(&ctx, 1);
+
+    return SUCCESS;
 }
 
 int lm_wrapper_priv_getEthernetPort(char *mac)
 {
-    return 0;
+#if 0
+        int port;
+        char tmp[6];
+        mac_string_to_array(mac, tmp);
+        if(SWCTL_OK == swctl_findMacAddress(tmp, &port))
+            return port;
+        else
+#endif
+            return -1;
 }
