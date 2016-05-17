@@ -255,19 +255,23 @@ void add_to_list_ndt(char* ip_table_line)
     else
     {
         const char * delim = "|";
-
-        ptr->timestamp.tv_sec = strtok(ip_table_line, delim);
-        ptr->timestamp.tv_sec -= tm_offset;
+		int rx_packets, tx_packets = 0;
+        
+		gettimeofday(&(ptr->timestamp), NULL);
+		ptr->timestamp.tv_sec -= tm_offset;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
-        ptr->ip_address = strdup(strtok(NULL, delim));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, ip_address[%s] \n",ptr->ip_address ));
-
-        ptr->device_mac = strdup(strtok(NULL, delim));
+        ptr->device_mac = strdup(strtok(ip_table_line, delim));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->device_mac ));
+
+		rx_packets =  atoi(strtok(NULL, delim));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%d] \n",rx_packets ));
 
         ptr->external_bytes_down = atoi(strtok(NULL, delim));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%d] \n",ptr->external_bytes_down ));
+
+		tx_packets =  atoi(strtok(NULL, delim));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%d] \n", tx_packets ));
 
         ptr->external_bytes_up = atoi(strtok(NULL, delim));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%d] \n",ptr->external_bytes_up ));
@@ -319,7 +323,6 @@ void delete_list_ndt()
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)currnode, currnode->device_mac));
         next = currnode->next;
         free(currnode->device_mac);
-        free(currnode->ip_address);
         free(currnode);
         currnode = next;
     }
@@ -336,9 +339,21 @@ void GetIPTableData()
     char ip_table_line[256];
     FILE *fp = NULL;
 
-    fp = fopen("/tmp/ip_table_data.txt" , "r");
+    char rxtxcmd[128] = {0};
+    char rxtxarr[128] = {0};
+    int ret  = 0;
+    sprintf(rxtxcmd, "/usr/ccsp/tad/rxtx_sum.sh");
+    ret = _syscmd_ndt(rxtxcmd, rxtxarr, sizeof(rxtxarr));
+    if(ret)
+    {
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX Sum shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+        return;
+    }
+
+    fp = fopen("/tmp/rxtx_sum.txt" , "r");
     if(!fp)
     {
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Error Opening File /tmp/rxtx_sum.txt \n",__FUNCTION__));
         return;
     }
 

@@ -25,7 +25,6 @@ struct networkdevicetrafficdata
 {
 struct timeval timestamp;
 char* device_mac;
-char* ip_address;
 ULONG external_bytes_up;
 ULONG external_bytes_down;
 

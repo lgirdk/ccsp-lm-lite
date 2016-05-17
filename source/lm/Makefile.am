@@ -58,6 +58,6 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						network_devices_traffic.c
 
 
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpack -lbase64
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpack -lbase64 -luuid
 
 

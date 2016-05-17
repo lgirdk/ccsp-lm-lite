@@ -102,6 +102,10 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, deviceMAC *********:%s\n",deviceMAC));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest :%s\n",dest));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, transaction_id :%s\n",trans_id));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType :%s\n",contentType));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, payload_len :%d\n",payload_len));
 
     snprintf(source, sizeof(source), "mac:%s/%s", deviceMAC, serviceName);
 
