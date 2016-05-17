@@ -14,6 +14,7 @@
 #include <avro.h>
 #include <arpa/inet.h>
 #include <semaphore.h>  /* Semaphore */
+#include <uuid/uuid.h>
 #include "ansc_platform.h"
 
 #include "base64.h"
@@ -46,6 +47,7 @@ char *ndtschemaidbuffer = "8323ce6e-25e0-4d23-bdb3-51a541128261/2ecd240b79ad7c13
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
+uuid_t ndt_transaction_id;
 
 // local data, load it with real data if necessary
 char ReportSourceNDT[] = "LMLite";
@@ -95,7 +97,7 @@ avro_writer_t prepare_writer()
 {
   avro_writer_t writer;
   long lSize = 0;
-
+  char trans_id[36];
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Avro prepares to serialize data\n"));
@@ -141,9 +143,13 @@ avro_writer_t prepare_writer()
   memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE ], UUID_NDT, sizeof(UUID_NDT));
 
   memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID_NDT) ], HASH_NDT, sizeof(HASH_NDT));
+  
+  uuid_generate(ndt_transaction_id);
+  uuid_unparse(ndt_transaction_id, trans_id);
 
-  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH],
-                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH );
+  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID_NDT) + sizeof(HASH_NDT) ], trans_id, sizeof(trans_id));
+  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH + sizeof(trans_id)],
+                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH - sizeof(trans_id) );
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
@@ -155,6 +161,7 @@ avro_writer_t prepare_writer()
 void network_devices_traffic_report(struct networkdevicetrafficdata *head)
 {
   int i, j, k = 0;
+  char trans_id[36];
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -162,7 +169,6 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
   avro_writer_t writer;
   char * serviceName = "lmlite";
   char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesTraffic";
-  char * trans_id = "abcd"; // identifier for each message, if required. If NULL msgpack will fail
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
@@ -308,7 +314,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, ip_address\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_set_string(&optional, ptr->ip_address );
+      avro_value_set_string(&optional, "Dummy IP" );
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
       // external_bytes_up
@@ -389,7 +395,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
   }
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
-
+  uuid_unparse(ndt_transaction_id, trans_id);
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
 

@@ -14,6 +14,7 @@
 #include <avro.h>
 #include <arpa/inet.h>
 #include <semaphore.h>  /* Semaphore */
+#include <uuid/uuid.h>
 #include "ansc_platform.h"
 
 #include "base64.h"
@@ -49,6 +50,7 @@ static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 extern LmObjectHosts lmHosts;
 extern pthread_mutex_t LmHostObjectMutex;
+uuid_t transaction_id;
 
 // local data, load it with real data if necessary
 char ReportSource[] = "LMLite";
@@ -98,6 +100,7 @@ avro_writer_t prepare_writer_status()
 {
   avro_writer_t writer;
   long lSize = 0;
+  char trans_id[36];
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
@@ -145,8 +148,12 @@ avro_writer_t prepare_writer_status()
 
   memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID) ], HASH, sizeof(HASH));
 
-  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH],
-                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH );
+  uuid_generate(transaction_id);
+  uuid_unparse(transaction_id, trans_id);
+  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID) + sizeof(HASH) ], trans_id , sizeof(trans_id));
+
+  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH + sizeof(trans_id)],
+                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH - sizeof(trans_id) );
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
@@ -158,6 +165,7 @@ avro_writer_t prepare_writer_status()
 void network_devices_status_report(struct networkdevicestatusdata *head)
 {
   int i, j, k = 0;
+  char trans_id[36];
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -165,7 +173,6 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   avro_writer_t writer;
   char * serviceName = "lmlite";
   char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesStatus";
-  char * trans_id = "abcd"; // identifier for each message, if required. If NULL msgpack will fail
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
@@ -385,6 +392,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
 
+  uuid_unparse(transaction_id, trans_id);
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
 
