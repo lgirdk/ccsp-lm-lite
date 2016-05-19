@@ -407,17 +407,17 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
                 }
             currentNDTReportingPeriod = 0;
         }
-
-        if(GetNDTOverrideTTL())
-        {
-            SetNDTOverrideTTL(GetNDTOverrideTTL() - GetNDTPollingPeriod());
-        }
         
         if(!GetNDTOverrideTTL())
         {
             SetNDTPollingPeriod(GetNDTPollingPeriodDefault());
             SetNDTReportingPeriod(GetNDTReportingPeriodDefault());
             SetNDTOverrideTTL(GetNDTOverrideTTLDefault());
+        }
+
+        if(GetNDTOverrideTTL())
+        {
+            SetNDTOverrideTTL(GetNDTOverrideTTL() - GetNDTPollingPeriod());
         }
 
         do
