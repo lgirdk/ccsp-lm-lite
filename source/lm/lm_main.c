@@ -362,9 +362,24 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				if(pHost->bNotify == TRUE)
 				{
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
-					pHost->bNotify = FALSE;
 					lmHosts.lastActivity++;
+					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+					char buf[8];
+					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+					{
+						AnscTraceWarning(("syscfg_set failed\n"));
+					}
+					else 
+					{
+						if (syscfg_commit() != 0) 
+						{
+							AnscTraceWarning(("syscfg_commit failed\n"));
+						}
+		
+					}
+					pHost->bNotify = FALSE;
+					
 				}
 				
 			}
@@ -374,10 +389,24 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 			{
 				if(pHost->bNotify == FALSE)
 				{
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-				Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
-				pHost->bNotify = TRUE;
-				lmHosts.lastActivity++;
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+					lmHosts.lastActivity++;
+					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+					char buf[8];
+					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+					{
+						AnscTraceWarning(("syscfg_set failed\n"));
+					}
+					else 
+					{
+						if (syscfg_commit() != 0) 
+						{
+							AnscTraceWarning(("syscfg_commit failed\n"));
+						}
+		
+					}
+					pHost->bNotify = TRUE;
 				}
 			}
 		}
@@ -480,6 +509,20 @@ void Hosts_RmHosts(){
     lmHosts.numHost = 0;
     lmHosts.sizeHost = 0;
     lmHosts.lastActivity++;
+	char buf[8];
+	snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+	if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+		{
+			AnscTraceWarning(("syscfg_set failed\n"));
+		}
+	else 
+		{
+			if (syscfg_commit() != 0) 
+				{
+					AnscTraceWarning(("syscfg_commit failed\n"));
+				}
+		}
+
     return;
 }
 
@@ -1338,9 +1381,23 @@ void Hosts_StatSyncThreadFunc()
 //last activity cahnge 
 		if(!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_PhysAddressId], TRUE))
                 {
-			strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
-			lmHosts.lastActivity++;
-		}
+					strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
+					lmHosts.lastActivity++;
+					char buf[8];
+					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+					{
+						AnscTraceWarning(("syscfg_set failed\n"));
+					}
+					else 
+					{
+						if (syscfg_commit() != 0) 
+						{
+							AnscTraceWarning(("syscfg_commit failed\n"));
+						}
+		
+					}
+				}
                 /* This is a WiFi or MoCA host if l1unReachableCnt is NOT zero.
                  * When we cannot find a host in WiFi or MoCA assocaite table for 3 times,
                  * we think the host is offline.
@@ -1524,6 +1581,7 @@ void LM_main()
 {
     int res;
     void *status;
+    char buf[8];
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
     lm_wrapper_init();
@@ -1535,7 +1593,13 @@ void LM_main()
 
 
     pComponentName = compName;
-
+	syscfg_init();
+	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
+    if( buf != NULL )
+    	{
+   		    lmHosts.lastActivity = atoi(buf);
+			
+   		}
 
 	#ifdef FEATURE_SUPPORT_RDKLOG
 		rdk_logger_init(DEBUG_INI_NAME);
