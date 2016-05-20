@@ -55,7 +55,6 @@ char *ndtschemaidbuffer = "8323ce6e-25e0-4d23-bdb3-51a541128261/2ecd240b79ad7c13
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
-uuid_t ndt_transaction_id;
 
 // local data, load it with real data if necessary
 char ReportSourceNDT[] = "LMLite";
@@ -105,7 +104,6 @@ avro_writer_t prepare_writer()
 {
   avro_writer_t writer;
   long lSize = 0;
-  char trans_id[36];
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Avro prepares to serialize data\n"));
@@ -152,12 +150,8 @@ avro_writer_t prepare_writer()
 
   memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID_NDT) ], HASH_NDT, sizeof(HASH_NDT));
   
-  uuid_generate(ndt_transaction_id);
-  uuid_unparse(ndt_transaction_id, trans_id);
-
-  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID_NDT) + sizeof(HASH_NDT) ], trans_id, sizeof(trans_id));
-  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH + sizeof(trans_id)],
-                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH - sizeof(trans_id) );
+  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH],
+                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH );
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
@@ -169,7 +163,8 @@ avro_writer_t prepare_writer()
 void network_devices_traffic_report(struct networkdevicetrafficdata *head)
 {
   int i, j, k = 0;
-  char trans_id[36];
+  uuid_t ndt_transaction_id;
+  char trans_id[37];
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -403,6 +398,8 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
   }
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
+  
+  uuid_generate(ndt_transaction_id);
   uuid_unparse(ndt_transaction_id, trans_id);
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);

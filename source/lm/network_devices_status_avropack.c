@@ -58,7 +58,6 @@ static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 extern LmObjectHosts lmHosts;
 extern pthread_mutex_t LmHostObjectMutex;
-uuid_t transaction_id;
 
 // local data, load it with real data if necessary
 char ReportSource[] = "LMLite";
@@ -108,7 +107,6 @@ avro_writer_t prepare_writer_status()
 {
   avro_writer_t writer;
   long lSize = 0;
-  char trans_id[36];
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
@@ -156,12 +154,8 @@ avro_writer_t prepare_writer_status()
 
   memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID) ], HASH, sizeof(HASH));
 
-  uuid_generate(transaction_id);
-  uuid_unparse(transaction_id, trans_id);
-  memcpy( &AvroSerializedBuf[ MAGIC_NUMBER_SIZE + sizeof(UUID) + sizeof(HASH) ], trans_id , sizeof(trans_id));
-
-  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH + sizeof(trans_id)],
-                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH - sizeof(trans_id) );
+  writer = avro_writer_memory( (char*)&AvroSerializedBuf[MAGIC_NUMBER_SIZE + SCHEMA_ID_LENGTH],
+                               sizeof(AvroSerializedBuf) - MAGIC_NUMBER_SIZE - SCHEMA_ID_LENGTH );
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
@@ -173,7 +167,6 @@ avro_writer_t prepare_writer_status()
 void network_devices_status_report(struct networkdevicestatusdata *head)
 {
   int i, j, k = 0;
-  char trans_id[36];
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -182,6 +175,8 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   char * serviceName = "lmlite";
   char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesStatus";
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
+  uuid_t transaction_id;
+  char trans_id[37];
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
@@ -400,8 +395,10 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
 
+  uuid_generate_random(transaction_id); 
   uuid_unparse(transaction_id, trans_id);
-  // Send data from LMLite to webpa using CCSP bus interface
+
+    // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After ND WebPA SEND message call\n"));

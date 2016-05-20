@@ -388,6 +388,13 @@ void GetLMHostData()
 
         for(i = 0; i < array_size; i++)
         {
+            int LeaseTimeRemaining = lmHosts.hostArray[i]->LeaseTime - time(NULL);
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LeaseTime [%d]  CurrentTime[%d] LeaseTimeRemaining [%d] \n", lmHosts.hostArray[i]->LeaseTime, time(NULL), LeaseTimeRemaining));
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AddressSource [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource]));
+
+            if( (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ))
+                continue;
+
             add_to_list(lmHosts.hostArray[i]);
         }
         
@@ -433,16 +440,18 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
             currentReportingPeriod = 0;
         }
 
-        if(GetNDSOverrideTTL())
-        {
-            SetNDSOverrideTTL(GetNDSOverrideTTL() - GetNDSPollingPeriod());
-        }
+
         
         if(!GetNDSOverrideTTL())
         {
             SetNDSPollingPeriod(GetNDSPollingPeriodDefault());
             SetNDSReportingPeriod(GetNDSReportingPeriodDefault());
             SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
+        }
+
+        if(GetNDSOverrideTTL())
+        {
+            SetNDSOverrideTTL(GetNDSOverrideTTL() - GetNDSPollingPeriod());
         }
 
         do
