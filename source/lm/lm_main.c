@@ -110,6 +110,8 @@ Name_DM_t *g_pDHCPv4List = NULL;
 
 static int firstFlg = 0;
 
+extern int bWifiHost;
+
 extern char*                                pComponentName;
 /***********************************************************************
  IMPORTANT NOTE:
@@ -619,7 +621,16 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         {
             pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
         }
-        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+        if(bWifiHost)
+        {
+        	pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");
+        	bWifiHost = FALSE;
+
+        }
+        else
+        {
+        	pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+        }
 		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
         lmHosts.availableInstanceNum++;
     }
@@ -1750,7 +1761,8 @@ LM_get_host_info()
 		if(lmHosts.hostArray[i]->numIPv4Addr)
 		{
 			if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource],LM_ADDRESS_SOURCE_DHCP_STR)	!= NULL){
-                _get_dmbyname(g_DHCPv4ListNum, g_pDHCPv4List, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);		
+                _get_dmbyname(g_DHCPv4ListNum, g_pDHCPv4List, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+                lmHosts.hostArray[i]->LeaseTime = lmHosts.hostArray[i]->ipv4AddrArray->LeaseTime;    		
             }
 		}
 		

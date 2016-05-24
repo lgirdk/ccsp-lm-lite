@@ -70,7 +70,7 @@ static char pAtomBRMac[32] = {0};
 
 
 
-
+int bWifiHost = FALSE;
 static int fd;
 pthread_mutex_t GetARPEntryMutex;
 
@@ -365,7 +365,8 @@ void Wifi_Server_Thread_func()
 				hosts.host[i].Status = ntohl(hosts.host[i].Status);
 				
 			}
-			
+			bWifiHost = TRUE;
+
 		}
 		pthread_mutex_unlock(&Wifi_Hosts_mutex);
         close(newsockfd);
