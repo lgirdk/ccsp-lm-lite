@@ -37,10 +37,10 @@
 #define WRITER_BUF_SIZE   1024 * 30 // 30K
 
 //      "schemaTypeUUID" : "d9823986-8092-4ee9-b1f6-cf808486f186",
-//      "schemaMD5Hash" : "8e2a859d6ef44610423f559296565635",
+//      "schemaMD5Hash" : "95f76b0f2359f27febe8729a917c1cac",
 
-uint8_t HASH[16] = {0x8e, 0x2a, 0x85, 0x9d, 0x6e, 0xf4, 0x46, 0x10,
-                    0x42, 0x3f, 0x55, 0x92, 0x96, 0x56, 0x56, 0x35
+uint8_t HASH[16] = {0x95, 0xf7, 0x6b, 0x0f, 0x23, 0x59, 0xf2, 0x7f,
+                    0xeb, 0xe8, 0x72, 0x9a, 0x91, 0x7c, 0x1c, 0xac
                    };
 
 uint8_t UUID[16] = {0xd9, 0x82, 0x39, 0x86, 0x80, 0x92, 0x4e, 0xe9,
@@ -52,12 +52,13 @@ static char *macStr = NULL;
 static char CpemacStr[ 32 ];
 BOOL schema_file_parsed = FALSE;
 char *ndsschemabuffer = NULL;
-char *nds_schemaidbuffer = "d9823986-8092-4ee9-b1f6-cf808486f186/8e2a859d6ef44610423f559296565635";
+char *nds_schemaidbuffer = "d9823986-8092-4ee9-b1f6-cf808486f186/95f76b0f2359f27febe8729a917c1cac";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 extern LmObjectHosts lmHosts;
 extern pthread_mutex_t LmHostObjectMutex;
+extern int getTimeOffsetFromUtc();
 
 // local data, load it with real data if necessary
 char ReportSource[] = "LMLite";
@@ -252,7 +253,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   struct timespec ts;
 
   clock_gettime(CLOCK_REALTIME, &ts);
-  avro_value_set_long(&adrField, /*ts.tv_sec */ 1000 );
+  avro_value_set_long(&adrField, ts.tv_sec - getTimeOffsetFromUtc() );
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&adrField)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
@@ -262,6 +263,13 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   avro_value_set_branch(&adrField, 1, &optional);
   avro_value_set_string(&optional, ReportSource);
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, report_source\tType: %d\n", avro_value_get_type(&adrField)));
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+  //host_table_version - long
+  avro_value_get_by_name(&adr, "host_table_version", &adrField, NULL);
+  avro_value_set_branch(&adrField, 1, &optional);
+  avro_value_set_long(&optional, lmHosts.lastActivity);
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, host_table_version\tType: %d\n", avro_value_get_type(&adrField)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
   //Data Field block
