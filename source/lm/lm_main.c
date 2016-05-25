@@ -189,7 +189,7 @@ void Send_Notification(char* interface, char*mac , BOOL status)
 
 	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 	if(status)
-		strcpy(status_str,"Conneceted");
+		strcpy(status_str,"Connected");
 	else
 		strcpy(status_str,"Disconnected");
 		
@@ -1164,8 +1164,8 @@ void Hosts_SyncWifi()
 						/*LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
 						pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");*/
 						pHost->l1unReachableCnt = LM_HOST_RETRY_LIMIT;
-						pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
-						pHost->activityChangeTime = time((time_t*)NULL);
+						//pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
+						//pHost->activityChangeTime = time((time_t*)NULL);
 						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 				}
 #else
@@ -1418,11 +1418,13 @@ void Hosts_StatSyncThreadFunc()
 
 					if(pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT)
 					{
+/*
 						#ifdef USE_NOTIFY_COMPONENT						
 							#ifndef IW_EVENT_SUPPORT
 								pHost->bNotify = TRUE;
 							#endif
 						#endif
+*/
 						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 					}
 					else
