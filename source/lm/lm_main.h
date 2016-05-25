@@ -244,6 +244,7 @@ _LmObjectHost
     BOOL    bTrueStaticIPClient;
 	char	*Layer3Interface;
 	char backupHostname[64];
+	BOOL bClientReady;
 
 }
 LmObjectHost,  *PLmObjectHost;

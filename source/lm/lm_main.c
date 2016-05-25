@@ -393,6 +393,8 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				{
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 					lmHosts.lastActivity++;
+					pHost->bClientReady = TRUE;
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
 					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
 					char buf[8];
 					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
@@ -632,7 +634,9 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         	pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
         }
 		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
-        lmHosts.availableInstanceNum++;
+		pHost->bClientReady = FALSE;
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
+		lmHosts.availableInstanceNum++;
     }
 #ifdef USE_NOTIFY_COMPONENT
 	
