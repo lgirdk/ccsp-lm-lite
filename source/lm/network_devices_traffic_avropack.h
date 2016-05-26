@@ -35,6 +35,8 @@ struct timeval timestamp;
 char* device_mac;
 ULONG external_bytes_up;
 ULONG external_bytes_down;
+char* parent;
+char* device_type;
 
 struct networkdevicetrafficdata *next;
 };

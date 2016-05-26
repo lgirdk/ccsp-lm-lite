@@ -321,6 +321,14 @@ void add_to_list(PLmObjectHost host)
         gettimeofday(&(ptr->timestamp), NULL);
         ptr->timestamp.tv_sec -= tm_offset;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+
+        ptr->parent = strdup("11:22:33:44:55:66");
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->parent ));
+        ptr->device_type = strdup("Gateway");
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->device_type ));
+
+
+
         if (headnode == NULL)
         {
             headnode = currnode = ptr;
@@ -367,6 +375,8 @@ void delete_list()
         next = currnode->next;
         free(currnode->device_mac);
         free(currnode->interface_name);
+        free(currnode->parent);
+        free(currnode->device_type);        
         free(currnode);
         currnode = next;
     }
