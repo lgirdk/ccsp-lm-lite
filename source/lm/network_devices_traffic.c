@@ -66,6 +66,8 @@ void add_to_list_ndt(char* ip_table_line);
 void print_list_ndt();
 void delete_list_ndt();
 
+extern int getTimeOffsetFromUtc();
+
 static struct networkdevicetrafficdata *headnode = NULL;
 static struct networkdevicetrafficdata *currnode = NULL;
 
@@ -272,6 +274,10 @@ void add_to_list_ndt(char* ip_table_line)
         ptr->device_mac = strdup(strtok(ip_table_line, delim));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->device_mac ));
 
+
+
+
+
 		rx_packets =  atoi(strtok(NULL, delim));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%d] \n",rx_packets ));
 
@@ -284,6 +290,12 @@ void add_to_list_ndt(char* ip_table_line)
         ptr->external_bytes_up = atoi(strtok(NULL, delim));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%d] \n",ptr->external_bytes_up ));
         
+        ptr->parent = strdup("11:22:33:44:55:66");
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->parent ));
+
+        ptr->device_type = strdup("Gateway");
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->device_type ));
+
         ptr->next = NULL;
 
         if (headnode == NULL)
@@ -331,6 +343,8 @@ void delete_list_ndt()
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)currnode, currnode->device_mac));
         next = currnode->next;
         free(currnode->device_mac);
+        free(currnode->parent);
+        free(currnode->device_type);                
         free(currnode);
         currnode = next;
     }

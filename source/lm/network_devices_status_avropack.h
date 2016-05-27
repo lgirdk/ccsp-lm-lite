@@ -35,6 +35,8 @@ struct timeval timestamp;
 char* device_mac;
 char* interface_name;
 BOOL is_active;
+char* parent;
+char* device_type;
 
 struct networkdevicestatusdata *next;
 };

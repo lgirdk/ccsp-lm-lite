@@ -30,21 +30,24 @@
 #include "network_devices_status_avropack.h"
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_main.h"
+#if SIMULATION
+#include "dummy.h"
+#endif
 
 #define MAGIC_NUMBER      0x85
 #define MAGIC_NUMBER_SIZE 1
 #define SCHEMA_ID_LENGTH  32
 #define WRITER_BUF_SIZE   1024 * 30 // 30K
 
-//      "schemaTypeUUID" : "d9823986-8092-4ee9-b1f6-cf808486f186",
-//      "schemaMD5Hash" : "95f76b0f2359f27febe8729a917c1cac",
+//      "schemaTypeUUID" : "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca",
+//      "schemaMD5Hash" : "31f994887576bb739f897eb660043fbb",
 
-uint8_t HASH[16] = {0x95, 0xf7, 0x6b, 0x0f, 0x23, 0x59, 0xf2, 0x7f,
-                    0xeb, 0xe8, 0x72, 0x9a, 0x91, 0x7c, 0x1c, 0xac
+uint8_t HASH[16] = {0x31, 0xf9, 0x94, 0x88, 0x75, 0x76, 0xbb, 0x73,
+                    0x9f, 0x89, 0x7e, 0xb6, 0x60, 0x04, 0x3f, 0xbb
                    };
 
-uint8_t UUID[16] = {0xd9, 0x82, 0x39, 0x86, 0x80, 0x92, 0x4e, 0xe9,
-                    0xb1, 0xf6, 0xcf, 0x80, 0x84, 0x86, 0xf1, 0x86
+uint8_t UUID[16] = {0x30, 0x53, 0xb4, 0xab, 0xd3, 0xf9, 0x4c, 0xc9,
+                    0x8c, 0x3e, 0xf0, 0xbd, 0xe4, 0xa2, 0xe6, 0xca
                    };
 
 
@@ -52,7 +55,7 @@ static char *macStr = NULL;
 static char CpemacStr[ 32 ];
 BOOL schema_file_parsed = FALSE;
 char *ndsschemabuffer = NULL;
-char *nds_schemaidbuffer = "d9823986-8092-4ee9-b1f6-cf808486f186/95f76b0f2359f27febe8729a917c1cac";
+char *nds_schemaidbuffer = "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca/31f994887576bb739f897eb660043fbb";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
@@ -62,6 +65,15 @@ extern int getTimeOffsetFromUtc();
 
 // local data, load it with real data if necessary
 char ReportSource[] = "LMLite";
+char CPE_TYPE_STRING[] = "Gateway";
+
+#ifdef EXTENDER_CODE
+char ParentCpeMacid[] = { 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33 };
+int cpe_parent_exists = FALSE;
+char PARENT_CPE_TYPE_STRING[] = "BBParent ExtenderBB";
+#endif
+// local data, load it with real data if necessary
+
 
 char* GetNDStatusSchemaBuffer()
 {
@@ -93,6 +105,9 @@ return len;
 
 int NumberofElementsinLinkedList(struct networkdevicestatusdata* head)
 {
+#if SIMULATION
+  return 1;  
+#else
   int numelements = 0;
   struct networkdevicestatusdata* ptr  = head;
   while (ptr != NULL)
@@ -101,6 +116,7 @@ int NumberofElementsinLinkedList(struct networkdevicestatusdata* head)
     ptr = ptr->next;
   }
   return numelements;
+#endif
 }
 
 
@@ -167,7 +183,7 @@ avro_writer_t prepare_writer_status()
 /* function call from lmlite with parameters */
 void network_devices_status_report(struct networkdevicestatusdata *head)
 {
-  int i, j, k = 0;
+  int i = 0, k = 0;
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -207,12 +223,55 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   avro_value_t  adr;
   avro_generic_value_new(iface, &adr);
 
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, GatewayNetworkDeviceTrafficReport\tType: %d\n", avro_value_get_type(&adr)));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, GatewayNetworkDeviceStatusReport\tType: %d\n", avro_value_get_type(&adr)));
 
   avro_value_t  adrField;
 
-  //MAC
-  /* Get CPE mac address, do it only pointer is NULL */
+  //Optional value for unions, mac address is an union
+  avro_value_t optional;
+
+  // timestamp - long
+  avro_value_get_by_name(&adr, "header", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_get_by_name(&adrField, "timestamp", &adrField, NULL);
+  avro_value_set_branch(&adrField, 1, &optional);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+  struct timeval ts;
+  gettimeofday(&ts, NULL);
+
+  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec - getTimeOffsetFromUtc()) * 1000000) + (int64_t) ts.tv_usec;
+  tstamp_av_main = tstamp_av_main/1000;
+
+  avro_value_set_long(&optional, tstamp_av_main );
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&optional)));
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+  // uuid - fixed 16 bytes
+  uuid_generate_random(transaction_id); 
+  uuid_unparse(transaction_id, trans_id);
+
+  avro_value_get_by_name(&adr, "header", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_get_by_name(&adrField, "uuid", &adrField, NULL);
+  avro_value_set_branch(&adrField, 1, &optional);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_set_fixed(&optional, transaction_id, 16);
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, uuid\tType: %d\n", avro_value_get_type(&optional)));
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+  //source - string
+  avro_value_get_by_name(&adr, "header", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_get_by_name(&adrField, "source", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_set_branch(&adrField, 1, &optional);
+  avro_value_set_string(&optional, ReportSource);
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, source\tType: %d\n", avro_value_get_type(&optional)));
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+  //cpe_id block
+  /* MAC - Get CPE mac address, do it only pointer is NULL */
   if ( macStr == NULL )
   {
     macStr = getDeviceMac();
@@ -231,51 +290,87 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
     CpeMacid[ k ] = (unsigned char)strtol(&CpeMacHoldingBuf[ k * 2 ], NULL, 16);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Mac address = %0x\n", CpeMacid[ k ] ));
   }
-  avro_value_get_by_name(&adr, "report_header", &adrField, NULL);
+  avro_value_get_by_name(&adr, "cpe_id", &adrField, NULL);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-
-  avro_value_get_by_name(&adrField, "cpe_id", &adrField, NULL);
-  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-
-  //Optional value for unions, mac address is an union
-  avro_value_t optional;
-
   avro_value_get_by_name(&adrField, "mac_address", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
   avro_value_set_branch(&adrField, 1, &optional);
   avro_value_set_fixed(&optional, CpeMacid, 6);
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, mac_address\tType: %d\n", avro_value_get_type(&adrField)));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, mac_address\tType: %d\n", avro_value_get_type(&optional)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-  // timestamp - long
-  avro_value_get_by_name(&adr, "report_header", &adrField, NULL);
-  avro_value_get_by_name(&adrField, "timestamp", &adrField, NULL);
-
-  struct timespec ts;
-
-  clock_gettime(CLOCK_REALTIME, &ts);
-  avro_value_set_long(&adrField, ts.tv_sec - getTimeOffsetFromUtc() );
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&adrField)));
+  // cpe_type - string
+  avro_value_get_by_name(&adr, "cpe_id", &adrField, NULL);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-
-  //Report source - string
-  avro_value_get_by_name(&adr, "report_header", &adrField, NULL);
-  avro_value_get_by_name(&adrField, "report_source", &adrField, NULL);
+  avro_value_get_by_name(&adrField, "cpe_type", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
   avro_value_set_branch(&adrField, 1, &optional);
-  avro_value_set_string(&optional, ReportSource);
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, report_source\tType: %d\n", avro_value_get_type(&adrField)));
+  avro_value_set_string(&optional, CPE_TYPE_STRING);
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, cpe_type\tType: %d\n", avro_value_get_type(&optional)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-  //host_table_version - long
+  // cpe_parent - Recurrsive CPEIdentifier block
+  avro_value_get_by_name(&adr, "cpe_id", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_get_by_name(&adrField, "cpe_parent", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+#ifdef EXTENDER_CODE
+  if ( cpe_parent_exists == FALSE )
+#endif
+  {    
+      avro_value_set_branch(&adrField, 0, &optional);
+      avro_value_set_null(&optional);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, cpe_parent\tType: %d\n", avro_value_get_type(&optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  }
+
+#ifdef EXTENDER_CODE
+  else
+  {
+      avro_value_t parent_optional, parent_adrField;
+
+      // assume 1 parent ONLY
+      // Parent MAC
+      avro_value_set_branch(&adrField, 1, &parent_optional);
+      avro_value_get_by_name(&parent_optional, "mac_address", &parent_adrField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&parent_adrField, 1, &parent_optional);
+      avro_value_set_fixed(&parent_optional, ParentCpeMacid, 6);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parent mac_address\tType: %d\n", avro_value_get_type(&parent_optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      // Parent cpe_type
+      avro_value_set_branch(&adrField, 1, &parent_optional);
+      avro_value_get_by_name(&parent_optional, "cpe_type", &parent_adrField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&parent_adrField, 1, &parent_optional);
+      avro_value_set_string(&parent_optional, PARENT_CPE_TYPE_STRING);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parent cpe_type\tType: %d\n", avro_value_get_type(&parent_optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      // no more parent, set NULL
+      avro_value_set_branch(&adrField, 1, &parent_optional);
+      avro_value_get_by_name(&parent_optional, "cpe_parent", &parent_adrField, NULL);
+      avro_value_set_branch(&parent_adrField, 0, &parent_optional);
+      avro_value_set_null(&parent_optional);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parent cpe_parent\tType: %d\n", avro_value_get_type(&parent_optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  }
+#endif
+
+  //host_table_version block
   avro_value_get_by_name(&adr, "host_table_version", &adrField, NULL);
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
   avro_value_set_branch(&adrField, 1, &optional);
   avro_value_set_long(&optional, lmHosts.lastActivity);
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, host_table_version\tType: %d\n", avro_value_get_type(&adrField)));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, host_table_version\tType: %d\n", avro_value_get_type(&optional)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
   //Data Field block
 
   avro_value_get_by_name(&adr, "data", &adrField, NULL);
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, NetworkDeviceStatusReports - data\tType: %d\n", avro_value_get_type(&adrField)));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, NetworkDeviceStatusReports - data array\tType: %d\n", avro_value_get_type(&adrField)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
   //adrField now contains a reference to the AssociatedDeviceReportsArray
@@ -285,69 +380,77 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
   //Current Device Report Field
   avro_value_t drField;
 
-  //interference sources
-  avro_value_t interferenceSource;
-
- while(ptr)
+  while(ptr)
   {
     {
 
-       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numElements = %d\n", (ulong)ptr, numElements ));
-       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice entry #: %d\n", i + 1));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numElements = %d\n", (ulong)ptr, numElements ));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice entry #: %d\n", i + 1));
 
       //Append a DeviceReport item to array
       avro_value_append(&adrField, &dr, NULL);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice Status Report\tType: %d\n", avro_value_get_type(&dr)));
 
-      //report_header block
-      //device_mac
-      avro_value_get_by_name(&dr, "report_header", &drField, NULL);
+      //data array block
+
+      //device_mac - fixed 6 bytes
+      avro_value_get_by_name(&dr, "device_id", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, report_header\tType: %d\n", avro_value_get_type(&drField)));
-      avro_value_get_by_name(&drField, "device_mac", &drField, NULL);
-      avro_value_set_fixed(&drField, ptr->device_mac, 6);
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \t\tdevice_mac\tType: %d\n", avro_value_get_type(&drField)));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, device_id\tType: %d\n", avro_value_get_type(&drField)));
+      avro_value_get_by_name(&drField, "mac_address", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&drField, 1, &optional);
+      avro_value_set_fixed(&optional, ptr->device_mac, 6);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tmac_address\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-      //Timestamp
-      avro_value_get_by_name(&dr, "report_header", &drField, NULL);
+      //device_type - string
+      avro_value_get_by_name(&dr, "device_id", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      avro_value_get_by_name(&drField, "timestamp", &drField, NULL);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, device_id\tType: %d\n", avro_value_get_type(&drField)));
+      avro_value_get_by_name(&drField, "device_type", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&drField, 1, &optional);
+      avro_value_set_string(&optional, ptr->device_type);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tdevice_type\tType: %d\n", avro_value_get_type(&optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      //timestamp - long
+      avro_value_get_by_name(&dr, "timestamp", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&drField, 1, &optional);
       int64_t tstamp_av = (int64_t) ptr->timestamp.tv_sec * 1000000 + (int64_t) ptr->timestamp.tv_usec;
       tstamp_av = tstamp_av/1000;
-      avro_value_set_long(&drField, tstamp_av);
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \t\ttimestamp\tType: %d\n", avro_value_get_type(&drField)));
+      avro_value_set_long(&optional, tstamp_av);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \ttimestamp\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-      // network_data block - this is an union
-      // Interface_name
-      avro_value_get_by_name(&dr, "network_data", &drField, NULL);
+      //interface_name - string
+      avro_value_get_by_name(&dr, "interface_name", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, network_data\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_get_by_name(&optional, "interface_name", &drField, NULL);
-      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, interface_name\tType: %d\n", avro_value_get_type(&drField)));
-      avro_value_set_branch(&drField, 1, &optional);
+      //avro_value_set_string(&optional, "  aa  ");
       avro_value_set_string(&optional, ptr->interface_name );
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tinterface_name\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-      // status
-      avro_value_get_by_name(&dr, "network_data", &drField, NULL);
+      //status - enum
+      avro_value_get_by_name(&dr, "status", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_get_by_name(&optional, "status", &drField, NULL);
-      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, status\tType: %d\n", avro_value_get_type(&drField)));
-      avro_value_set_branch(&drField, 1, &optional);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, status\tType: %d\n", avro_value_get_type(&optional)));
       if ( ptr->is_active )
           avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "ONLINE"));
       else
           avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "OFFLINE"));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-
     }
+
+#if SIMULATION
+    ptr = 0;
+#else
     ptr = ptr->next; // next link list
+#endif
 
     /* check for writer size, if buffer is almost full, skip trailing linklist */
     avro_value_sizeof(&adr, &AvroSerializedSize);
@@ -403,10 +506,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
 
-  uuid_generate_random(transaction_id); 
-  uuid_unparse(transaction_id, trans_id);
-
-    // Send data from LMLite to webpa using CCSP bus interface
+  // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After ND WebPA SEND message call\n"));
@@ -415,5 +515,8 @@ void network_devices_status_report(struct networkdevicestatusdata *head)
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
+#if SIMULATION
+  exit(0);
+#endif
 }
 

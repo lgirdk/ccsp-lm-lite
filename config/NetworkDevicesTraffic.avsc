@@ -1,137 +1,170 @@
 {
-  "doc": "Contains a list of zero of more reports for each device connected to a network interface (Ethernet/Moca/WiFi). Each report contains device status and L2 counters",
-  "type": "record",
-  "namespace": "com.comcast.kestrel.reports",
+  "namespace": "com.comcast.kestrel.odp.event",
   "name": "NetworkDevicesTraffic",
+  "type": "record",
+  "doc": "Contains a list of zero of more reports for each device connected to a network interface (Ethernet/Moca/WiFi). Each report contains device status and L2 counters",
   "fields": [
     {
+      "name": "header",
       "type": {
-        "doc": "Indicates the creation timestamp and report interval of a report generated on a gateway. Header which should be included in the top level of all reports initiating on a gateway.",
+        "namespace": "com.comcast.kestrel",
+        "name": "CoreHeader",
         "type": "record",
-        "namespace": "com.comcast.kestrel.reports",
-        "name": "CPEReportHeader",
+        "doc": "Common information related to the event which MUST be included in any kestrel event. It allows some common processing at the system level, and some consistency for processing events.",
         "fields": [
           {
-            "doc": "Canonical identifier for the gateway. (Eg, may be CM Mac for cable modems)",
-            "type": {
-              "doc": "Unique identifying fields for a gateway. All fields are optional, but at least one field should be populated with a non null value",
-              "type": "record",
-              "namespace": "com.comcast.kestrel.common",
-              "name": "CPEIdentifier",
-              "fields": [
-                {
-                  "default": null,
-                  "doc": "Canonical (Identifying) MAC address for the gateway. (Eg, may be CM Mac for cable modems)",
-                  "type": [
-                    "null",
-                    {
-                      "type": "fixed",
-                      "namespace": "com.comcast.kestrel.common",
-                      "name": "MacAddress",
-                      "size": 6
-                    }
-                  ],
-                  "name": "mac_address"
-                }
-              ]
-            },
-            "name": "cpe_id"
+            "name": "timestamp",
+            "type": [
+              "null",
+              {
+                "logicalType": "timestamp-millis",
+                "type": "long"
+              }
+            ],
+            "doc": "The UTC time stamp in milliseconds since Unix epoch (January 1, 1970 midnight) when the event is generated.",
+            "default": null
           },
           {
-            "doc": "Timestamp indicating when this report was generated. The number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC",
-            "type": "long",
-            "name": "timestamp"
+            "name": "uuid",
+            "type": [
+              "null",
+              {
+                "name": "UUID",
+                "namespace": "com.comcast.kestrel.datatype",
+                "size": 16,
+                "type": "fixed"
+              }
+            ],
+            "doc": "Unique identifier for the event used for event de-duplication and tracing.",
+            "default": null
           },
           {
-            "default": null,
-            "doc": "Source of this report - generally the application or process generating the report",
+            "name": "source",
             "type": [
               "null",
               "string"
             ],
-            "name": "report_source"
+            "doc": "Source of this report - generally the application or process generating the event",
+            "default": null
           }
         ]
-      },
-      "name": "report_header"
+      }
     },
     {
+      "name": "cpe_id",
+      "type": {
+        "namespace": "com.comcast.kestrel.odp",
+        "name": "CPEIdentifier",
+        "type": "record",
+        "doc": "Unique identifying fields for a CPE device. All fields are optional, but at least one field should be populated with a non null value",
+        "fields": [
+          {
+            "name": "mac_address",
+            "type": [
+              "null",
+              {
+                "name": "MacAddress",
+                "namespace": "com.comcast.kestrel.datatype",
+                "size": 6,
+                "type": "fixed"
+              }
+            ],
+            "doc": "Canonical (Identifying) MAC address for the gateway. (Eg, may be CM Mac for cable modems)",
+            "default": null
+          },
+          {
+            "name": "cpe_type",
+            "type": [
+              "null",
+              "string"
+            ],
+            "doc": "Contains the cpe type e.g. Extender or Gateway",
+            "default": null
+          },
+          {
+            "name": "cpe_parent",
+            "type": [
+              "null",
+              "com.comcast.kestrel.odp.CPEIdentifier"
+            ],
+            "doc": "If this device is a child device (it is managed by another CPE device), this field identifies the parent device. Canonical identifier for the CPE. (Eg, may be CM Mac for cable modems)",
+            "default": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "data",
       "type": {
         "items": {
-          "doc": "Contains gateway network and L3 data for a network related to a specific connected device at a point in time",
-          "type": "record",
-          "namespace": "com.comcast.kestrel.reports",
+          "namespace": "com.comcast.kestrel.odp",
           "name": "NetworkDeviceTraffic",
+          "type": "record",
+          "doc": "Contains gateway network and L3 data for a network related to a specific connected device at a point in time",
           "fields": [
             {
+              "name": "device_id",
               "type": {
-                "doc": "Indicates the creation timestamp, data collection (polling) interval and device associated with a specific device report",
+                "namespace": "com.comcast.kestrel.odp",
+                "name": "ConnectedDeviceIdentifier",
                 "type": "record",
-                "namespace": "com.comcast.kestrel.reports",
-                "name": "DeviceReportHeader",
+                "doc": "Identifies a connected device",
                 "fields": [
                   {
+                    "name": "mac_address",
+                    "type": [
+                      "null",
+                      "com.comcast.kestrel.datatype.MacAddress"
+                    ],
                     "doc": "MAC address of the conected device the report is related to",
-                    "type": "com.comcast.kestrel.common.MacAddress",
-                    "name": "device_mac"
+                    "default": null
                   },
                   {
-                    "doc": "Timestamp indicating when the data for this report was gathered (not when the report was sent). The number of milliseconds from the unix epoch, 1 January 1970 00:00:00.000 UTC",
-                    "type": "long",
-                    "name": "timestamp"
+                    "name": "device_type",
+                    "type": [
+                      "null",
+                      "string"
+                    ],
+                    "doc": "Device Type connected to the Gateway [TR-181: Device.Hosts.Host.{i}.X_RDKCENTRAL_COM-DeviceType]",
+                    "default": null
                   }
                 ]
-              },
-              "name": "report_header"
+              }
             },
             {
-              "default": null,
-              "doc": "Network and Status data from the gateway, related to a single connected devices.",
+              "name": "timestamp",
               "type": [
                 "null",
                 {
-                  "doc": "Contains network traffic data collected about a single device",
-                  "type": "record",
-                  "namespace": "com.comcast.kestrel.common",
-                  "name": "NetworkDeviceTrafficData",
-                  "fields": [
-                    {
-                      "default": null,
-                      "doc": "ip address associated with the device on this network",
-                      "type": [
-                        "null",
-			"string"
-                      ],
-                      "name": "ip_address"
-                    },
-                    {
-                      "default": null,
-                      "doc": "number of bytes sent from this device to the 'internet' - (or xfinitywifi tunnel, etc)",
-                      "type": [
-                        "null",
-                        "long"
-                      ],
-                      "name": "external_bytes_up"
-                    },
-                    {
-                      "default": null,
-                      "doc": "number of bytes sent to this device from the 'internet' - (or xfinitywifi tunnel, etc)",
-                      "type": [
-                        "null",
-                        "long"
-                      ],
-                      "name": "external_bytes_down"
-                    }
-                  ]
+                  "logicalType": "timestamp-millis",
+                  "type": "long"
                 }
               ],
-              "name": "network_data"
+              "doc": "The UTC time stamp in milliseconds since Unix epoch (January 1, 1970 midnight) when the record data is generated.",
+              "default": null
+            },
+            {
+              "name": "external_bytes_up",
+              "type": [
+                "null",
+                "long"
+              ],
+              "doc": "number of bytes sent from this device to the 'internet' - (or xfinitywifi tunnel, etc)",
+              "default": null
+            },
+            {
+              "name": "external_bytes_down",
+              "type": [
+                "null",
+                "long"
+              ],
+              "doc": "number of bytes sent to this device from the 'internet' - (or xfinitywifi tunnel, etc)",
+              "default": null
             }
           ]
         },
         "type": "array"
-      },
-      "name": "data"
+      }
     }
   ]
 }

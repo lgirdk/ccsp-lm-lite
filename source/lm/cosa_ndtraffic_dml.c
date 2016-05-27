@@ -35,9 +35,6 @@ extern char g_Subsystem[32];
 extern COSA_DATAMODEL_REPORTS* g_pReports;
 
 static char *NetworkDevicesTrafficEnabled              = "eRT.com.cisco.spvtg.ccsp.lmlite.NetworkDevicesTrafficEnabled";
-static char *NetworkDevicesTrafficPollingPeriod        = "eRT.com.cisco.spvtg.ccsp.lmlite.NetworkDevicesTrafficPollingPeriod";
-static char *NetworkDevicesTrafficReportingPeriod      = "eRT.com.cisco.spvtg.ccsp.lmlite.NetworkDevicesTrafficReportingPeriod";
-
 
 extern char* GetNDTrafficSchemaBuffer();
 extern int GetNDTrafficSchemaBufferSize();
@@ -64,18 +61,6 @@ CosaDmlNetworkDevicesTrafficInit
         SetNDTHarvestingStatus(g_pReports->bNDTEnabled);
     }
 
-    retPsmGet = GetNVRamULONGConfiguration(NetworkDevicesTrafficPollingPeriod, &psmValue);
-    if (retPsmGet == CCSP_SUCCESS) {
-        g_pReports->uNDTPollingPeriod = psmValue;
-        SetNDTPollingPeriod(g_pReports->uNDTPollingPeriod);
-    }
-
-    retPsmGet = GetNVRamULONGConfiguration(NetworkDevicesTrafficReportingPeriod, &psmValue);
-    if (retPsmGet == CCSP_SUCCESS) {
-        g_pReports->uNDTReportingPeriod = psmValue;
-        SetNDTReportingPeriod(g_pReports->uNDTReportingPeriod);
-    }  
-
 }
 
 BOOL
@@ -87,7 +72,6 @@ NetworkDevicesTraffic_Default_GetParamUlongValue
     )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    fprintf(stderr, "RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ );
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
@@ -112,7 +96,6 @@ NetworkDevicesTraffic_Default_GetParamUlongValue
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
-    fprintf(stderr, "RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ );
     return FALSE;
 }
 
@@ -125,7 +108,6 @@ NetworkDevicesTraffic_GetParamUlongValue
 )
 {
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-	fprintf(stderr, "RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ );
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
@@ -143,7 +125,6 @@ NetworkDevicesTraffic_GetParamUlongValue
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
-	fprintf(stderr, "RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ );
     return FALSE;
 }
 
@@ -389,17 +370,13 @@ NetworkDevicesTraffic_Commit
     {
     SetNDTPollingPeriod(g_pReports->uNDTPollingPeriod);
     SetNDTOverrideTTL(GetNDTOverrideTTLDefault());
-    psmValue = g_pReports->uNDTPollingPeriod;
-    SetNVRamULONGConfiguration(NetworkDevicesTrafficPollingPeriod, psmValue);
     g_pReports->bNDTPollingPeriodChanged = false;
     }
 
     if(g_pReports->bNDTReportingPeriodChanged)
     {
     SetNDTReportingPeriod(g_pReports->uNDTReportingPeriod);
-    SetNDTOverrideTTL(GetNDTOverrideTTLDefault());
-    psmValue = g_pReports->uNDTReportingPeriod;
-    SetNVRamULONGConfiguration(NetworkDevicesTrafficReportingPeriod, psmValue);    
+    SetNDTOverrideTTL(GetNDTOverrideTTLDefault());  
     g_pReports->bNDTReportingPeriodChanged = false;
     }
 
