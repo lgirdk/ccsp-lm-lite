@@ -239,13 +239,13 @@ _LmObjectHost
     PLmObjectHostIPAddress ipv6AddrArray;
     int numIPv6Addr;
 #ifdef USE_NOTIFY_COMPONENT
-	BOOL    bNotify;
+    BOOL    bNotify;
 #endif	
     BOOL    bTrueStaticIPClient;
-	char	*Layer3Interface;
-	char backupHostname[64];
-	BOOL bClientReady;
-
+    char	*Layer3Interface;
+    char backupHostname[64];
+    BOOL bClientReady;
+    int band;
 }
 LmObjectHost,  *PLmObjectHost;
 

@@ -611,6 +611,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 	int currentChannel = 0;
         LM_wifi_wsta_t *hosts = *ppWstaArray;
 	time_t     now;
+	int band=0;
 	int activityTimeChangeDiff = 0;
 	for (i = 0; i < *pCount ; i++)
         {
@@ -618,6 +619,8 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		char index;
   		index = hosts[i].ssid[strlen(hosts[i].ssid)-1];
 		interface = index - '0';
+                if (interface==2) band=5;
+                if (interface==1) band=2;
 		/* SSID index check. Disabling logging for xfinity wifi devices and XHS clients. As these devices are not getting saved, whenever this loop runs , everytime these devices are getting logged as New Client.
 			TODO: Need to figure out the way to idenify new client. 
 		1 and 2 private wifi - Log is enabled
@@ -628,14 +631,24 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		}
 		/* disable logic ends */
 		pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
-		if(pHost) {
-		    if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) {
-			     if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
-				 continue;
-			     } 
-		    } 
-		} else {
-		   CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client connected. Mac is %s \n",hosts[i].phyAddr));
+		if(pHost) 
+		{
+			if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) 
+			{
+			 	if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
+				{
+					if(pHost->band != interface) 
+					{
+                                        	pHost->band = interface;
+		                        	CcspWifiTrace(("RDK_LOG_WARN, Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
+					}
+					continue;
+			     	} 
+		    	} 
+		} 
+		else 
+		{
+			CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client connected. Mac is %s band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
 		}
 		
 		if(interface%2 == 0)
@@ -713,7 +726,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 			goto RET1;
 		}
 		CcspWifiTrace(("RDK_LOG_WARN, No of Wifi clients connected : %d \n",*pCount));
-		CcspWifiTrace(("RDK_LOG_WARN, Device No : %d MAC - %s interface : ath%d \n",i+1,hosts[i].phyAddr,interface-1));
+		CcspWifiTrace(("RDK_LOG_WARN, Device No : %d MAC - %s interface: ath%d band %dGHz RSSI %d \n",i+1,hosts[i].phyAddr,interface-1,band,hosts[i].RSSI));
 		if(!retval){	
 		  CcspWifiTrace(("RDK_LOG_WARN, ssid : %s Auto channel enabled, channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
 		}else {
