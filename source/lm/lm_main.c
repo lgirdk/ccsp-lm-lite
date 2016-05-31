@@ -341,21 +341,24 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 	PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
     }
 	#ifdef USE_NOTIFY_COMPONENT
-	if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
-		strcpy(interface,"WiFi");
-	}
-	else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
+	if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
 	{
-		strcpy(interface,"MoCA");
-	}
-	else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
-	{
-		strcpy(interface,"Ethernet");
-	}
-	else
-	{
-		strcpy(interface,"Other");
-	}
+		if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
+			strcpy(interface,"WiFi");
+		}
+		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
+		{
+			strcpy(interface,"MoCA");
+		}
+		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
+		{
+			strcpy(interface,"Ethernet");
+		}
+		else
+		{
+			strcpy(interface,"Other");
+		}
+	
 		if(state == FALSE)
 		{
 			if(FindHostInLeases(pHost->pStringParaValue[LM_HOST_PhysAddressId], DNS_LEASE))
@@ -414,6 +417,7 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				}
 			}
 		}
+	}
 #endif
 } 
 
@@ -1759,8 +1763,11 @@ LM_get_host_info()
 
 		_get_dmbyname(g_IPIfNameDMListNum, g_pIPIfNameDMList, &(lmHosts.hostArray[i]->Layer3Interface), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer3InterfaceId]);
 
-		if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") != NULL){
-            _get_dmbyname(g_MoCAADListNum, g_pMoCAADList, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AssociatedDeviceId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+		if(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
+		{
+			if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") != NULL){
+	        	_get_dmbyname(g_MoCAADListNum, g_pMoCAADList, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AssociatedDeviceId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+			}
 		}
 		
 		
