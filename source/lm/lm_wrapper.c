@@ -1107,6 +1107,12 @@ void lm_wrapper_get_dhcpv4_reserved()
             }else
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
 
+		if ( pHost->pStringParaValue[LM_HOST_AddressSource] )	
+		{
+			LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
+   		       pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("Static");
+		}
+				
             pIP = Host_AddIPv4Address
                 (
                     pHost,
