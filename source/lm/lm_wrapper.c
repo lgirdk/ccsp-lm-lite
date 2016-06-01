@@ -639,15 +639,16 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 				{
 					if(pHost->band != interface) 
 					{
-                                        	pHost->band = interface;
+                                        	pHost->band = band;
 		                        	CcspWifiTrace(("RDK_LOG_WARN, Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
 					}
-					continue;
+					else continue;
 			     	} 
 		    	} 
 		} 
 		else 
 		{
+                        pHost->band = band;
 			CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client connected. Mac is %s band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
 		}
 		
