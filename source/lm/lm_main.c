@@ -1158,36 +1158,32 @@ void Hosts_SyncWifi()
 
             if ( pHost )
             {
-                if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                    
-                
-                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(hosts[i].ssid);
-                
-                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
-
-                if(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] )
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]);
-                
-                pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] = LanManager_CloneString(hosts[i].AssociatedDevice);
-
-                pHost->l1unReachableCnt = 1;
 #ifdef USE_NOTIFY_COMPONENT
-            
-			    if(hosts[i].Status)
-				{
-					LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-				}
-				else
-				{
-						/*LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-						pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");*/
-						pHost->l1unReachableCnt = LM_HOST_RETRY_LIMIT;
-						//pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
-						//pHost->activityChangeTime = time((time_t*)NULL);
-						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-				}
-#else
-                LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+			if(hosts[i].Status)
+			{
+#endif
+		                if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+		                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                    
+		                
+		                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(hosts[i].ssid);
+
+		                
+		                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
+
+		                if(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] )
+		                    LanManager_Free(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]);
+		                
+		                pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] = LanManager_CloneString(hosts[i].AssociatedDevice);
+
+		                pHost->l1unReachableCnt = 1;
+
+				LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+#ifdef USE_NOTIFY_COMPONENT
+			}
+			else
+			{
+					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+			}
 #endif
             }
         }
