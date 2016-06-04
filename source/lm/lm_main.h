@@ -245,7 +245,6 @@ _LmObjectHost
     char	*Layer3Interface;
     char backupHostname[64];
     BOOL bClientReady;
-    int band;
 }
 LmObjectHost,  *PLmObjectHost;
 
