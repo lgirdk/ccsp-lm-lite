@@ -104,7 +104,8 @@ typedef struct {
     unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
     int RSSI;
 #ifdef USE_NOTIFY_COMPONENT
-	int Status;
+    int Status;
+    int band;
 }__attribute__((packed, aligned(1))) LM_wifi_wsta_t;
 
 typedef struct{
@@ -112,6 +113,7 @@ typedef struct{
     LM_wifi_wsta_t   host[LM_MAX_HOSTS_NUM];
 }__attribute__((packed, aligned(1))) LM_wifi_hosts_t;
 #else
+    int band;
 }LM_wifi_wsta_t;
 #endif
 
