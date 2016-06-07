@@ -78,18 +78,125 @@ LM_wifi_hosts_t hosts;
 pthread_mutex_t Wifi_Hosts_mutex;
 #endif
 
-int Mac_to_band_mapping[1000] ={0};
+typedef struct{
+int band;
+BOOL active;
+char macAddress[18];
+struct mac_band_record *next;
+}mac_band_record;
+
+mac_band_record *Mac_to_band_mapping[HASHSIZE]={NULL};
+
 
 unsigned long hash(char *s)
 {
-        int macwalk=0;
 	unsigned long hashval=0;
-        while(macwalk<17)
+	if(s)
 	{
-		hashval=hashval*31+s[macwalk];
-                macwalk++;
-        }
+        	while(*s)
+		{
+			if (!(*s==':'))
+			{
+				hashval^=*s;
+                		s++;
+			}	
+                	else s++;
+		}
+	}
         return (hashval%HASHSIZE); 
+}
+
+mac_band_record *lookup_Mac_to_band_mapping(char *macstring)
+{	
+	mac_band_record * curr=NULL, *wp=NULL;
+        unsigned long hashindex;
+        hashindex=hash(macstring);
+	wp=Mac_to_band_mapping[hashindex];
+        for(curr=wp;curr!=NULL;curr=curr->next)
+	{
+		if(!strcmp(curr->macAddress,macstring)) return curr;
+	}
+       return curr;
+}
+
+void insert_Mac_to_band_mapping(char *macstring,int band)
+{
+	unsigned long hashindex;
+        hashindex=hash(macstring);
+        mac_band_record *curr=NULL, *wp=NULL,*np=NULL;
+
+	wp=lookup_Mac_to_band_mapping(macstring);
+        if(!wp)
+	{
+		wp=malloc(sizeof(mac_band_record));
+		if(wp)
+		{
+			hashindex=hash(macstring);
+                        np=Mac_to_band_mapping[hashindex];
+			if(np)
+			{
+                                curr=np;
+				for(curr=np;curr->next!=NULL;curr=curr->next);
+                        	curr->next=wp;
+				curr=curr->next;
+                        	curr->next=NULL;
+			}
+			else 
+			{
+				curr=wp;
+				curr->next=NULL;
+                                Mac_to_band_mapping[hashindex]=curr;
+			}
+			strcpy(curr->macAddress,macstring);
+			curr->band=band;
+		}
+	}
+	else
+	{
+		wp->band=band;
+		
+	}
+}
+
+void remove_Mac_to_band_mapping(char *macstring)
+{
+	//CcspWifiTrace(("RDK_LOG_WARN,Wifi inside remove_Mac  \n"));
+	mac_band_record *prev=NULL,*curr=NULL,*next=NULL,*tmp=NULL;
+        unsigned long hashindex;
+        hashindex=hash(macstring);
+	curr=Mac_to_band_mapping[hashindex];
+	prev=curr;
+        
+	if(curr && !strcmp(curr->macAddress,macstring))
+	{       tmp=curr;
+                curr=curr->next;
+		free(tmp);
+		//CcspWifiTrace(("RDK_LOG_WARN,Wifi band %d \n",curr->band));
+	}
+ 
+	else
+        {
+		//cspWifiTrace(("RDK_LOG_WARN,Wifiinside else 2.10  \n"));
+       	  	if(curr) curr=curr->next;
+		if (curr) next=curr->next;
+		if(curr) 
+		{
+			//CcspWifiTrace(("RDK_LOG_WARN,Wifi kb   %d \n",curr->band));
+        		for (;curr!=NULL,prev!=NULL;curr=curr->next,prev=prev->next,next=next->next)
+			{
+				if(curr && !strcmp(curr->macAddress,macstring)) 
+		
+				{
+					//CcspWifiTrace(("RDK_LOG_WARN,Wifi kb -mac %s  band %d \n",curr->macAddress,curr->band));
+					prev->next=next;
+					free(curr);
+                                        break;
+				}
+                                if(!next) break;
+                
+			}
+		}
+	}
 }
 
 int LanManager_DiscoverComponent
@@ -391,9 +498,10 @@ void Wifi_Server_Thread_func()
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
 	LM_wifi_wsta_t *pwifi_wsta = NULL;
-	int i,band=0,retmac;
+	int i,band=0,retband;
         char macstring[18]={0};
-        unsigned long hashindex=0;
+        mac_band_record *hash_record=NULL;
+        char *pos;
         
 	
 	/*TODO : Receive Data from WIFI Agent via Socket*/
@@ -420,23 +528,43 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		pwifi_wsta[i].RSSI = hosts.host[i].RSSI;
 		pwifi_wsta[i].Status = hosts.host[i].Status;
                 
-		//Logic below to print band info to be modified to leverage more from New nitification mechanisms
- 		if(strstr(pwifi_wsta[i].ssid,"1")) band=2;
- 		if(strstr(pwifi_wsta[i].ssid,"2")) band=5;
-                if (band) 
+		//Logic below to print band info to be compiled out when new notification mechanism is working, for now this solves the logging roblem
+#if 1
+ 		if(pos=strstr(pwifi_wsta[i].ssid,"1"))
+		{
+			if  (*(pos+1)=='\0') band=2;
+		}
+ 		if(pos=strstr(pwifi_wsta[i].ssid,"2")) 
+		{
+			if  (*(pos+1)=='\0') band=5;
+		}
+                if (band && strlen(hosts.host[i].phyAddr)>=17) 
 		{
                 	memset(macstring,0,sizeof(macstring));
 			strcpy(macstring,hosts.host[i].phyAddr);
-	        	hashindex=hash(macstring);
-                	retmac= Mac_to_band_mapping[hashindex];
-			if(retmac == band) continue;
+                        hash_record = lookup_Mac_to_band_mapping(macstring);
+                	if(hash_record) 
+			{  
+				retband = hash_record->band;
+				if(retband == band) 
+				{
+				        //CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %d \n",hosts.host[i].phyAddr,hash_record->band));
+					continue;
+				}
+				else
+				{
+					hash_record->band=band;
+				        CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts.host[i].phyAddr,band,pwifi_wsta[i].RSSI));
+				}	
+			}
                 	else
 			{
-               			Mac_to_band_mapping[hashindex]=band;
-				CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %dGHz  \n",hosts.host[i].phyAddr,band));
+               			insert_Mac_to_band_mapping(macstring,band);
+				CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts.host[i].phyAddr,band,pwifi_wsta[i].RSSI));
 			}
 		}
-	}		
+	}	
+#endif	
 	pthread_mutex_unlock(&Wifi_Hosts_mutex);
 
 	return 0;
@@ -631,7 +759,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 	parameterValStruct_t **valStrsecmode;
 	parameterValStruct_t **valStrsecencrymode;
 	parameterValStruct_t **valStrssid;
-	int nval, retval,retmac;
+	int nval, retval,retband;
 	char str[2][80];
 	char * name[2] = {(char*) str[0], (char*) str[1]};  
 	int interface ;
@@ -646,7 +774,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 	int activityTimeChangeDiff = 0;
         int band=0;
         char macstring[18]={0};
-        unsigned long hashindex=0;
+        mac_band_record *hash_record=NULL; 
 	for (i = 0; i < *pCount ; i++)
         {
 		PLmObjectHost pHost;
@@ -673,28 +801,45 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 				{
                                         memset(macstring,0,sizeof(macstring));
 					strcpy(macstring,hosts[i].phyAddr);
-					hashindex=hash(macstring);
-                                        retmac= Mac_to_band_mapping[hashindex];
-					if(retmac == band)
-					{
-					
-						continue;
+                                        if(!strlen(hosts[i].phyAddr) >=17) continue;
+                        		hash_record = lookup_Mac_to_band_mapping(macstring);
+                			if(hash_record) 
+					{  
+						retband= hash_record->band;
+						if(retband == band) continue;
 					}
-					else 
+                			else
 					{
-                         			Mac_to_band_mapping[hashindex] = band;
-		                        	CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
+               					insert_Mac_to_band_mapping(macstring,band);
+						CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts.host[i].phyAddr,band,pwifi_wsta[i].RSSI));
 					}
 			     	} else continue;
-		    	} else continue; 
+		    	}  
+			else continue;
 		} 
 		else 
 		{
+                        if(!strlen(hosts[i].phyAddr) >=17) continue;
                         memset(macstring,0,sizeof(macstring));
 		        strcpy(macstring,hosts[i].phyAddr);
-			hashindex=hash(macstring);
-                        Mac_to_band_mapping[hashindex] = band;
-		        CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
+                        hash_record = lookup_Mac_to_band_mapping(macstring);
+                	if(hash_record) 
+			{  
+				retband = hash_record->band;
+				if(retband == band) 
+				{
+					continue;
+				}
+				else
+				{
+					hash_record->band=band;
+				        CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts.host[i].phyAddr,band,pwifi_wsta[i].RSSI));               }
+			}
+                	else
+			{
+               			insert_Mac_to_band_mapping(macstring,band);
+		        	CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client %s connected to  band %dGHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
+			}
 		}
 		if(interface%2 == 0)
 			radioInt = 1;
