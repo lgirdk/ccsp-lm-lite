@@ -290,24 +290,19 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 		{
 			if(state) 
 			{
-				if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"1"))) 
-				{
-					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s appeared online on 2.4 GHz band\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-				}
-				else
-				{	CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s appeared online on 5 GHz band\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-				}
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s appeared online\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
 			}  
 			else 
 			{
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 				CcspWifiTrace(("RDK_LOG_WARN: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+#ifndef USE_NOTIFY_COMPONENT
 				remove_Mac_to_band_mapping(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+#endif
 			}
 			strcpy(interface,"WiFi");
-			
 		}
 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
@@ -406,6 +401,7 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 			{
 				if(pHost->bNotify == FALSE)
 				{
+					
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 					lmHosts.lastActivity++;
 					pHost->bClientReady = TRUE;

@@ -84,51 +84,49 @@ enum LM_NEIGHBOR_STATE{
  *
  */
 struct arp_pkt {
-    unsigned char ether_dhost[6];
-    unsigned char ether_shost[6];
-    unsigned short ether_type;
-    unsigned short hw_type;
-    unsigned short pro_type;
-    unsigned char hw_size;
-    unsigned char pro_size;
-    unsigned short opcode;
-    unsigned char sMac[6];
-    unsigned char sIP[4];
-    unsigned char tMac[6];
-    unsigned char tIP[4];   
+    	unsigned char ether_dhost[6];
+    	unsigned char ether_shost[6];
+    	unsigned short ether_type;
+        unsigned short hw_type;
+        unsigned short pro_type;
+        unsigned char hw_size;
+        unsigned char pro_size;
+        unsigned short opcode;
+        unsigned char sMac[6];
+        unsigned char sIP[4];
+        unsigned char tMac[6];
+        unsigned char tIP[4];   
 };
 
 typedef struct {
-    unsigned char phyAddr[18];
-    unsigned char ssid[LM_GEN_STR_SIZE];
-    unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
-    int RSSI;
+	unsigned char phyAddr[18];
+    	unsigned char ssid[LM_GEN_STR_SIZE];
+    	unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
+    	int RSSI;
 #ifdef USE_NOTIFY_COMPONENT
-    int Status;
-    int band;
+    	int Status;
 }__attribute__((packed, aligned(1))) LM_wifi_wsta_t;
 
 typedef struct{
-    int count;
-    LM_wifi_wsta_t   host[LM_MAX_HOSTS_NUM];
+	int count;
+	LM_wifi_wsta_t   host[LM_MAX_HOSTS_NUM];
 }__attribute__((packed, aligned(1))) LM_wifi_hosts_t;
 #else
-    int band;
 }LM_wifi_wsta_t;
 #endif
 
 typedef struct {
-    unsigned char phyAddr[18];
-    unsigned char ncId[LM_GEN_STR_SIZE];
+	unsigned char phyAddr[18];
+    	unsigned char ncId[LM_GEN_STR_SIZE];
 }LM_moca_cpe_t;
 
 typedef struct{
 	unsigned char phyAddr[18];
 	unsigned char ipAddr[64];
 	enum LM_NEIGHBOR_STATE status;
-    unsigned char hostName[LM_GEN_STR_SIZE];
-    unsigned char ifName[LM_GEN_STR_SIZE];
-    int LeaseTime;
+        unsigned char hostName[LM_GEN_STR_SIZE];
+        unsigned char ifName[LM_GEN_STR_SIZE];
+        int LeaseTime;
 }LM_host_entry_t;
 
 ANSC_HANDLE bus_handle;
