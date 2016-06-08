@@ -303,6 +303,8 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 			else 
 			{
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				CcspWifiTrace(("RDK_LOG_WARN: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				remove_Mac_to_band_mapping(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 			}
 			strcpy(interface,"WiFi");
 			
