@@ -1199,7 +1199,7 @@ void lm_wrapper_get_dhcpv4_client()
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
         /*
-        Sample:
+        Sample:sss
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
         6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
         */
@@ -1238,6 +1238,8 @@ void lm_wrapper_get_dhcpv4_client()
                     LanManager_Free(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
                 pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId] = LanManager_CloneString("DHCP");
                 pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
+				pHost->LeaseTime = pIP->LeaseTime;
+				
             }
         }
     }
