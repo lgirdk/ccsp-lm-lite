@@ -1213,6 +1213,23 @@ void lm_wrapper_get_dhcpv4_client()
             continue;
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
 
+		
+        if ( !pHost )
+        {
+            pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
+
+            if ( pHost )
+            {
+                if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                {
+                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                    pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                }
+
+
+            }
+        }
+		
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
