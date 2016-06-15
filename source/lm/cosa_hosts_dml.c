@@ -81,6 +81,7 @@ extern LmObjectHosts lmHosts;
 
 extern ULONG HostsUpdateTime;
 extern pthread_mutex_t LmHostObjectMutex;
+extern int g_Client_Poll_interval;
 //#define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
 #define COSA_DML_USERS_USER_ACCESS_INTERVAL     10
 
@@ -278,11 +279,46 @@ Hosts_GetParamUlongValue
         *puLong = lmHosts.lastActivity;
         return TRUE;
     }
-
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod", TRUE))
+    {
+        /* collect value */
+        *puLong = g_Client_Poll_interval;
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
 
+BOOL
+Hosts_SetParamUlongValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        ULONG                       uValue
+    )
+{
+    /* check the parameter name and set the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod", TRUE))
+    {
+		char buf1[8];
+		memset(buf1, 0, sizeof(buf1));
+        g_Client_Poll_interval = uValue;
+		snprintf(buf1,sizeof(buf1),"%d",uValue);
+			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
+                     		     return ANSC_STATUS_FAILURE;
+             } else {
+
+                    if (syscfg_commit() != 0)
+						{
+                            CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
+							return ANSC_STATUS_FAILURE;
+						}
+			 }
+        return TRUE;
+    }
+    /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
+}
 /**********************************************************************  
 
     caller:     owner of this object 

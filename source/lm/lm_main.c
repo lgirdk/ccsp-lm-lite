@@ -113,6 +113,8 @@ static int firstFlg = 0;
 extern int bWifiHost;
 
 extern char*                                pComponentName;
+
+int g_Client_Poll_interval;
 /***********************************************************************
  IMPORTANT NOTE:
 
@@ -1373,6 +1375,95 @@ void Hosts_SyncEthernetPort()
 //    pthread_mutex_unlock(&LmHostObjectMutex);
 }
 
+void Hosts_LoggingThread()
+{
+    int i;
+    PLmObjectHost pHost;
+	int TotalDevCount = 0;
+	int TotalOnlineDev = 0;
+	int TotalOffLineDev = 0;
+	int TotalWiFiDev = 0;
+	int Radio_2_Dev = 0;
+	int Radio_5_Dev = 0;
+	int TotalEthDev = 0;
+	int TotalMoCADev = 0;
+	sleep(30);
+	while(1)
+	{
+
+		
+
+		TotalDevCount = lmHosts.numHost;
+
+		for ( i = 0; i < lmHosts.numHost; i++ )
+		{
+
+			pHost = lmHosts.hostArray[i];
+			if(pHost)
+			{
+				if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId])
+				{
+					if(pHost->bBoolParaValue[LM_HOST_ActiveId])
+					{
+						TotalOnlineDev ++;
+
+
+						if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi")))
+						{
+							if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.1")))
+							{
+								Radio_2_Dev++;
+							}
+							else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.2")))
+							{
+								Radio_5_Dev++;
+							}
+							TotalWiFiDev++;
+						}
+						else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
+						{
+							
+							TotalMoCADev++;
+						}
+						else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
+						{
+							
+							TotalEthDev++;
+						}
+					}
+				
+				}
+			}
+		}
+
+		TotalOffLineDev = TotalDevCount - TotalOnlineDev;
+		
+		CcspTraceWarning(("------------------------AssociatedClientsInfo-----------------------\n"));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Clients_Connected = %d \n",TotalDevCount));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Online_Clients    = %d \n",TotalOnlineDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Offline_Clients   = %d \n",TotalOffLineDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_WiFi_Clients      = %d \n",TotalWiFiDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_WiFi-2.4G_Clients = %d \n",Radio_2_Dev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_WiFi-5.0G_Clients = %d \n",Radio_5_Dev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Ethernet_Clients  = %d \n",TotalEthDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_MoCA_Clients      = %d \n",TotalMoCADev));
+		CcspTraceWarning(("-------------------------------------------------------------------\n"));
+		
+		TotalDevCount = 0;
+		TotalOnlineDev = 0;
+		TotalOffLineDev = 0;
+		TotalWiFiDev = 0;
+		Radio_2_Dev = 0;
+		Radio_5_Dev = 0;
+		TotalEthDev = 0;
+		TotalMoCADev = 0;
+
+		sleep(g_Client_Poll_interval*60); 
+	}
+}
+
+
+
 void Hosts_StatSyncThreadFunc()
 {
     int i,count;
@@ -1607,6 +1698,7 @@ void LM_main()
     int res;
     void *status;
     char buf[8];
+	char buf1[8];
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
     lm_wrapper_init();
@@ -1626,6 +1718,31 @@ void LM_main()
 			
    		}
 
+	memset(buf1, 0, sizeof(buf1));
+	if(syscfg_get( NULL, "X_RDKCENTRAL-COM_HostCountPeriod", buf1, sizeof(buf1)) == 0)
+	{
+    if( buf1 != NULL )
+    	{
+   		    g_Client_Poll_interval =  atoi(buf1);
+			
+   		}
+		
+	}
+	else
+		{
+			g_Client_Poll_interval = 60;
+			strcpy(buf1,"60");
+			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
+                     		     return ANSC_STATUS_FAILURE;
+             } else {
+
+                    if (syscfg_commit() != 0)
+						{
+                            CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
+							return ANSC_STATUS_FAILURE;
+						}
+			 }
+		}
 	#ifdef FEATURE_SUPPORT_RDKLOG
 		rdk_logger_init(DEBUG_INI_NAME);
 	#endif
@@ -1639,6 +1756,11 @@ void LM_main()
     res = pthread_create(&Hosts_StatSyncThread, NULL, Hosts_StatSyncThreadFunc, "Hosts_StatSyncThreadFunc");
     if(res != 0) {
         CcspTraceError(("Create Hosts_StatSyncThread error %d\n", res));
+    }
+	pthread_t Hosts_LogThread;
+	res = pthread_create(&Hosts_LogThread, NULL, Hosts_LoggingThread, "Hosts_LoggingThread");
+    if(res != 0) {
+        CcspTraceError(("Create Hosts_LogThread error %d\n", res));
     }
 #ifdef LM_IPC_SUPPORT
     pthread_t Hosts_CmdThread;

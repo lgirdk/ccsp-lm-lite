@@ -11,6 +11,7 @@
       <objectType>object</objectType>
       <functions>
         <func_GetParamUlongValue>Hosts_GetParamUlongValue</func_GetParamUlongValue>
+		<func_SetParamUlongValue>Hosts_SetParamUlongValue</func_SetParamUlongValue>
       </functions>
       <parameters>
             <parameter>
@@ -27,6 +28,12 @@
               <name>X_RDKCENTRAL-COM_HostVersionId</name>
               <type>unsignedInt</type>
               <syntax>uint32</syntax>
+            </parameter>
+			<parameter>
+              <name>X_RDKCENTRAL-COM_HostCountPeriod</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+			  <writable>true</writable>
             </parameter>
       </parameters>
       <objects>
