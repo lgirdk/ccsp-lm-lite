@@ -313,7 +313,12 @@ void add_to_list(PLmObjectHost host)
     {
         ptr->device_mac = strdup(host->pStringParaValue[LM_HOST_PhysAddressId]);
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->device_mac ));
-        ptr->interface_name = strdup(host->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+
+        if(host->pStringParaValue[LM_HOST_Layer1InterfaceId])
+                ptr->interface_name = strdup(host->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+        else
+                ptr->interface_name = strdup("Unknown");
+
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->interface_name ));
         ptr->is_active = host->bBoolParaValue[LM_HOST_ActiveId];
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Active[%d] \n",ptr->is_active ));
