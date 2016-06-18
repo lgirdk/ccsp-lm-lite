@@ -42,6 +42,9 @@
 
 #include "cosa_reports_internal.h"
 #include "cosa_ndstatus_dml.h"
+#include "cosa_ndtraffic_dml.h"
+#include "cosa_extassocdevices_dml.h"
+
 //extern void* g_pDslhDmlAgent;
 
 /**********************************************************************
@@ -135,6 +138,12 @@ CosaReportsInitialize
         return  returnStatus;
     }
 
+    returnStatus = CosaDmlInterfaceDevicesWifiExtenderInit((ANSC_HANDLE)pMyObject);
+    
+    if ( returnStatus != ANSC_STATUS_SUCCESS )
+    {        
+        return  returnStatus;
+    }
     return returnStatus;
 }
 

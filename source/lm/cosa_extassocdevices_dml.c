@@ -34,47 +34,19 @@ extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
 extern COSA_DATAMODEL_REPORTS* g_pReports;
 
-static char *NetworkDevicesStatusEnabled              = "eRT.com.cisco.spvtg.ccsp.lmlite.NetworkDevicesStatusEnabled";
+static char *InterfaceDevicesWifiExtenderEnabled              = "eRT.com.cisco.spvtg.ccsp.lmlite.InterfaceDevicesWifiExtenderEnabled";
 
-extern char* GetNDStatusSchemaBuffer();
-extern int GetNDStatusSchemaBufferSize();
-extern char* GetNDStatusSchemaIDBuffer();
-extern int GetNDStatusSchemaIDBufferSize();
+extern char* GetIDWSchemaBuffer();
+extern int GetIDWSchemaBufferSize();
+extern char* GetIDWSchemaIDBuffer();
+extern int GetIDWSchemaIDBufferSize();
 
 
-ANSC_STATUS GetNVRamULONGConfiguration(char* setting, ULONG* value)
-{
-    char *strValue = NULL;
-    int retPsmGet = CCSP_SUCCESS;
-
-    retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, setting, NULL, &strValue);
-    if (retPsmGet == CCSP_SUCCESS) {
-        *value = _ansc_atoi(strValue);
-        ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
-    }
-    return retPsmGet;
-}
-
-ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value)
-{
-    int retPsmSet = CCSP_SUCCESS;
-    char psmValue[32] = {};
-
-    sprintf(psmValue,"%d",value);
-    retPsmSet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, setting, ccsp_string, psmValue);
-    if (retPsmSet != CCSP_SUCCESS) 
-        {
-        CcspLMLiteConsoleTrace(("%s PSM_Set_Record_Value2 returned ERROR [%d] while setting [%s] Value [%d]\n",__FUNCTION__, retPsmSet, setting, value)); 
-        }
-    else
-        {
-        CcspLMLiteConsoleTrace(("%s PSM_Set_Record_Value2 returned SUCCESS[%d] while Setting [%s] Value [%d]\n",__FUNCTION__, retPsmSet, setting, value)); 
-        }
-    return retPsmSet;
-}
+extern ANSC_STATUS GetNVRamULONGConfiguration(char* setting, ULONG* value);
+extern ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value);
 
 ANSC_STATUS
-CosaDmlNetworkDevicesStatusInit
+CosaDmlInterfaceDevicesWifiExtenderInit
     (
         ANSC_HANDLE                 hThisObject
     )
@@ -83,16 +55,16 @@ CosaDmlNetworkDevicesStatusInit
     int retPsmGet = CCSP_SUCCESS;
     ULONG psmValue = 0;
 
-    retPsmGet = GetNVRamULONGConfiguration(NetworkDevicesStatusEnabled, &psmValue);
+    retPsmGet = GetNVRamULONGConfiguration(InterfaceDevicesWifiExtenderEnabled, &psmValue);
     if (retPsmGet == CCSP_SUCCESS) {
-        g_pReports->bNDSEnabled = psmValue;
-        SetNDSHarvestingStatus(g_pReports->bNDSEnabled);
+        g_pReports->bIDWEnabled = psmValue;
+        SetIDWHarvestingStatus(g_pReports->bIDWEnabled);
     }
 
 }
 
 BOOL
-NetworkDevicesStatus_Default_GetParamUlongValue
+InterfaceDevicesWifiExtender_Default_GetParamUlongValue
     (
                 ANSC_HANDLE                 hInsContext,
                 char*                       ParamName,
@@ -103,21 +75,21 @@ NetworkDevicesStatus_Default_GetParamUlongValue
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
-        *puLong =  GetNDSPollingPeriodDefault();
+        *puLong =  GetIDWPollingPeriodDefault();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
     {
-        *puLong =  GetNDSReportingPeriodDefault();
+        *puLong =  GetIDWReportingPeriodDefault();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "OverrideTTL", TRUE))
     {
-        *puLong =  GetNDSOverrideTTLDefault();
+        *puLong =  GetIDWOverrideTTLDefault();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
@@ -128,7 +100,7 @@ NetworkDevicesStatus_Default_GetParamUlongValue
 }
 
 BOOL
-NetworkDevicesStatus_GetParamUlongValue
+InterfaceDevicesWifiExtender_GetParamUlongValue
 (
     ANSC_HANDLE                 hInsContext,
     char*                       ParamName,
@@ -139,14 +111,14 @@ NetworkDevicesStatus_GetParamUlongValue
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
-        *puLong =  GetNDSPollingPeriod();
+        *puLong =  GetIDWPollingPeriod();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
     {
-        *puLong =  GetNDSReportingPeriod();
+        *puLong =  GetIDWReportingPeriod();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
@@ -157,7 +129,7 @@ NetworkDevicesStatus_GetParamUlongValue
 }
 
 BOOL
-NetworkDevicesStatus_SetParamUlongValue
+InterfaceDevicesWifiExtender_SetParamUlongValue
 (
     ANSC_HANDLE                 hInsContext,
     char*                       ParamName,
@@ -168,16 +140,16 @@ NetworkDevicesStatus_SetParamUlongValue
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
-        g_pReports->bNDSPollingPeriodChanged = true;
-        g_pReports->uNDSPollingPeriod = uValue;
+        g_pReports->bIDWPollingPeriodChanged = true;
+        g_pReports->uIDWPollingPeriod = uValue;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, uValue ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
     {
-        g_pReports->bNDSReportingPeriodChanged = true;
-        g_pReports->uNDSReportingPeriod = uValue;
+        g_pReports->bIDWReportingPeriodChanged = true;
+        g_pReports->uIDWReportingPeriod = uValue;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, uValue ));
         return TRUE;
     }
@@ -187,7 +159,7 @@ NetworkDevicesStatus_SetParamUlongValue
 }
 
 BOOL
-NetworkDevicesStatus_GetParamStringValue
+InterfaceDevicesWifiExtender_GetParamStringValue
     (
         ANSC_HANDLE                 hInsContext,
         char*                       ParamName,
@@ -200,7 +172,7 @@ NetworkDevicesStatus_GetParamStringValue
     if( AnscEqualString(ParamName, "Schema", TRUE))
     {
         /* collect value */
-        int bufsize = GetNDStatusSchemaBufferSize();
+        int bufsize = GetIDWSchemaBufferSize();
         if(!bufsize)
         {
             char result[1024] = "Schema Buffer is empty";
@@ -212,7 +184,7 @@ NetworkDevicesStatus_GetParamStringValue
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%d]\n", bufsize, *pUlSize));
         if (bufsize < *pUlSize)
         {
-            AnscCopyString(pValue, GetNDStatusSchemaBuffer());
+            AnscCopyString(pValue, GetIDWSchemaBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
             return FALSE;
@@ -229,7 +201,7 @@ NetworkDevicesStatus_GetParamStringValue
     if( AnscEqualString(ParamName, "SchemaID", TRUE))
     {
         /* collect value */
-        int bufsize = GetNDStatusSchemaIDBufferSize();
+        int bufsize = GetIDWSchemaIDBufferSize();
         if(!bufsize)
         {
             char result[1024] = "SchemaID Buffer is empty";
@@ -242,7 +214,7 @@ NetworkDevicesStatus_GetParamStringValue
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%d]\n", bufsize, *pUlSize));
         if (bufsize < *pUlSize)
         {
-            AnscCopyString(pValue, GetNDStatusSchemaIDBuffer());
+            AnscCopyString(pValue, GetIDWSchemaIDBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
             return FALSE;
@@ -271,7 +243,7 @@ NetworkDevicesStatus_GetParamStringValue
     prototype: 
 
         BOOL
-        NetworkDevicesStatus_Validate
+        InterfaceDevicesWifiExtender_Validate
             (
                 ANSC_HANDLE                 hInsContext,
                 char*                       pReturnParamName,
@@ -295,7 +267,7 @@ NetworkDevicesStatus_GetParamStringValue
 
 **********************************************************************/
 BOOL
-NetworkDevicesStatus_Validate
+InterfaceDevicesWifiExtender_Validate
     (
         ANSC_HANDLE                 hInsContext,
         char*                       pReturnParamName,
@@ -304,58 +276,59 @@ NetworkDevicesStatus_Validate
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if(g_pReports->bNDSPollingPeriodChanged)
+    if(g_pReports->bIDWPollingPeriodChanged)
     {
-        BOOL validated = ValidateNDSPeriod(g_pReports->uNDSPollingPeriod);    
+        BOOL validated = ValidateIDWPeriod(g_pReports->uIDWPollingPeriod);    
         if(!validated)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDSPollingPeriod));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uIDWPollingPeriod));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
         }
-        if( GetNDSHarvestingStatus() && g_pReports->uNDSPollingPeriod > GetNDSPollingPeriod())
+        if(GetIDWHarvestingStatus() && g_pReports->uIDWPollingPeriod > GetIDWPollingPeriod())
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDSPollingPeriod, GetNDSPollingPeriod() ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uIDWPollingPeriod, GetIDWPollingPeriod() ));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
         }
 
-        ULONG period = (g_pReports->bNDSReportingPeriodChanged == TRUE) ? g_pReports->uNDSReportingPeriod : GetNDSReportingPeriod();
+        ULONG period = (g_pReports->bIDWReportingPeriodChanged == TRUE) ? g_pReports->uIDWReportingPeriod : GetIDWReportingPeriod();
 
-        if(g_pReports->uNDSPollingPeriod > period )
+        if(g_pReports->uIDWPollingPeriod > period )
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDSPollingPeriod, period ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uIDWPollingPeriod, period ));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
-        }
+        }         
     }
 
-    if(g_pReports->bNDSReportingPeriodChanged)
+    if(g_pReports->bIDWReportingPeriodChanged)
     {
-        BOOL validated = ValidateNDSPeriod(g_pReports->uNDSReportingPeriod);    
+        BOOL validated = ValidateIDWPeriod(g_pReports->uIDWReportingPeriod);    
         if(!validated)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : NeighboringAPPollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDSReportingPeriod));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : NeighboringAPPollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uIDWReportingPeriod));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
         }
 
-        ULONG period = (g_pReports->bNDSPollingPeriodChanged == TRUE) ? g_pReports->uNDSPollingPeriod : GetNDSPollingPeriod();
+        ULONG period = (g_pReports->bIDWPollingPeriodChanged == TRUE) ? g_pReports->uIDWPollingPeriod : GetIDWPollingPeriod();
 
-        if(g_pReports->uNDSReportingPeriod < period )
+        if(g_pReports->uIDWReportingPeriod < period )
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] < Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDSReportingPeriod, period ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] < Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uIDWReportingPeriod, period ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
         }
-        if(GetNDSHarvestingStatus() && g_pReports->uNDSReportingPeriod > GetNDSReportingPeriod())
+        
+        if(GetIDWHarvestingStatus() && g_pReports->uIDWReportingPeriod > GetIDWReportingPeriod())
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDSReportingPeriod, GetNDSReportingPeriod() ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uIDWReportingPeriod, GetIDWReportingPeriod() ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
@@ -374,7 +347,7 @@ NetworkDevicesStatus_Validate
     prototype:
 
         ULONG
-        NetworkDevicesStatus_Commit
+        InterfaceDevicesWifiExtender_Commit
             (
                 ANSC_HANDLE                 hInsContext
             );
@@ -390,7 +363,7 @@ NetworkDevicesStatus_Validate
 
 **********************************************************************/
 ULONG
-NetworkDevicesStatus_Commit
+InterfaceDevicesWifiExtender_Commit
 (
     ANSC_HANDLE                 hInsContext
 )
@@ -399,26 +372,26 @@ NetworkDevicesStatus_Commit
     ULONG psmValue = 0;
     /* Network Device Parameters*/
 
-    if(g_pReports->bNDSEnabledChanged)
+    if(g_pReports->bIDWEnabledChanged)
     {
-    SetNDSHarvestingStatus(g_pReports->bNDSEnabled);
-    psmValue = g_pReports->bNDSEnabled;
-    SetNVRamULONGConfiguration(NetworkDevicesStatusEnabled, psmValue);
-    g_pReports->bNDSEnabledChanged = false;
+    SetIDWHarvestingStatus(g_pReports->bIDWEnabled);
+    psmValue = g_pReports->bIDWEnabled;
+    SetNVRamULONGConfiguration(InterfaceDevicesWifiExtenderEnabled, psmValue);
+    g_pReports->bIDWEnabledChanged = false;
     }
 
-    if(g_pReports->bNDSPollingPeriodChanged)
+    if(g_pReports->bIDWPollingPeriodChanged)
     {
-    SetNDSPollingPeriod(g_pReports->uNDSPollingPeriod);
-    SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
-    g_pReports->bNDSPollingPeriodChanged = false;
+    SetIDWPollingPeriod(g_pReports->uIDWPollingPeriod);
+    SetIDWOverrideTTL(GetIDWOverrideTTLDefault());
+    g_pReports->bIDWPollingPeriodChanged = false;
     }
 
-    if(g_pReports->bNDSReportingPeriodChanged)
+    if(g_pReports->bIDWReportingPeriodChanged)
     {
-    SetNDSReportingPeriod(g_pReports->uNDSReportingPeriod);
-    SetNDSOverrideTTL(GetNDSOverrideTTLDefault());  
-    g_pReports->bNDSReportingPeriodChanged = false;
+    SetIDWReportingPeriod(g_pReports->uIDWReportingPeriod);
+    SetIDWOverrideTTL(GetIDWOverrideTTLDefault());  
+    g_pReports->bIDWReportingPeriodChanged = false;
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
@@ -433,7 +406,7 @@ NetworkDevicesStatus_Commit
     prototype: 
 
         ULONG
-        NetworkDevicesStatus_Rollback
+        InterfaceDevicesWifiExtender_Rollback
             (
                 ANSC_HANDLE                 hInsContext
             );
@@ -450,28 +423,28 @@ NetworkDevicesStatus_Commit
 
 **********************************************************************/
 ULONG
-NetworkDevicesStatus_Rollback
+InterfaceDevicesWifiExtender_Rollback
     (
         ANSC_HANDLE                 hInsContext
     )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if(g_pReports->bNDSEnabledChanged)
+    if(g_pReports->bIDWEnabledChanged)
     {
-    g_pReports->bNDSEnabled = GetNDSHarvestingStatus();
-    g_pReports->bNDSEnabledChanged = false;
+    g_pReports->bIDWEnabled = GetIDWHarvestingStatus();
+    g_pReports->bIDWEnabledChanged = false;
     }
 
-    if(g_pReports->bNDSPollingPeriodChanged)
+    if(g_pReports->bIDWPollingPeriodChanged)
     {
-    g_pReports->uNDSPollingPeriod = GetNDSPollingPeriod();
-    g_pReports->bNDSPollingPeriodChanged = false;
+    g_pReports->uIDWPollingPeriod = GetIDWPollingPeriod();
+    g_pReports->bIDWPollingPeriodChanged = false;
     }
-    if(g_pReports->bNDSReportingPeriodChanged)
+    if(g_pReports->bIDWReportingPeriodChanged)
     {
-    g_pReports->uNDSReportingPeriod = GetNDSReportingPeriod();
-    g_pReports->bNDSReportingPeriodChanged = false;
+    g_pReports->uIDWReportingPeriod = GetIDWReportingPeriod();
+    g_pReports->bIDWReportingPeriodChanged = false;
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
@@ -480,7 +453,7 @@ NetworkDevicesStatus_Rollback
 }
 
 BOOL
-NetworkDevicesStatus_GetParamBoolValue
+InterfaceDevicesWifiExtender_GetParamBoolValue
 (
     ANSC_HANDLE                 hInsContext,
     char*                       ParamName,
@@ -493,7 +466,7 @@ NetworkDevicesStatus_GetParamBoolValue
     if ( AnscEqualString(ParamName, "Enabled", TRUE))
     {
         /* collect value */
-        *pBool    =  GetNDSHarvestingStatus();
+        *pBool    =  GetIDWHarvestingStatus();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *pBool ));
         return TRUE;
     }
@@ -503,7 +476,7 @@ NetworkDevicesStatus_GetParamBoolValue
 }
 
 BOOL
-NetworkDevicesStatus_SetParamBoolValue
+InterfaceDevicesWifiExtender_SetParamBoolValue
 (
     ANSC_HANDLE                 hInsContext,
     char*                       ParamName,
@@ -515,8 +488,8 @@ NetworkDevicesStatus_SetParamBoolValue
 
     if ( AnscEqualString(ParamName, "Enabled", TRUE))
     {
-        g_pReports->bNDSEnabledChanged = true;
-        g_pReports->bNDSEnabled = bValue;
+        g_pReports->bIDWEnabledChanged = true;
+        g_pReports->bIDWEnabled = bValue;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, bValue ));
         return TRUE;
     }

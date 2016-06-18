@@ -38,4 +38,10 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
 */
 char * getDeviceMac();
 
+/**
+ * @brief To get device CM MAC by querying stack
+ * @return deviceMAC
+*/
+char * getFullDeviceMac();
+
 #endif /* WEB_INTERFACE_H_ */

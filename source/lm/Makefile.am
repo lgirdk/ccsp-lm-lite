@@ -55,7 +55,10 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						cosa_reports_internal.c \
 						network_devices_traffic_avropack.c  \
 						cosa_ndtraffic_dml.c \ 
-						network_devices_traffic.c
+						network_devices_traffic.c \
+						extender_associated_devices.c \
+						extender_associated_devices_avropack.c \
+						cosa_extassocdevices_dml.c 
 
 
 libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpack -lbase64 -luuid

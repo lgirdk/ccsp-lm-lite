@@ -41,6 +41,7 @@ extern ANSC_HANDLE bus_handle;
 pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char deviceMAC[32]={'\0'}; 
+char fullDeviceMAC[32]={'\0'}; 
 
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
 static void macToLower(char macValue[]);
@@ -210,6 +211,16 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
 }
 
 
+char * getFullDeviceMac()
+{
+    if(strlen(fullDeviceMAC) == 0)
+    {
+        getDeviceMac();
+    }
+
+    return fullDeviceMAC;
+}
+
 char * getDeviceMac()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
@@ -242,6 +253,7 @@ char * getDeviceMac()
             
             }
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Calling macToLower to get deviceMacId\n"));
+            strcpy(fullDeviceMAC, parameterval[0]->parameterValue);
             macToLower(parameterval[0]->parameterValue);    
         }
         else

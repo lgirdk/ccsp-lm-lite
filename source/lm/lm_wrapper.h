@@ -120,6 +120,46 @@ typedef struct {
     	unsigned char ncId[LM_GEN_STR_SIZE];
 }LM_moca_cpe_t;
 
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+
+typedef struct _ClientInfo
+{
+
+char* MAC_Address;
+char* SSID_Type;
+char* Device_Name;
+char* SSID_Name;
+char* RSSI;
+
+struct _ClientInfo* next;
+
+} ClientInfo;
+
+typedef struct _ClientInfoLists
+{
+int numClient;
+ClientInfo* connectedDeviceList;
+
+} ClientInfoLists;
+
+typedef struct _ExtenderInfo
+{
+
+char* extender_ip;
+char* client_info_result;
+ClientInfoLists* list;
+
+} ExtenderInfo;
+
+typedef struct _ExtenderList
+{
+ExtenderInfo* info;
+struct _ExtenderList* next;
+} ExtenderList;
+
 typedef struct{
 	unsigned char phyAddr[18];
 	unsigned char ipAddr[64];
@@ -166,5 +206,9 @@ void getAddressSource(char *physAddress, char *pAddressSource);
 void Wifi_Server_Thread_func();
 #endif
 int getIPAddress(char *physAddress,char *IPAddress);
+
+
+int QueryMocaExtender(char* ip_address);
+int IsExtenderSynced(char* extender_ip);
 
 #endif
