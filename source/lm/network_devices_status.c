@@ -60,12 +60,13 @@ bool isvalueinarray(ULONG val, ULONG *arr, int size);
 
 void* StartNetworkDeviceStatusHarvesting( void *arg );
 int _syscmd(char *cmd, char *retBuf, int retBufSize);
-void add_to_list(PLmObjectHost host);
-void print_list();
-void delete_list();
+void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head);
+void print_list(struct networkdevicestatusdata *head);
+void delete_list(struct networkdevicestatusdata **head);
 
 static struct networkdevicestatusdata *headnode = NULL;
 static struct networkdevicestatusdata *currnode = NULL;
+static struct networkdevicestatusdata *headnodeextender = NULL;
 
 extern pthread_mutex_t LmHostObjectMutex;
 
@@ -299,7 +300,7 @@ int _syscmd(char *cmd, char *retBuf, int retBufSize)
     return 0;
 }
 
-void add_to_list(PLmObjectHost host)
+void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
@@ -334,9 +335,9 @@ void add_to_list(PLmObjectHost host)
 
 
 
-        if (headnode == NULL)
+        if (*head == NULL)
         {
-            headnode = currnode = ptr;
+            *head = currnode = ptr;
         }
         else
         {
@@ -350,12 +351,12 @@ void add_to_list(PLmObjectHost host)
     return;
 }
 
-void print_list()
+void print_list(struct networkdevicestatusdata *head)
 {
     int z = 0;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    struct networkdevicestatusdata  *ptr = headnode;
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Head Ptr [%lx]\n", (ulong)headnode));
+    struct networkdevicestatusdata  *ptr = head;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Head Ptr [%lx]\n", (ulong)head));
     while (ptr != NULL)
     {
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Head Ptr [%lx] TimeStamp[%d] for Node[%d] with SSID[%s] \n", __FUNCTION__ ,(ulong)ptr, (int)ptr->timestamp.tv_sec, z, ptr->device_mac));
@@ -367,11 +368,11 @@ void print_list()
 }
 
 /* Function to delete the entire linked list */
-void delete_list()
+void delete_list(struct networkdevicestatusdata **head)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    currnode = headnode;
+    currnode = *head;
     struct networkdevicestatusdata* next = NULL;
 
     while (currnode != NULL)
@@ -385,7 +386,7 @@ void delete_list()
         free(currnode);
         currnode = next;
     }
-    headnode = currnode = NULL;
+    *head = currnode = NULL;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 
     return;
@@ -403,17 +404,43 @@ void GetLMHostData()
 
         for(i = 0; i < array_size; i++)
         {
+
             int LeaseTimeRemaining = lmHosts.hostArray[i]->LeaseTime - time(NULL);
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LeaseTime [%d]  CurrentTime[%d] LeaseTimeRemaining [%d] \n", lmHosts.hostArray[i]->LeaseTime, time(NULL), LeaseTimeRemaining));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AddressSource [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource]));
+            
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, bClientReady [%d] \n", lmHosts.hostArray[i]->bClientReady ));
 
-            if( (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ))
+            if (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL)
+                {
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent [%x] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]));
+                }
+            else
+                {
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent pointer is NULL [%x] \n"));
+                }
+
+            printf("RDK_LOG_DEBUG, bClientReady [%d] \n", lmHosts.hostArray[i]->bClientReady);
+
+            if ( (!lmHosts.hostArray[i]->bClientReady) && (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ))
                 continue;
 
-            add_to_list(lmHosts.hostArray[i]);
+            if (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL)
+            {
+                if(!strcasecmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent], getFullDeviceMac()))
+                    {
+                        add_to_list(lmHosts.hostArray[i], &headnode);
+                    }
+                else
+                    {
+                        add_to_list(lmHosts.hostArray[i], &headnodeextender);
+                    }
+            }
+
         }
         
-        print_list();
+        print_list(headnode);
+        print_list(headnodeextender);
 
     } // end of if statement
     else
@@ -450,8 +477,17 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
                     network_devices_status_report(ptr);
-                    delete_list();
+                    delete_list(&headnode);
                 }
+
+            ptr = headnodeextender;
+            if(ptr)
+                {
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
+                    network_devices_status_report(ptr);
+                    delete_list(&headnodeextender);
+                }
+
             currentReportingPeriod = 0;
         }
 

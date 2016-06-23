@@ -143,6 +143,18 @@
               <type>int</type>
               <syntax>int</syntax>
             </parameter>
+            <parameter>
+              <name>X_RDKCENTRAL-COM_Parent</name>
+              <type>string(18)</type>
+              <syntax>string</syntax>
+              <writable>false</writable>
+            </parameter>
+            <parameter>
+              <name>X_RDKCENTRAL-COM_DeviceType</name>
+              <type>string(64)</type>
+              <syntax>string</syntax>
+              <writable>false</writable>
+            </parameter>                        
           </parameters>
           <objects>
             <object>
@@ -342,7 +354,82 @@
                         </parameters>               
                     </object>
                 </objects>                    
-            </object>                                                              
+            </object>
+            <object>
+                <name>InterfaceDevicesWifiExtender</name>
+                <objectType>object</objectType>
+                <functions>
+                    <func_GetParamBoolValue>InterfaceDevicesWifiExtender_GetParamBoolValue</func_GetParamBoolValue>
+                    <func_GetParamUlongValue>InterfaceDevicesWifiExtender_GetParamUlongValue</func_GetParamUlongValue>
+                    <func_SetParamBoolValue>InterfaceDevicesWifiExtender_SetParamBoolValue</func_SetParamBoolValue>
+                    <func_SetParamUlongValue>InterfaceDevicesWifiExtender_SetParamUlongValue</func_SetParamUlongValue>
+                    <func_GetParamStringValue>InterfaceDevicesWifiExtender_GetParamStringValue</func_GetParamStringValue>
+                    <func_Validate>InterfaceDevicesWifiExtender_Validate</func_Validate>
+                    <func_Commit>InterfaceDevicesWifiExtender_Commit</func_Commit>
+                    <func_Rollback>InterfaceDevicesWifiExtender_Rollback</func_Rollback>
+                </functions>
+                <parameters>
+                    <parameter>
+                        <name>Enabled</name>
+                        <type>boolean</type>
+                        <syntax>bool</syntax>
+                        <writable>true</writable>
+                    </parameter>
+                    <parameter>
+                        <name>ReportingPeriod</name>
+                        <type>unsignedInt</type>
+                        <syntax>uint32</syntax>
+                        <writable>true</writable>
+                    </parameter>
+                    <parameter>
+                        <name>PollingPeriod</name>
+                        <type>unsignedInt</type>
+                        <syntax>uint32</syntax>
+                        <writable>true</writable>
+                    </parameter>
+                    <parameter>
+                        <name>Schema</name>
+                        <type>string</type>
+                        <syntax>string</syntax>
+                        <writable>false</writable>
+                    </parameter>
+                    <parameter>
+                        <name>SchemaID</name>
+                        <type>string</type>
+                        <syntax>string</syntax>
+                        <writable>false</writable>
+                    </parameter>
+                </parameters>
+                <objects>
+                    <object>
+                        <name>Default</name>
+                        <objectType>object</objectType>
+                        <functions>
+                            <func_GetParamUlongValue>InterfaceDevicesWifiExtender_Default_GetParamUlongValue</func_GetParamUlongValue>
+                        </functions>
+                        <parameters>
+                            <parameter>
+                                <name>ReportingPeriod</name>
+                                <type>unsignedInt</type>
+                                <syntax>uint32</syntax>
+                                <writable>false</writable>
+                            </parameter>
+                            <parameter>
+                                <name>PollingPeriod</name>
+                                <type>unsignedInt</type>
+                                <syntax>uint32</syntax>
+                                <writable>false</writable>
+                            </parameter>
+                            <parameter>
+                                <name>OverrideTTL</name>
+                                <type>unsignedInt</type>
+                                <syntax>uint32</syntax>
+                                <writable>false</writable>
+                            </parameter> 
+                        </parameters>               
+                    </object>
+                </objects>                    
+            </object>                                                                           
         </objects>
     </object>    
  </objects>

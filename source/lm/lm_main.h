@@ -160,7 +160,9 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_CISCO_COM_UserDefinedSoftwareVendorId 16
 #define LM_HOST_AddressSource                           17
 #define LM_HOST_Comments                                18
-#define LM_HOST_NumStringPara                           20 
+#define LM_HOST_X_RDKCENTRAL_COM_Parent                 19
+#define LM_HOST_X_RDKCENTRAL_COM_DeviceType             20
+#define LM_HOST_NumStringPara                           22 
 
 #define LM_HOST_IPAddress_IPAddressId     0
 #define LM_HOST_IPAddress_IPAddressSourceId     1
@@ -314,5 +316,8 @@ Hosts_AddHost(int instanceNum);
 
 void Hosts_RmHosts();
 void LM_main();
+
+char* FindParentIPInExtenderList(char* mac_address);
+char* FindMACByIPAddress(char * ip_address);
 
 #endif

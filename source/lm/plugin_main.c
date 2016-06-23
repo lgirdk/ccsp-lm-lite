@@ -32,6 +32,7 @@
 #include "cosa_hosts_dml.h"
 #include "cosa_ndstatus_dml.h"
 #include "cosa_ndtraffic_dml.h"
+#include "cosa_extassocdevices_dml.h"
 
 #include "cosa_reports_internal.h"
 
@@ -110,7 +111,16 @@ COSA_Init
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_GetParamUlongValue",  NetworkDevicesTraffic_Default_GetParamUlongValue);
 
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_GetParamUlongValue",  InterfaceDevicesWifiExtender_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_GetParamBoolValue",  InterfaceDevicesWifiExtender_GetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_GetParamStringValue",  InterfaceDevicesWifiExtender_GetParamStringValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_SetParamBoolValue",  InterfaceDevicesWifiExtender_SetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_SetParamUlongValue",  InterfaceDevicesWifiExtender_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Validate",  InterfaceDevicesWifiExtender_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Commit",  InterfaceDevicesWifiExtender_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Rollback",  InterfaceDevicesWifiExtender_Rollback);
 
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Default_GetParamUlongValue",  InterfaceDevicesWifiExtender_Default_GetParamUlongValue);
     
      /* Create LMLite Object for Settings */
     g_pReports = (PCOSA_DATAMODEL_REPORTS)CosaReportsCreate();

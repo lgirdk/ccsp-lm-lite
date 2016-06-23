@@ -286,13 +286,23 @@ NetworkDevicesTraffic_Validate
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
         }
-        if(g_pReports->uNDTPollingPeriod > GetNDTPollingPeriod())
+        if(GetNDTHarvestingStatus() && g_pReports->uNDTPollingPeriod > GetNDTPollingPeriod())
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod, GetNDTPollingPeriod() ));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
         }
+
+        ULONG period = (g_pReports->bNDTReportingPeriodChanged == TRUE) ? g_pReports->uNDTReportingPeriod : GetNDTReportingPeriod();
+
+        if(g_pReports->uNDTPollingPeriod > period )
+        {
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod, period ));
+            AnscCopyString(pReturnParamName, "PollingPeriod");
+            *puLength = AnscSizeOfString("PollingPeriod");
+            return FALSE;           
+        }        
     }
 
     if(g_pReports->bNDTReportingPeriodChanged)
@@ -305,14 +315,17 @@ NetworkDevicesTraffic_Validate
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
         }
-        if(g_pReports->uNDTReportingPeriod < GetNDTPollingPeriod())
+
+        ULONG period = (g_pReports->bNDTPollingPeriodChanged == TRUE) ? g_pReports->uNDTPollingPeriod : GetNDTPollingPeriod();
+
+        if(g_pReports->uNDTReportingPeriod < period )
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] < Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, GetNDTPollingPeriod() ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] < Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, period ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
         }
-        if(g_pReports->uNDTReportingPeriod > GetNDTReportingPeriod())
+        if(GetNDTHarvestingStatus() && g_pReports->uNDTReportingPeriod > GetNDTReportingPeriod())
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, GetNDTReportingPeriod() ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
