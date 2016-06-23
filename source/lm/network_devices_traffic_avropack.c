@@ -372,6 +372,18 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
 
       //data array block
 
+      memset(CpeMacHoldingBuf, 0, sizeof CpeMacHoldingBuf);
+      memset(CpeMacid, 0, sizeof CpeMacid);
+      
+      for (k = 0; k < 6; k++ )
+      {
+        /* copy 2 bytes */
+        CpeMacHoldingBuf[ k * 2 ] = ptr->device_mac[ k * 3 ];
+        CpeMacHoldingBuf[ k * 2 + 1 ] = ptr->device_mac[ k * 3 + 1 ];
+        CpeMacid[ k ] = (unsigned char)strtol(&CpeMacHoldingBuf[ k * 2 ], NULL, 16);
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Mac address = %0x\n", CpeMacid[ k ] ));
+      }
+
       //device_mac - fixed 6 bytes
       avro_value_get_by_name(&dr, "device_id", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
@@ -379,7 +391,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
       avro_value_get_by_name(&drField, "mac_address", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_set_fixed(&optional, ptr->device_mac, 6);
+      avro_value_set_fixed(&optional, CpeMacid, 6);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tmac_address\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
