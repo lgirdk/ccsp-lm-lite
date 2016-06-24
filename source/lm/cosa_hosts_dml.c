@@ -285,6 +285,11 @@ Hosts_GetParamUlongValue
         *puLong = g_Client_Poll_interval;
         return TRUE;
     }
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync", TRUE))
+    {
+		*puLong = 0;
+        return TRUE;
+    }
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -314,6 +319,11 @@ Hosts_SetParamUlongValue
 							return ANSC_STATUS_FAILURE;
 						}
 			 }
+        return TRUE;
+    }
+ 	if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync", TRUE))
+    {
+	
         return TRUE;
     }
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */

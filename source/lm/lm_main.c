@@ -290,7 +290,8 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 				LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
    		        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString(addressSource);
 		}
-
+	if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
+	{
 		if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
 		{
 			if(state) 
@@ -349,7 +350,7 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
         pHost->activityChangeTime = time((time_t*)NULL);
 		logOnlineDevicesCount();
 
-		
+	}
 	PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
     }
 	#ifdef USE_NOTIFY_COMPONENT

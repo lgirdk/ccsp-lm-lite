@@ -433,6 +433,35 @@ OUT:
     }
     return (i);
 }
+
+void SyncWiFi()
+{
+
+	parameterValStruct_t    value = { "Device.WiFi.X_RDKCENTRAL-COM_WiFiHost_Sync", "true", ccsp_boolean};
+	char compo[256] = "eRT.com.cisco.spvtg.ccsp.wifi";
+	char bus[256] = "/com/cisco/spvtg/ccsp/wifi";
+	char* faultParam = NULL;
+	int ret = 0;	
+
+    CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Get WiFi Clients \n",__FUNCTION__));
+
+	ret = CcspBaseIf_setParameterValues(
+		  bus_handle,
+		  compo,
+		  bus,
+		  0,
+		  0,
+		  &value,
+		  1,
+		  TRUE,
+		  &faultParam
+		  );
+	if(ret == CCSP_SUCCESS)
+	{
+		CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Failed ret %d\n",__FUNCTION__,ret));
+	}	
+}
+
 #ifdef USE_NOTIFY_COMPONENT
 void Wifi_Server_Thread_func()
 {
@@ -477,6 +506,8 @@ void Wifi_Server_Thread_func()
 	
 	listen(sockfd,10);
 	clilen = sizeof(cli_addr);
+
+	SyncWiFi();
 	
     while(1){
         newsockfd = accept(sockfd,(struct sockaddr *) &cli_addr,&clilen);
@@ -501,7 +532,8 @@ void Wifi_Server_Thread_func()
 				hosts.host[i].Status = ntohl(hosts.host[i].Status);
 				pos2=strstr(hosts.host[i].ssid,".1");
 				pos5=strstr(hosts.host[i].ssid,".2");
-                                if(hosts.host[i].Status)
+				hosts.host[i].phyAddr[17] = '\0';
+                if(hosts.host[i].Status)
 				{
 					if(pos2!=NULL)
 					{

@@ -99,9 +99,9 @@ struct arp_pkt {
 };
 
 typedef struct {
-	unsigned char phyAddr[18];
     	unsigned char ssid[LM_GEN_STR_SIZE];
     	unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
+		unsigned char phyAddr[32]; /* Byte alignment*/
     	int RSSI;
 #ifdef USE_NOTIFY_COMPONENT
     	int Status;
