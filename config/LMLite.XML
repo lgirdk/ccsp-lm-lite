@@ -35,6 +35,12 @@
               <syntax>uint32</syntax>
 			  <writable>true</writable>
             </parameter>
+			<parameter>
+              <name>X_RDKCENTRAL-COM_LMHost_Sync</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+			  <writable>true</writable>
+            </parameter>
       </parameters>
       <objects>
         <object>
