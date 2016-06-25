@@ -24,6 +24,10 @@
 #include "stdlib.h"
 #include "ccsp_dm_api.h"
 
+#ifdef INCLUDE_BREAKPAD
+#include "breakpad_wrapper.h"
+#endif
+
 #define DEBUG_INI_NAME "/etc/debug.ini"
 extern char*                                pComponentName;
 char                                        g_Subsystem[32]         = {0};
@@ -239,6 +243,9 @@ int main(int argc, char* argv[])
     }
 
     pComponentName          = CCSP_COMPONENT_NAME_LMLITE;
+#ifdef INCLUDE_BREAKPAD
+    breakpad_ExceptionHandler();
+#endif
 
 #if  defined(_ANSC_WINDOWSNT)
 
