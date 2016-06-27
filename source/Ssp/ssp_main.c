@@ -189,7 +189,7 @@ void sig_handler(int sig)
     	/* get stack trace first */
     	_print_stack_backtrace();
     	CcspTraceInfo(("Signal %d received, exiting!\n", sig));
-    	exit(0);
+    	//exit(0);
     }
 
 }
