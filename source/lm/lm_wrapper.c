@@ -1221,7 +1221,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
 		output[strlen(output) - 1] = '\0';
 	}
 	strcpy(IPAddress,output);
-    fclose(fp);
+    pclose(fp);
 
     return 0;
 
