@@ -1263,18 +1263,19 @@ void lm_wrapper_get_dhcpv4_client()
 		
         if ( !pHost )
         {
-            pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
+			 if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
+			 {
+		        		pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
 
-            if ( pHost )
-            {
-                if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-                    pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
-                }
-
-
-            }
+		    	    	if ( pHost )
+		        		{
+		            		if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+		            		{
+		    	           		 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+			               		 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+		           		 	}
+		        		}	
+			} 
         }
 		
         if ( pHost )
