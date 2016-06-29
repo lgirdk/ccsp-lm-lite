@@ -1548,14 +1548,14 @@ void Hosts_LoggingThread()
 		TotalOffLineDev = TotalDevCount - TotalOnlineDev;
 		
 		CcspTraceWarning(("------------------------AssociatedClientsInfo-----------------------\n"));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Clients_Connected = %d \n",TotalDevCount));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Online_Clients    = %d \n",TotalOnlineDev));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Offline_Clients   = %d \n",TotalOffLineDev));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_WiFi_Clients      = %d \n",TotalWiFiDev));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_WiFi-2.4G_Clients = %d \n",Radio_2_Dev));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_WiFi-5.0G_Clients = %d \n",Radio_5_Dev));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_Ethernet_Clients  = %d \n",TotalEthDev));
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Total_MoCA_Clients      = %d \n",TotalMoCADev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Clients_Connected=%d\n",TotalDevCount));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Online_Clients=%d\n",TotalOnlineDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Offline_Clients=%d\n",TotalOffLineDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi_Clients=%d\n",TotalWiFiDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-2.4G_Clients=%d\n",Radio_2_Dev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-5.0G_Clients=%d\n",Radio_5_Dev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Ethernet_Clients=%d\n",TotalEthDev));
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_MoCA_Clients=%d\n",TotalMoCADev));
 		CcspTraceWarning(("-------------------------------------------------------------------\n"));
 		
 		TotalDevCount = 0;
