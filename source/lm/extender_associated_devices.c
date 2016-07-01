@@ -68,7 +68,7 @@ ULONG IDWOverrideTTLDefault = 300;
 bool isvalueinarray_idw(ULONG val, ULONG *arr, int size);
 
 void* StartAssociatedDeviceHarvesting( void *arg );
-void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG devices, wifi_associated_dev_t* devicedata, char* freqband, ULONG channel, char* intfcmacid);
+void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG devices, wifi_associated_dev_t* devicedata, char* freqband, ULONG channel, char* intfcmacid, char* extenderMac);
 void print_list_idw( struct associateddevicedata *head );
 void delete_list_idw( struct associateddevicedata *head );
 int GetWiFiApGetAssocDevicesData(int ServiceType);
@@ -238,7 +238,7 @@ ULONG GetIDWOverrideTTLDefault()
 }
 
 
-void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG devices, wifi_associated_dev_t* devicedata, char* freqband, ULONG channel, char* intfcmacid)
+void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG devices, wifi_associated_dev_t* devicedata, char* freqband, ULONG channel, char* intfcmacid, char* extenderMac)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
@@ -258,6 +258,7 @@ void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG d
         ptr->devicedata = devicedata;
         ptr->radioOperatingFrequencyBand = strdup(freqband); //Possible value 2.4Ghz and 5.0 Ghz
         ptr->radioChannel = channel;
+        ptr->parent = strdup(extenderMac);
         ptr->next = NULL;
         gettimeofday(&(ptr->timestamp), NULL);
         ptr->timestamp.tv_sec -= getTimeOffsetFromUtc();
@@ -319,6 +320,7 @@ void delete_list_idw(  struct associateddevicedata *headnode )
         free(currnode->bssid);
         free(currnode->radioOperatingFrequencyBand);
         free(currnode->devicedata);
+        free(currnode->parent);
         free(currnode);
         currnode = next;
     }
@@ -366,19 +368,6 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 
             wifi_associated_dev_array = malloc (sizeof(*wifi_associated_dev_array));
 
-            wifi_associated_dev_array->cli_RSSI = atoi(tmp->RSSI);
-
-
-            if((strstr(tmp->SSID_Type,"2.4"))) 
-                {
-                    strcpy(wifi_associated_dev_array->cli_OperatingStandard, "2.4Ghz");
-                    strcpy(freqband, "2.4");
-                }
-            else
-                {
-                    strcpy(wifi_associated_dev_array->cli_OperatingStandard, "5Ghz");
-                    strcpy(freqband, "5.0");
-                }
 
             for (k = 0; k < 6; k++ )
             {
@@ -388,16 +377,50 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
             wifi_associated_dev_array->cli_MACAddress[ k ] = (unsigned char)strtol(&CpeMacHoldingBuf[ k * 2 ], NULL, 16);
             }
 
+            memset(wifi_associated_dev_array->cli_IPAddress, 0, sizeof wifi_associated_dev_array->cli_IPAddress);
+
+            wifi_associated_dev_array->cli_AuthenticationState = 0;
+            wifi_associated_dev_array->cli_LastDataDownlinkRate= 0;
+            wifi_associated_dev_array->cli_LastDataUplinkRate= 0;
+            wifi_associated_dev_array->cli_SignalStrength= atoi(tmp->RSSI) + 100;
+            wifi_associated_dev_array->cli_Retransmissions= 0;
+            wifi_associated_dev_array->cli_Active= TRUE;
+
+            if((strstr(tmp->SSID_Type,"2.4"))) 
+                {
+                    strcpy(wifi_associated_dev_array->cli_OperatingStandard, "_2_4GHz");
+                    strcpy(freqband, "_2_4GHz");
+                }
+            else
+                {
+                    strcpy(wifi_associated_dev_array->cli_OperatingStandard, "_5GHz");
+                    strcpy(freqband, "_5GHz");
+                }
+
+            memset(wifi_associated_dev_array->cli_OperatingChannelBandwidth, 0, sizeof wifi_associated_dev_array->cli_OperatingChannelBandwidth);
+            wifi_associated_dev_array->cli_SNR= 0; 
+            memset(wifi_associated_dev_array->cli_InterferenceSources, 0, sizeof wifi_associated_dev_array->cli_InterferenceSources);
+            wifi_associated_dev_array->cli_DataFramesSentAck= 0;
+            wifi_associated_dev_array->cli_DataFramesSentNoAck= 0;
+            wifi_associated_dev_array->cli_BytesSent= 0;
+            wifi_associated_dev_array->cli_BytesReceived= 0;
+            wifi_associated_dev_array->cli_RSSI = atoi(tmp->RSSI);
+            wifi_associated_dev_array->cli_MinRSSI= 0;
+            wifi_associated_dev_array->cli_MaxRSSI= 0;
+            wifi_associated_dev_array->cli_Disassociations= 0;
+            wifi_associated_dev_array->cli_AuthenticationFailures= 0;
+
+
             if ( ServiceType == PUBLIC )
             {
                 headnode = (struct associateddevicedata **)headnodepublic;
-                add_to_list_idw((struct associateddevicedata **)&headnode,  tmp->SSID_Name, array_size, wifi_associated_dev_array, (char*)&freqband, channel, (char*)&interfaceMAC);
+                add_to_list_idw((struct associateddevicedata **)&headnode,  tmp->SSID_Name, array_size, wifi_associated_dev_array, (char*)&freqband, channel, (char*)&interfaceMAC, parentextender);
                 headnodepublic = (struct associateddevicedata *)headnode; //Important - headnode only change when it is a NEW list
             }
             else
             {
                 headnode = (struct associateddevicedata **)headnodeprivate;
-                add_to_list_idw((struct associateddevicedata **)&headnode, tmp->SSID_Name, array_size, wifi_associated_dev_array, (char*)&freqband, channel, (char*)&interfaceMAC);
+                add_to_list_idw((struct associateddevicedata **)&headnode, tmp->SSID_Name, array_size, wifi_associated_dev_array, (char*)&freqband, channel, (char*)&interfaceMAC, parentextender);
                 headnodeprivate = (struct associateddevicedata *)headnode; //Important - headnode only change when it is a NEW list
             }
 

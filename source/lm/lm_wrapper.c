@@ -1951,7 +1951,6 @@ int QueryMocaExtender(char* ip_address)
         return ret;
     }
 
-    curl_global_init(CURL_GLOBAL_ALL);
 
     struct MemoryStruct chunk;
 
@@ -1990,7 +1989,7 @@ int QueryMocaExtender(char* ip_address)
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
         curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);

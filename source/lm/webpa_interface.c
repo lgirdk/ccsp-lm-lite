@@ -61,10 +61,10 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     // Pack the message using msgpck WRP notification format and then using base64        
     packedMsg = packStructure(serviceName, dest, trans_id, payload, contentType,payload_len);              
     
-    if(consoleDebugEnable)    
+/*    if(consoleDebugEnable)    
         {
             fprintf(stderr, "RDK_LOG_DEBUG, base64 encoded msgpack packed data containing %d bytes is : %s\n",strlen(packedMsg),packedMsg);
-        }
+        }*/
     
     // set this packed message as value of WebPA Post parameter 
     val.parameterValue = packedMsg;
@@ -170,8 +170,8 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
     msgpack_pack_str(&pk, strlen(contentType));
     msgpack_pack_str_body(&pk, contentType,strlen(contentType));
     
-    if(consoleDebugEnable)
-        fprintf(stderr, "RDK_LOG_DEBUG,msgpack encoded data contains %d bytes and data is : %s\n",(int)sbuf.size,sbuf.data);
+    /*if(consoleDebugEnable)
+        fprintf(stderr, "RDK_LOG_DEBUG,msgpack encoded data contains %d bytes and data is : %s\n",(int)sbuf.size,sbuf.data);*/
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,-----------End of msgpack encoding------------\n"));
     // End of msgpack encoding
@@ -185,7 +185,7 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
     b64buffer[encodeSize] = '\0' ;    
  
     
-    if(consoleDebugEnable)
+    /*if(consoleDebugEnable)
     {
     int i;
     fprintf(stderr, "RDK_LOG_DEBUG,\n\n b64 encoded data is : ");
@@ -193,7 +193,7 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
         fprintf(stderr,"%c", b64buffer[i]);      
 
     fprintf(stderr,"\n\n");       
-    }
+    }*/
 
     //CcspLMLiteTrace(("RDK_LOG_DEBUG,\nb64 encoded data length is %d\n",i));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,---------- End of Base64 Encode -------------\n"));

@@ -65,7 +65,6 @@ void print_list(struct networkdevicestatusdata *head);
 void delete_list(struct networkdevicestatusdata **head);
 
 static struct networkdevicestatusdata *headnode = NULL;
-static struct networkdevicestatusdata *currnode = NULL;
 static struct networkdevicestatusdata *headnodeextender = NULL;
 
 extern pthread_mutex_t LmHostObjectMutex;
@@ -346,12 +345,21 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
 
         if (*head == NULL)
         {
-            *head = currnode = ptr;
+            *head = ptr;
         }
         else
         {
-            currnode->next = ptr;
-            currnode = ptr;
+            struct networkdevicestatusdata *prevnode, *currnode;
+
+            // transverse to end of list and append new list
+            prevnode = *head;
+            currnode = (*head)->next;
+            while ( currnode != NULL)
+            {
+                prevnode = currnode;
+                currnode = currnode->next;
+            };
+            prevnode->next = ptr; // add to list
         }
     }
 
@@ -381,7 +389,7 @@ void delete_list(struct networkdevicestatusdata **head)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    currnode = *head;
+    struct networkdevicestatusdata* currnode = *head;
     struct networkdevicestatusdata* next = NULL;
 
     while (currnode != NULL)
@@ -395,7 +403,7 @@ void delete_list(struct networkdevicestatusdata **head)
         free(currnode);
         currnode = next;
     }
-    *head = currnode = NULL;
+    
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 
     return;
@@ -426,7 +434,7 @@ void GetLMHostData()
                 }
             else
                 {
-                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent pointer is NULL [%x] \n"));
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent pointer is NULL \n"));
                 }
 
             printf("RDK_LOG_DEBUG, bClientReady [%d] \n", lmHosts.hostArray[i]->bClientReady);
@@ -485,16 +493,18 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
             if(ptr)
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
-                    network_devices_status_report(ptr);
+                    network_devices_status_report(ptr, FALSE);
                     delete_list(&headnode);
+                    headnode = NULL;
                 }
 
             ptr = headnodeextender;
             if(ptr)
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
-                    network_devices_status_report(ptr);
+                    network_devices_status_report(ptr, TRUE);
                     delete_list(&headnodeextender);
+                    headnodeextender = NULL;
                 }
 
             currentReportingPeriod = 0;
