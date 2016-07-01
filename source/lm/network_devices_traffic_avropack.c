@@ -349,7 +349,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
   //Data Field block
 
   avro_value_get_by_name(&adr, "data", &adrField, NULL);
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, NetworkDeviceStatusReports - data array\tType: %d\n", avro_value_get_type(&adrField)));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, NetworkDevicesTrafficReports - data array\tType: %d\n", avro_value_get_type(&adrField)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
   //adrField now contains a reference to the AssociatedDeviceReportsArray
@@ -368,7 +368,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
 
       //Append a DeviceReport item to array
       avro_value_append(&adrField, &dr, NULL);
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice Status Report\tType: %d\n", avro_value_get_type(&dr)));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice Traffic Report\tType: %d\n", avro_value_get_type(&dr)));
 
       //data array block
 
@@ -417,22 +417,24 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
       // external_bytes_up
-      avro_value_get_by_name(&optional, "external_bytes_up", &drField, NULL);
+      avro_value_get_by_name(&dr, "external_bytes_up", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, status\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_set_branch(&drField, 1, &optional);
       avro_value_set_long(&optional, ptr->external_bytes_up);
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \external_bytes_up\tType: %d\n", avro_value_get_type(&optional)));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \texternal_bytes_up\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
       // external_bytes_down
-      avro_value_get_by_name(&optional, "external_bytes_down", &drField, NULL);
+      avro_value_get_by_name(&dr, "external_bytes_down", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, status\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_set_branch(&drField, 1, &optional);
       avro_value_set_long(&optional, ptr->external_bytes_down);
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \external_bytes_down\tType: %d\n", avro_value_get_type(&optional)));      
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \texternal_bytes_down\tType: %d\n", avro_value_get_type(&optional)));      
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      i++;
 	}
 
 #if SIMULATION
@@ -471,7 +473,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
   b64buffer = malloc(decodesize * sizeof(uint8_t));
   b64_encode( (uint8_t*)AvroSerializedBuf, AvroSerializedSize, b64buffer);
 
-  if ( consoleDebugEnable )
+/*  if ( consoleDebugEnable )
   {
     fprintf( stderr, "\nAVro serialized data\n");
     for (k = 0; k < (int)AvroSerializedSize ; k++)
@@ -491,7 +493,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
       fprintf( stderr, "%c", b64buffer[k]);
     }
     fprintf( stderr, "\n\n");
-  }
+  }*/
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
 

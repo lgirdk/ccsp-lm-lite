@@ -74,6 +74,7 @@ char* radioOperatingFrequencyBand; //Possible value 2.4Ghz and 5.0 Ghz
 ULONG radioChannel;  // Possible Value between 1-11
 ULONG numAssocDevices;
 wifi_associated_dev_t* devicedata;
+char* parent;
 
 struct associateddevicedata *next;
 };

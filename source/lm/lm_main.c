@@ -74,6 +74,8 @@
 **************************************************************************/
 
 #include <time.h>
+#include <curl/curl.h>
+
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_main.h"
@@ -1406,9 +1408,11 @@ void Hosts_SyncMoCA()
 						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
 						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId] ));
 
-						if(!IsExtenderSynced(pHost->pStringParaValue[LM_HOST_IPAddressId]))
+						//if(!IsExtenderSynced(pHost->pStringParaValue[LM_HOST_IPAddressId]))
+						int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
+						if(!ret)						
 						{
-							int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
+							//int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
 
 							CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s QueryMocaExtender ret value %d \n", __FUNCTION__, ret));
 
@@ -1436,6 +1440,10 @@ void Hosts_SyncMoCA()
 									pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(FindMACByIPAddress(parent_ipAddress));
 									LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 								}
+							else
+								{
+									LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+								}	
 						}
 					}
 				else
@@ -1852,10 +1860,13 @@ void LM_main()
 						}
 			 }
 		}
+
 	#ifdef FEATURE_SUPPORT_RDKLOG
 		rdk_logger_init(DEBUG_INI_NAME);
 	#endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
+
+    curl_global_init(CURL_GLOBAL_ALL);
 
     Hosts_PollHost();
 
