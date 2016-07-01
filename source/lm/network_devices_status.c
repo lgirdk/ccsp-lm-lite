@@ -328,10 +328,19 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
         ptr->timestamp.tv_sec -= tm_offset;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
-        ptr->parent = strdup("11:22:33:44:55:66");
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->parent ));
-        ptr->device_type = strdup("Gateway");
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->device_type ));
+         if(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent])
+                ptr->parent = strdup(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
+        else
+                ptr->parent = strdup("empty");
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent[%s] \n",ptr->parent ));
+
+         if(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType])
+                ptr->device_type = strdup(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
+        else
+                ptr->device_type = strdup("empty");
+                       
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceType[%s] \n",ptr->device_type ));
 
 
 
