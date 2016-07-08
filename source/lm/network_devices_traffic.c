@@ -87,6 +87,24 @@ void WaitForSamaphoreTimeoutNDT()
     sem_timedwait(&mutex, &ts); // Wait for trigger
 }
 
+struct networkdevicetrafficdata* FindMacInLinkedList(char* device_mac)
+{
+    struct networkdevicetrafficdata* ptr  = headnode;
+    struct networkdevicetrafficdata* retptr  = NULL;
+
+    while (ptr != NULL)
+    {
+        if(!strcmp(ptr->device_mac, device_mac))
+        {
+            retptr = ptr;
+            break;
+        }
+
+        ptr = ptr->next;
+    }
+
+    return retptr;
+}
 
 bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size)
 {
@@ -256,45 +274,53 @@ void add_to_list_ndt(char* ip_table_line)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    struct networkdevicetrafficdata *ptr = malloc(sizeof(*ptr));
-    if (ptr == NULL)
+    const char * delim = "|";
+    int rx_packets, tx_packets = 0;
+    int external_bytes_down, external_bytes_up = 0;
+    struct networkdevicetrafficdata *ptr = NULL;
+
+    char* device_mac = strtok(ip_table_line, delim);
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n", device_mac ));
+
+    rx_packets =  atoi(strtok(NULL, delim));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%d] \n",rx_packets ));
+
+    external_bytes_down = atoi(strtok(NULL, delim));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%d] \n",external_bytes_down ));
+
+    tx_packets =  atoi(strtok(NULL, delim));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%d] \n", tx_packets ));
+
+    external_bytes_up = atoi(strtok(NULL, delim));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%d] \n", external_bytes_up ));
+
+    ptr = FindMacInLinkedList(device_mac);
+
+    if(ptr == NULL)
     {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s :  Linked List Allocation Failed \n", __FUNCTION__ ));
-        return;
-    }
-    else
-    {
-        const char * delim = "|";
-		int rx_packets, tx_packets = 0;
-        
-		gettimeofday(&(ptr->timestamp), NULL);
-		ptr->timestamp.tv_sec -= tm_offset;
+        ptr = malloc(sizeof(*ptr));
+        if (ptr == NULL)
+        {
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s :  Linked List Allocation Failed \n", __FUNCTION__ ));
+            return;
+        }
+
+        gettimeofday(&(ptr->timestamp), NULL);
+        ptr->timestamp.tv_sec -= tm_offset;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
-        ptr->device_mac = strdup(strtok(ip_table_line, delim));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->device_mac ));
+        ptr->device_mac = strdup(device_mac);
 
+        ptr->external_bytes_down = external_bytes_down;
 
+        ptr->external_bytes_up = external_bytes_up;
 
-
-
-		rx_packets =  atoi(strtok(NULL, delim));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%d] \n",rx_packets ));
-
-        ptr->external_bytes_down = atoi(strtok(NULL, delim));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%d] \n",ptr->external_bytes_down ));
-
-		tx_packets =  atoi(strtok(NULL, delim));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%d] \n", tx_packets ));
-
-        ptr->external_bytes_up = atoi(strtok(NULL, delim));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%d] \n",ptr->external_bytes_up ));
-        
         ptr->parent = strdup("11:22:33:44:55:66");
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n",ptr->parent ));
 
         ptr->device_type = strdup("Gateway");
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, InterfaceName[%s] \n",ptr->device_type ));
+
+        ptr->is_updated = TRUE;
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
 
         ptr->next = NULL;
 
@@ -308,6 +334,29 @@ void add_to_list_ndt(char* ip_table_line)
             currnode = ptr;
         }
     }
+    else
+    {
+        if((ptr->external_bytes_up != external_bytes_up) || (ptr->external_bytes_down != external_bytes_down))
+        {
+            ptr->external_bytes_up = external_bytes_up;
+            ptr->external_bytes_down = external_bytes_down;
+
+            gettimeofday(&(ptr->timestamp), NULL);
+            ptr->timestamp.tv_sec -= tm_offset;
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+
+            ptr->is_updated = TRUE;
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
+        }
+        else
+        {
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+
+            ptr->is_updated = FALSE;
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
+        }
+    }
+
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
 
@@ -322,7 +371,7 @@ void print_list_ndt()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Head Ptr [%lx]\n", (ulong)headnode));
     while (ptr != NULL)
     {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Head Ptr [%lx] TimeStamp[%d] for Node[%d] with DeviceMAC[%s] \n", __FUNCTION__ ,(ulong)ptr, (int)ptr->timestamp.tv_sec, z, ptr->device_mac));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Head Ptr [%lx] TimeStamp[%d] for Node[%d] with DeviceMAC[%s] Is_Updated[%d] \n", __FUNCTION__ ,(ulong)ptr, (int)ptr->timestamp.tv_sec, z, ptr->device_mac, ptr->is_updated));
         ptr = ptr->next;
         z++;
     }
@@ -417,7 +466,6 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentNDTPollingPeriod [%ld] NDTReportingPeriod[%ld]  \n", currentNDTPollingPeriod, GetNDTReportingPeriod()));
                     network_devices_traffic_report(ptr);
-                    delete_list_ndt();
                 }
             currentNDTReportingPeriod = 0;
         }
@@ -447,6 +495,8 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
 
     } while (GetNDTHarvestingStatus());
     
+    delete_list_ndt();
+
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 
     return NULL; // shouldn't return;

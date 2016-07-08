@@ -37,6 +37,7 @@ ULONG external_bytes_up;
 ULONG external_bytes_down;
 char* parent;
 char* device_type;
+BOOL is_updated;
 
 struct networkdevicetrafficdata *next;
 };

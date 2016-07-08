@@ -361,11 +361,10 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
 
   while(ptr)
   {
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numElements = %d\n", (ulong)ptr, numElements ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice entry #: %d\n", i + 1));
+    if(ptr->is_updated == TRUE)
     {
-
-       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numElements = %d\n", (ulong)ptr, numElements ));
-       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice entry #: %d\n", i + 1));
-
       //Append a DeviceReport item to array
       avro_value_append(&adrField, &dr, NULL);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice Traffic Report\tType: %d\n", avro_value_get_type(&dr)));
@@ -435,8 +434,8 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
       i++;
-	}
-
+    }
+    
 #if SIMULATION
     ptr = 0;
 #else
@@ -451,7 +450,6 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head)
     {
       CcspLMLiteTrace(("RDK_LOG_ERROR, AVRO write buffer is almost full, size = %d func %s, exit!\n", (int)AvroSerializedSize, __FUNCTION__ ));      break;
     }
-
   }
 
   //Thats the end of that
