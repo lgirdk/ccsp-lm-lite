@@ -330,14 +330,14 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
          if(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent])
                 ptr->parent = strdup(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
         else
-                ptr->parent = strdup("empty");
+                ptr->parent = strdup("Unknown");
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent[%s] \n",ptr->parent ));
 
          if(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType])
                 ptr->device_type = strdup(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
         else
-                ptr->device_type = strdup("empty");
+                ptr->device_type = strdup("Unknown");
                        
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceType[%s] \n",ptr->device_type ));
 
@@ -453,6 +453,10 @@ void GetLMHostData()
                         add_to_list(lmHosts.hostArray[i], &headnodeextender);
                     }
             }
+            else
+            {
+                add_to_list(lmHosts.hostArray[i], &headnode);
+            }
 
         }
         
@@ -493,7 +497,7 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
             if(ptr)
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
-                    network_devices_status_report(ptr, FALSE);
+                    network_devices_status_report(ptr, FALSE, getFullDeviceMac());
                     delete_list(&headnode);
                     headnode = NULL;
                 }
@@ -501,8 +505,23 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
             ptr = headnodeextender;
             if(ptr)
                 {
+                    int i = 0;
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", currentPollingPeriod, GetNDSReportingPeriod()));
-                    network_devices_status_report(ptr, TRUE);
+                    pthread_mutex_lock(&LmHostObjectMutex);
+                    int array_size = lmHosts.numHost;
+                    if (array_size)
+                    {
+                        for(i = 0; i < array_size; i++)
+                        {
+                            if((lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] != NULL) && !strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType], "extender"))
+                                {
+                                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Calling network_devices_status_report with Extender [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId] ));
+                                    network_devices_status_report(ptr, TRUE, lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+                                }
+                        }
+                    }
+
+                    pthread_mutex_unlock(&LmHostObjectMutex);
                     delete_list(&headnodeextender);
                     headnodeextender = NULL;
                 }
