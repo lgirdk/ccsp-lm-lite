@@ -34,6 +34,7 @@
 #include "extender_associated_devices_avropack.h"
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_wrapper.h"   
+#include "lm_main.h"
 
 #define PUBLIC  0
 #define PRIVATE 1
@@ -46,8 +47,10 @@
 static sem_t mutex;
 static int ThreadStarted;
 static struct timespec ts;
+extern LmObjectHosts lmHosts;
 
 extern ExtenderList *extenderlist;
+extern pthread_mutex_t LmHostObjectMutex;
 
 ULONG AssociatedDevicePeriods[13] = {1,5,15,30,60,300,900,1800,3600,10800,21600,43200,86400};
 
@@ -388,15 +391,14 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 
             if((strstr(tmp->SSID_Type,"2.4"))) 
                 {
-                    strcpy(wifi_associated_dev_array->cli_OperatingStandard, "_2_4GHz");
                     strcpy(freqband, "_2_4GHz");
                 }
             else
                 {
-                    strcpy(wifi_associated_dev_array->cli_OperatingStandard, "_5GHz");
                     strcpy(freqband, "_5GHz");
                 }
 
+            memset(wifi_associated_dev_array->cli_OperatingStandard, 0, sizeof wifi_associated_dev_array->cli_OperatingStandard);
             memset(wifi_associated_dev_array->cli_OperatingChannelBandwidth, 0, sizeof wifi_associated_dev_array->cli_OperatingChannelBandwidth);
             wifi_associated_dev_array->cli_SNR= 0; 
             memset(wifi_associated_dev_array->cli_InterferenceSources, 0, sizeof wifi_associated_dev_array->cli_InterferenceSources);
@@ -471,8 +473,25 @@ void* StartAssociatedDeviceHarvesting( void *arg )
         {
             if( headnodeprivate )
                 {
+
+                    int i = 0;
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentIDWPollingPeriod [%ld] IDWReportingPeriod[%ld]  \n", currentIDWPollingPeriod, GetIDWReportingPeriod()));
-                    extender_report_associateddevices( headnodeprivate, "PRIVATE");
+                    pthread_mutex_lock(&LmHostObjectMutex);
+                    int array_size = lmHosts.numHost;
+                    if (array_size)
+                    {
+                        for(i = 0; i < array_size; i++)
+                        {
+                            if((lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] != NULL) && !strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType], "extender"))
+                                {
+                                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Calling extender_report_associateddevices with Extender [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId] ));
+                                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentIDWPollingPeriod [%ld] IDWReportingPeriod[%ld]  \n", currentIDWPollingPeriod, GetIDWReportingPeriod()));
+                                    extender_report_associateddevices(headnodeprivate, "PRIVATE", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+                                }
+                        }
+                    }
+
+                    pthread_mutex_unlock(&LmHostObjectMutex);
                     delete_list_idw( headnodeprivate );
                     headnodeprivate = NULL;
                 }

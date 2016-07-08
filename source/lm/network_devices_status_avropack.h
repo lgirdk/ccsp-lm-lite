@@ -44,6 +44,6 @@ struct networkdevicestatusdata *next;
 /**
  * @brief To send the network devices report to webpa
 */
-void network_devices_status_report(struct networkdevicestatusdata *ptr, BOOL extender);
+void network_devices_status_report(struct networkdevicestatusdata *ptr, BOOL extender, char* parent_mac);
 
 #endif /* !NETWORK_DEVICES_STATUS_AVROPACK_H */

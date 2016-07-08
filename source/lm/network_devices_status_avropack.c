@@ -177,7 +177,7 @@ avro_writer_t prepare_writer_status()
 
 
 /* function call from lmlite with parameters */
-void network_devices_status_report(struct networkdevicestatusdata *head, BOOL extender)
+void network_devices_status_report(struct networkdevicestatusdata *head, BOOL extender, char* parent_mac)
 {
   int i = 0, k = 0;
   uint8_t* b64buffer =  NULL;
@@ -335,8 +335,8 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
     for (k = 0; k < 6; k++ )
     {
       /* copy 2 bytes */
-      CpeMacHoldingBuf[ k * 2 ] = ptr->parent[ k * 3 ];
-      CpeMacHoldingBuf[ k * 2 + 1 ] = ptr->parent[ k * 3 + 1 ];
+      CpeMacHoldingBuf[ k * 2 ] = parent_mac[ k * 3 ];
+      CpeMacHoldingBuf[ k * 2 + 1 ] = parent_mac[ k * 3 + 1 ];
       CpeMacid[ k ] = (unsigned char)strtol(&CpeMacHoldingBuf[ k * 2 ], NULL, 16);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Extender Mac address = %0x\n", CpeMacid[ k ] ));
     }
@@ -442,6 +442,8 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 
   while(ptr)
   {
+
+    if( (!strcmp(ptr->parent, parent_mac) && (extender == TRUE)) || (extender == FALSE) )
     {
 
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numElements = %d\n", (ulong)ptr, numElements ));

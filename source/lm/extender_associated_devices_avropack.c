@@ -182,7 +182,7 @@ avro_writer_t prepare_writer_idw()
 
 
 /* function call from harvester with parameters */
-void extender_report_associateddevices(struct associateddevicedata *head, char* ServiceType)
+void extender_report_associateddevices(struct associateddevicedata *head, char* ServiceType, char* extender_mac)
 {
   int i, j, k = 0;
   uint8_t* b64buffer =  NULL;
@@ -283,8 +283,8 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
   for (k = 0; k < 6; k++ )
   {
     /* copy 2 bytes */
-    CpeMacHoldingBuf[ k * 2 ] = ptr->parent[ k * 3 ];
-    CpeMacHoldingBuf[ k * 2 + 1 ] = ptr->parent[ k * 3 + 1 ];
+    CpeMacHoldingBuf[ k * 2 ] = extender_mac[ k * 3 ];
+    CpeMacHoldingBuf[ k * 2 + 1 ] = extender_mac[ k * 3 + 1 ];
     CpeMacid[ k ] = (unsigned char)strtol(&CpeMacHoldingBuf[ k * 2 ], NULL, 16);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Extender Mac address = %0x\n", CpeMacid[ k ] ));
   }
@@ -388,7 +388,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
 
   for (i = 0; i < numElements; i++)
   {
-    for (j = 0, ps = ptr->devicedata; j < ptr->numAssocDevices; j++, ps++)
+    for (j = 0, ps = ptr->devicedata; (j < ptr->numAssocDevices  && (!strcmp(ptr->parent, extender_mac))) ; j++, ps++)
     {
 
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numDevices = %d\n", (ulong)ptr, numDevices ));
@@ -487,7 +487,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
       avro_value_set_branch(&drField, 1, &optional);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, operating_channel_bandwidth\tType: %d\n", avro_value_get_type(&optional)));
       //Patch HAL values if necessary
-      if ( strcmp( ps->cli_OperatingChannelBandwidth, "20MHz" ) == 0 )
+      if ( strlen( ps->cli_OperatingChannelBandwidth) == 0 )
       {
           CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, operating_channel_bandwidth = \"%s\"\n", "Not defined, set to _20MHz" ));
           avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "_20MHz"));

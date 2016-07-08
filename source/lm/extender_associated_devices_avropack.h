@@ -79,6 +79,6 @@ char* parent;
 struct associateddevicedata *next;
 };
 
-extern void extender_report_associateddevices(struct associateddevicedata *head, char* ServiceType);
+extern void extender_report_associateddevices(struct associateddevicedata *head, char* ServiceType, char* extender_mac);
 
 #endif /* !_HARVESTER_AVRO_H */
