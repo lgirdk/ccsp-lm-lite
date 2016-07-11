@@ -555,7 +555,18 @@ void Wifi_Server_Thread_func()
     }
 
 }
-
+BOOL SearchWiFiClients(char *phyAddr)
+{
+	int i = 0;
+	for(i = 0; i < hosts.count ; i++)
+	{
+		if(!strcmp(hosts.host[i].phyAddr,phyAddr))
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
 	LM_wifi_wsta_t *pwifi_wsta = NULL;
