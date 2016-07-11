@@ -198,6 +198,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray);
 void lm_wrapper_get_dhcpv4_client();
 void lm_wrapper_get_dhcpv4_reserved();
+BOOL SearchWiFiClients(char *phyAddr);
 
 int mac_string_to_array(char *pStr, unsigned char array[6]);
 int ip_string_to_arrary(char* pStr, unsigned char array[4]);

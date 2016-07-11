@@ -619,18 +619,42 @@ PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress)
     return NULL;
 }
 #define MACADDR_SZ          18
+#define ATOM_MAC "00:00:ca:01:02:03"
+BOOL validate_mac(char * physAddress)
+{
+	if(physAddress[2] == ':')
+		if(physAddress[5] == ':')
+			if(physAddress[8] == ':')
+				if(physAddress[11] == ':')
+					if(physAddress[14] == ':')
+						return TRUE;
+					
+					
+	return FALSE;
+}
 
 PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
 
+	if(!validate_mac(physAddress))
+	{
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
+		return NULL;
+	}
+		
     if(!physAddress || \
        0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
 
     if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
     PLmObjectHost pHost = Hosts_FindHostByPhysAddress(physAddress);
     if(pHost) return pHost;
-
+	
+	if(!strcmp(ATOM_MAC,physAddress))
+	{
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
+		return NULL;
+	}
     pHost = Hosts_AddHost(lmHosts.availableInstanceNum);
     if(pHost){
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
@@ -643,8 +667,15 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         }
         if(bWifiHost)
         {
-        	pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");
-        	bWifiHost = FALSE;
+			if(SearchWiFiClients(physAddress))
+			{
+				pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");
+				bWifiHost = FALSE;
+			}
+			else
+			{
+				pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+			}
 
         }
         else
