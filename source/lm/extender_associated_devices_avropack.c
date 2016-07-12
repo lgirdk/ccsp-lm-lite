@@ -193,7 +193,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
   struct associateddevicedata* ptr = head;
   avro_writer_t writer;
   char * serviceName = "lmlite";
-  char * dest = "event:com.comcast.kestrel.GatewayAssociatedDeviceReport";
+  char * dest = "event:raw.kestrel.reports.InterfaceDevicesWifi";
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
   uuid_t transaction_id;
   char trans_id[37];

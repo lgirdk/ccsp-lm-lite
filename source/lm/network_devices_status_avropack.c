@@ -186,7 +186,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   struct networkdevicestatusdata* ptr = head;
   avro_writer_t writer;
   char * serviceName = "lmlite";
-  char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesStatus";
+  char * dest = "event:raw.kestrel.reports.NetworkDevicesStatus";
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
   uuid_t transaction_id;
   char trans_id[37];
