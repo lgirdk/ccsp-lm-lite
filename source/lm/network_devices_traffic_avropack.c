@@ -177,7 +177,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   struct networkdevicetrafficdata* ptr = head;
   avro_writer_t writer;
   char * serviceName = "lmlite";
-  char * dest = "event:com.comcast.kestrel.reports.NetworkDevicesTraffic";
+  char * dest = "event:raw.kestrel.reports.NetworkDevicesTraffic";
   char * contentType = "avro/binary"; // contentType "application/json", "avro/binary"
   uuid_t ndt_transaction_id;
   char trans_id[37];
