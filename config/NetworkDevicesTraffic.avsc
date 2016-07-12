@@ -94,6 +94,17 @@
       }
     },
     {
+      "name": "last_traffic_counter_reset",
+      "type": [
+        "null",
+        {
+          "logicalType": "timestamp-millis",
+          "type": "long"
+        }
+      ],
+      "default": null
+    },
+    {
       "name": "data",
       "type": {
         "items": {
