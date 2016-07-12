@@ -36,14 +36,14 @@
 #define WRITER_BUF_SIZE   1024 * 30 // 30K
 
 //      "schemaTypeUUID" : "5fc8321e-d8bf-45a7-8b3c-3dcdfd091092",
-//      "schemaMD5Hash" : "4134b0a7b264301f2a9a97dc35908dcd",
+//      "schemaMD5Hash" : "1a73afad2380ee4730dacfcbf359222b",
 
-uint8_t HASH_NDT[16] = {0x41, 0x34, 0xb0, 0xa7, 0xb2, 0x64, 0x30, 0x1f,
-                    0x2a, 0x9a, 0x97, 0xdc, 0x35, 0x90, 0x8d, 0xcd
+uint8_t HASH_NDT[16] = {0x1a, 0x73, 0xaf, 0xad, 0x23, 0x80, 0xee, 0x47,
+                        0x30, 0xda, 0xcf, 0xcb, 0xf3, 0x59, 0x22, 0x2b
                    };
 
 uint8_t UUID_NDT[16] = {0x5f, 0xc8, 0x32, 0x1e, 0xd8, 0xbf, 0x45, 0xa7,
-                    0x8b, 0x3c, 0x3d, 0xcd, 0xfd, 0x09, 0x10, 0x92
+                        0x8b, 0x3c, 0x3d, 0xcd, 0xfd, 0x09, 0x10, 0x92
                    };
 
 
@@ -51,7 +51,7 @@ static char *macStr = NULL;
 static char CpemacStr[ 32 ];
 BOOL ndt_schema_file_parsed = FALSE;
 char *ndtschemabuffer = NULL;
-char *ndtschemaidbuffer = "5fc8321e-d8bf-45a7-8b3c-3dcdfd091092/4134b0a7b264301f2a9a97dc35908dcd";
+char *ndtschemaidbuffer = "5fc8321e-d8bf-45a7-8b3c-3dcdfd091092/1a73afad2380ee4730dacfcbf359222b";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
@@ -170,7 +170,7 @@ avro_writer_t prepare_writer()
 /* function call from lmlite with parameters */
 void network_devices_traffic_report(struct networkdevicetrafficdata *head, struct timeval *reset_timestamp)
 {
-  int i=0, j=0, k = 0;
+  int i = 0, k = 0;
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -345,6 +345,18 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
   }
 #endif
+
+  //Last Traffic counter block
+
+  avro_value_get_by_name(&adr, "last_traffic_counter_reset", &adrField, NULL);
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, NetworkDevicesTrafficReports - data array\tType: %d\n", avro_value_get_type(&adrField)));
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  avro_value_set_branch(&adrField, 1, &optional);
+  int64_t reset_tstamp_av = (int64_t) reset_timestamp->tv_sec * 1000000 + (int64_t) reset_timestamp->tv_usec;
+  reset_tstamp_av = reset_tstamp_av/1000;
+  avro_value_set_long(&optional, reset_tstamp_av);
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tlast_traffic_counter_reset\tType: %d\n", avro_value_get_type(&optional)));
+  if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
   //Data Field block
 
