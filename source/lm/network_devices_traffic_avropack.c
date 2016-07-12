@@ -168,9 +168,9 @@ avro_writer_t prepare_writer()
 
 
 /* function call from lmlite with parameters */
-void network_devices_traffic_report(struct networkdevicetrafficdata *head)
+void network_devices_traffic_report(struct networkdevicetrafficdata *head, struct timeval *reset_timestamp)
 {
-  int i, j, k = 0;
+  int i=0, j=0, k = 0;
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;

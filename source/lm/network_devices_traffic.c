@@ -58,6 +58,9 @@ BOOL NDTReportStatus = FALSE;
 ULONG NDTOverrideTTL = 300;
 ULONG NDTOverrideTTLDefault = 300;
 
+struct timeval reset_timestamp;
+
+
 bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size);
 
 void* StartNetworkDevicesTrafficHarvesting( void *arg );
@@ -116,6 +119,29 @@ bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size)
     return false;
 }
 
+int ResetEBTables()
+{
+    char rxtxcmd[128] = {0};
+    char rxtxarr[128] = {0};
+    int ret  = 0;
+    sprintf(rxtxcmd, "/usr/ccsp/tad/rxtx_sta.sh");
+    ret = _syscmd_ndt(rxtxcmd, rxtxarr, sizeof(rxtxarr));
+    if(ret)
+    {
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+        return -1;
+    }
+    else
+    {
+        gettimeofday(&(reset_timestamp), NULL);
+        reset_timestamp.tv_sec -= tm_offset;
+        CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Reset Timestamp[%u] \n", __FUNCTION__, reset_timestamp.tv_sec ));
+
+        return 0;
+    }
+}
 
 int SetNDTHarvestingStatus(BOOL status)
 {
@@ -413,18 +439,18 @@ void GetIPTableData()
     char rxtxcmd[128] = {0};
     char rxtxarr[128] = {0};
     int ret  = 0;
-    sprintf(rxtxcmd, "/usr/ccsp/tad/rxtx_sum.sh");
+    sprintf(rxtxcmd, "/usr/ccsp/tad/rxtx_cur.sh");
     ret = _syscmd_ndt(rxtxcmd, rxtxarr, sizeof(rxtxarr));
     if(ret)
     {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX Sum shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX Cur shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
         return;
     }
 
-    fp = fopen("/tmp/rxtx_sum.txt" , "r");
+    fp = fopen("/tmp/rxtx_cur.txt" , "r");
     if(!fp)
     {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Error Opening File /tmp/rxtx_sum.txt \n",__FUNCTION__));
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Error Opening File /tmp/rxtx_cur.txt \n",__FUNCTION__));
         return;
     }
 
@@ -441,6 +467,9 @@ void GetIPTableData()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 }
 
+
+
+
 void* StartNetworkDevicesTrafficHarvesting( void *arg )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
@@ -451,6 +480,12 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
     ts.tv_sec += MinimumNDTPollingPeriod; // next trigger time
     currentNDTReportingPeriod = GetNDTReportingPeriod();
     getTimeOffsetFromUtc();
+
+    int ret = ResetEBTables();
+    if(ret)
+    {
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Failed to Reset EBTables  \n", __FUNCTION__ ));
+    }
 
     do 
     {
@@ -465,7 +500,7 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
             if(ptr)
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentNDTPollingPeriod [%ld] NDTReportingPeriod[%ld]  \n", currentNDTPollingPeriod, GetNDTReportingPeriod()));
-                    network_devices_traffic_report(ptr);
+                    network_devices_traffic_report(ptr, &reset_timestamp);
                 }
             currentNDTReportingPeriod = 0;
         }
