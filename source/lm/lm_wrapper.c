@@ -1074,8 +1074,8 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     char            cmd[256]         = {0};
     char            out[32]         = {0};
 	
-	// XB6 Doesn't have this interface. Remove constant warnings.
-#ifndef INTEL_PUMA7
+	// XB6/XF3 Do not have this interface. Remove constant warnings.
+#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_)
      if(pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
 		_ansc_sprintf(cmd, "ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14\n" );
 		_get_shell_output(cmd, out, sizeof(out));
@@ -1100,7 +1100,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
-        if ( strstr(buf, "FAILED") != 0 )
+        if ( strstr(buf, "FAILED") != 0 || strstr(buf, "router") != 0)
         {
             continue;
         }
