@@ -1519,6 +1519,14 @@ void Hosts_SyncEthernetPort()
                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(tmp);
             }
         }
+       
+	if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] )
+               LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
+        pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
+
+        if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] )
+               LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
+        pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
     }
 //    pthread_mutex_unlock(&LmHostObjectMutex);
 }
