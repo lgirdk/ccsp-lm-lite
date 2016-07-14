@@ -67,6 +67,7 @@ ssp_Mbi_MessageBusEngage
 {
     ANSC_STATUS                 returnStatus       = ANSC_STATUS_SUCCESS;
     CCSP_Base_Func_CB           cb                 = {0};
+    char PsmName[256];
 
     if ( ! component_id || ! path )
     {
@@ -95,7 +96,36 @@ ssp_Mbi_MessageBusEngage
     g_MessageBusHandle_Irep = bus_handle;
     AnscCopyString(g_SubSysPrefix_Irep, g_Subsystem);
 
-    CCSP_Msg_SleepInMilliSeconds(1000);
+    if ( g_Subsystem[0] != 0 )
+    {
+        _ansc_sprintf(PsmName, "%s%s", g_Subsystem, CCSP_DBUS_PSM);
+    }
+    else
+    {
+        AnscCopyString(PsmName, CCSP_DBUS_PSM);
+    }
+
+    /* Wait for PSM ready within 60 seconds */
+    BOOLEAN ready;
+    int count = 0;
+    ready = waitConditionReady(bus_handle, PsmName, CCSP_DBUS_PATH_PSM, component_id);
+
+    while (( ready == false ) && ( count++ < 60 ))
+    {
+        CCSP_Msg_SleepInMilliSeconds(1000);
+        ready = waitConditionReady(bus_handle, PsmName, CCSP_DBUS_PATH_PSM, component_id);
+        fprintf(stderr, "Waiting loop for PSM module, ready = %d count = %d\n", ready, count );
+    }
+    CcspTraceInfo(("!!! Connected to message bus... bus_handle: 0x%08X !!!\n", bus_handle));
+
+    if ( ready == true )
+    {
+        fprintf(stderr, "PSM module done.\n");
+    }	
+    else
+    {
+        fprintf(stderr, "PSM module timeout.\n");
+    }
 
     /* Base interface implementation that will be used cross components */
     cb.getParameterValues     = CcspCcMbi_GetParameterValues;
