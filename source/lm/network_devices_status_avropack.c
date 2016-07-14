@@ -242,6 +242,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   tstamp_av_main = tstamp_av_main/1000;
 
   avro_value_set_long(&optional, tstamp_av_main );
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = ""%" PRId64 "\n", tstamp_av_main ));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&optional)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
@@ -498,6 +499,8 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
       int64_t tstamp_av = (int64_t) ptr->timestamp.tv_sec * 1000000 + (int64_t) ptr->timestamp.tv_usec;
       tstamp_av = tstamp_av/1000;
       avro_value_set_long(&optional, tstamp_av);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = ""%" PRId64 "\n", tstamp_av ));
+
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \ttimestamp\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
