@@ -244,11 +244,17 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
   avro_value_set_branch(&adrField, 1, &optional);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-  struct timespec ts;
+  struct timeval ts;
+  gettimeofday(&ts, NULL);
 
-  clock_gettime(CLOCK_REALTIME, &ts);
-  avro_value_set_long(&optional, ts.tv_sec - getTimeOffsetFromUtc() );
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = %ld\n", ts.tv_sec - getTimeOffsetFromUtc() ));
+  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec - getTimeOffsetFromUtc()) * 1000000) + (int64_t) ts.tv_usec;
+  tstamp_av_main = tstamp_av_main/1000;
+
+  avro_value_set_long(&optional, tstamp_av_main );
+  
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = %ld\n", tstamp_av_main ));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = ""%" PRId64 "\n", tstamp_av_main ));
+
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&optional)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
@@ -432,7 +438,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
       int64_t tstamp_av = (int64_t) ptr->timestamp.tv_sec * 1000000 + (int64_t) ptr->timestamp.tv_usec;
       tstamp_av = tstamp_av/1000;
       avro_value_set_long(&optional, tstamp_av);
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = %ld\n", tstamp_av));
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = ""%" PRId64 "\n", tstamp_av ));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
