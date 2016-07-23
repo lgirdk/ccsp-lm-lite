@@ -915,7 +915,7 @@ LMDmlHostsSetHostComment
     )
 {
     int ret;
-    char mac[6];
+    unsigned char mac[6];
 	LM_cmd_comment_t cmd;
     
     ret = _mac_string_to_array(pMac, mac);
