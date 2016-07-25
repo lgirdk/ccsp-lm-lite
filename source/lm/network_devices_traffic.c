@@ -481,6 +481,11 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
     currentNDTReportingPeriod = GetNDTReportingPeriod();
     getTimeOffsetFromUtc();
 
+    if(GetNDTOverrideTTL() < currentNDTReportingPeriod)
+    {
+        SetNDTOverrideTTL(currentNDTReportingPeriod);
+    }
+
     int ret = ResetEBTables();
     if(ret)
     {
