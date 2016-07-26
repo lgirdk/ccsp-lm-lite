@@ -456,6 +456,11 @@ void* StartAssociatedDeviceHarvesting( void *arg )
     ts.tv_sec += MinimumIDWPollingPeriod; // next trigger time
     currentIDWReportingPeriod = GetIDWReportingPeriod();
 
+    if(GetIDWOverrideTTL() < currentIDWReportingPeriod)
+    {
+        SetIDWOverrideTTL(currentIDWReportingPeriod);
+    }
+
     while (!ret && GetIDWHarvestingStatus()) 
     {
         // scan extender WiFi devices

@@ -484,6 +484,11 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
     currentReportingPeriod = GetNDSReportingPeriod();
     getTimeOffsetFromUtc();
 
+    if(GetNDSOverrideTTL() < currentReportingPeriod)
+    {
+         SetNDSOverrideTTL(currentReportingPeriod);
+    }
+
     do 
     {
         GetLMHostData();
