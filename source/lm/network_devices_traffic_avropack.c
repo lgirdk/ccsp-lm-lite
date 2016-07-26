@@ -410,14 +410,14 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tmac_address\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
-      //device_type - string
+      //device_type - set NULL
       avro_value_get_by_name(&dr, "device_id", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, device_id\tType: %d\n", avro_value_get_type(&drField)));
       avro_value_get_by_name(&drField, "device_type", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       avro_value_set_branch(&drField, 1, &optional);
-      avro_value_set_string(&optional, ptr->device_type);
+      avro_value_set_null(&optional);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tdevice_type\tType: %d\n", avro_value_get_type(&optional)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
