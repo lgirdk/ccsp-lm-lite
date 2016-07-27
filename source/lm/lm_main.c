@@ -1511,7 +1511,7 @@ void Hosts_SyncEthernetPort()
     int port;
     char tmp[20];
     PLmObjectHost pHost;
-//    pthread_mutex_lock(&LmHostObjectMutex);
+    pthread_mutex_lock(&LmHostObjectMutex);
     for ( i = 0; i < lmHosts.numHost; i++ )
     {
 
@@ -1528,17 +1528,18 @@ void Hosts_SyncEthernetPort()
                 sprintf(tmp, "Ethernet.%d", port);
                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(tmp);
             }
-        }
        
-	if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] )
-               LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
-        pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
+       
+		if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] )
+			LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
+		pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
 
-        if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] )
-               LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
-        pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
+		if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] )
+			LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
+		pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
+	}    
     }
-//    pthread_mutex_unlock(&LmHostObjectMutex);
+    pthread_mutex_unlock(&LmHostObjectMutex);
 }
 
 void Hosts_LoggingThread()
