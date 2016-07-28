@@ -298,14 +298,20 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 		{
 			if(state) 
 			{
-				//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s appeared online\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				if(pHost->ipv4Active == TRUE)
+				{
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s appeared online\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
-				//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+				}
 			}  
 			else 
 			{
-				//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				if(pHost->ipv4Active == TRUE)
+				{
+				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 				CcspWifiTrace(("RDK_LOG_WARN: Wifi client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+				}
 #ifndef USE_NOTIFY_COMPONENT
 				remove_Mac_to_band_mapping(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 #endif
@@ -315,25 +321,31 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 		{
-		    /*  if(state) {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
-			}  else {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MoCA client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+			if(pHost->ipv4Active == TRUE)
+			{
+				  if(state) {
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+				}  else {
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MoCA client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
-			}*/
+				}
+			}
 			strcpy(interface,"MoCA");
 		}
 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
 		{
-		    /*  if(state) {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
-			}  else {
-				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+			if(pHost->ipv4Active == TRUE)
+			{
+				  if(state) {
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s appeared online \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is %s and address source is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource]));
+				}  else {
+					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 
-			}*/
+				}
+			}
 			strcpy(interface,"Ethernet");
 		}
 
@@ -577,7 +589,7 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
     pHost->numIPv4Addr = 0;
     pHost->ipv6AddrArray = NULL;
     pHost->numIPv6Addr = 0;
-
+	pHost->pStringParaValue[LM_HOST_IPAddressId] = NULL;
     /* Default it is inactive. */
     pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
     pHost->ipv4Active = FALSE;
