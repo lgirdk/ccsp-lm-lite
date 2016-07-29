@@ -37,7 +37,8 @@ char* interface_name;
 BOOL is_active;
 char* parent;
 char* device_type;
-
+char* hostname;
+char* ipaddress;
 struct networkdevicestatusdata *next;
 };
 

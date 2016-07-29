@@ -40,10 +40,10 @@
 #define WRITER_BUF_SIZE   1024 * 30 // 30K
 
 //      "schemaTypeUUID" : "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca",
-//      "schemaMD5Hash" : "31f994887576bb739f897eb660043fbb",
+//      "schemaMD5Hash" :  "da29287d0199d6279cf934ce884426af",
 
-uint8_t HASH[16] = {0x31, 0xf9, 0x94, 0x88, 0x75, 0x76, 0xbb, 0x73,
-                    0x9f, 0x89, 0x7e, 0xb6, 0x60, 0x04, 0x3f, 0xbb
+uint8_t HASH[16] = {0xda, 0x29, 0x28, 0x7d, 0x01, 0x99, 0xd6, 0x27,
+                    0x9c, 0xf9, 0x34, 0xce, 0x88, 0x44, 0x26, 0xaf
                    };
 
 uint8_t UUID[16] = {0x30, 0x53, 0xb4, 0xab, 0xd3, 0xf9, 0x4c, 0xc9,
@@ -55,7 +55,7 @@ static char *macStr = NULL;
 static char CpemacStr[ 32 ];
 BOOL schema_file_parsed = FALSE;
 char *ndsschemabuffer = NULL;
-char *nds_schemaidbuffer = "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca/31f994887576bb739f897eb660043fbb";
+char *nds_schemaidbuffer = "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca/da29287d0199d6279cf934ce884426af";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
@@ -224,7 +224,8 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, GatewayNetworkDeviceStatusReport\tType: %d\n", avro_value_get_type(&adr)));
 
   avro_value_t  adrField;
-
+  avro_value_t array;
+  size_t new_index = 0;
   //Optional value for unions, mac address is an union
   avro_value_t optional;
 
@@ -511,6 +512,23 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
       //avro_value_set_string(&optional, "  aa  ");
       avro_value_set_string(&optional, ptr->interface_name );
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tinterface_name\tType: %d\n", avro_value_get_type(&optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      //hostname - string
+      avro_value_get_by_name(&dr, "hostname", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&drField, 1, &optional);
+      avro_value_set_string(&optional, ptr->hostname);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \thostname\tType: %d\n", avro_value_get_type(&optional)));
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+
+      //ipaddress - array
+      avro_value_get_by_name(&dr, "ip_addresses", &drField, NULL);
+      if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+      avro_value_set_branch(&drField, 1, &array);
+      avro_value_append(&array, &optional,&new_index);
+      avro_value_set_string(&optional, ptr->ipaddress);
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tipaddress\tType: %d\n", avro_value_get_type(&array)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
       //status - enum
