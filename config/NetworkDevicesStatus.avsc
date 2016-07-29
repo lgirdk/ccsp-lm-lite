@@ -178,6 +178,25 @@
               ],
               "doc": "Indicates the current status of the 'connected' device. [TR-181: Commonly found in Device.WiFi.AccessPoint.{i}.AssociatedDevice.{i}.Active, OR Device.(InterfaceType).Interface.{i}.AssociatedDevice.{i}.Active]",
               "default": null
+           },
+          {
+              "name": "hostname",
+              "type": [
+                "null",
+                "string"
+             ],
+               "default":null
+            },
+            {
+              "name": "ip_addresses",
+               "type": [
+                 "null",
+                 {
+                   "type":"array",
+                   "items":"string"
+               }
+               ],
+               "default":null
             }
           ]
         },

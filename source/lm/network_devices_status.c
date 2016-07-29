@@ -341,6 +341,19 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
                        
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceType[%s] \n",ptr->device_type ));
 
+        if(host->pStringParaValue[LM_HOST_HostNameId])
+                ptr->hostname = strdup(host->pStringParaValue[LM_HOST_HostNameId]);
+        else
+                ptr->hostname = strdup("Unknown");
+
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, HostName[%s] \n",ptr->hostname ));
+
+        if(host->pStringParaValue[LM_HOST_IPAddressId])
+                ptr->ipaddress = strdup(host->pStringParaValue[LM_HOST_IPAddressId]);
+        else
+                ptr->ipaddress = strdup("Unknown");
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, IPAddress[%s] \n",ptr->ipaddress ));
 
 
         if (*head == NULL)
@@ -400,6 +413,8 @@ void delete_list(struct networkdevicestatusdata **head)
         free(currnode->interface_name);
         free(currnode->parent);
         free(currnode->device_type);        
+        free(currnode->hostname);
+        free(currnode->ipaddress);
         free(currnode);
         currnode = next;
     }
