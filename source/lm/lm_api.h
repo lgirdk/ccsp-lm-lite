@@ -139,7 +139,7 @@ typedef struct{
 
 typedef struct{
     int cmd;
-    char mac[6];
+    unsigned char mac[6];
     char comment[LM_COMMENTS_LEN];
 }LM_cmd_comment_t;
 
