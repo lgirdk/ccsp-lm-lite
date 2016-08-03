@@ -601,6 +601,7 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
 
 	pHost->Layer3Interface = NULL;
 
+	memset(pHost->backupHostname,0,64);
     int i;
     for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
 
@@ -677,7 +678,6 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
     if(pHost){
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
         pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
-        strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
         {
@@ -1671,26 +1671,7 @@ void Hosts_StatSyncThreadFunc()
                 {
                     continue;
                 }
-//last activity cahnge 
-		if(!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_PhysAddressId], TRUE))
-                {
-					strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
-					lmHosts.lastActivity++;
-					char buf[8];
-					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
-					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
-					{
-						AnscTraceWarning(("syscfg_set failed\n"));
-					}
-					else 
-					{
-						if (syscfg_commit() != 0) 
-						{
-							AnscTraceWarning(("syscfg_commit failed\n"));
-						}
 		
-					}
-				}
                 /* This is a WiFi or MoCA host if l1unReachableCnt is NOT zero.
                  * When we cannot find a host in WiFi or MoCA assocaite table for 3 times,
                  * we think the host is offline.
@@ -1756,6 +1737,7 @@ void Hosts_StatSyncThreadFunc()
 
             Hosts_SyncWifi();
             Hosts_SyncMoCA();
+			Hosts_SyncDHCP(); 
 
             lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
             if ( count > 0 )

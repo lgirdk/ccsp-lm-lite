@@ -85,6 +85,8 @@ extern ANSC_HANDLE bus_handle;
 char *pERTPAMComponentName = NULL;
 char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
+extern LmObjectHosts lmHosts;
+
 #define WIFI_DM_CHANNEL      "Device.WiFi.Radio.%d.Channel"
 #define WIFI_DM_AUTOCHAN     "Device.WiFi.Radio.%d.AutoChannelEnable"
 #define WIFI_DM_BSS_SECURITY_MODE "Device.WiFi.AccessPoint.%d.Security.ModeEnabled"
@@ -1314,7 +1316,10 @@ void lm_wrapper_get_dhcpv4_client()
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
-
+			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
+				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
+				
+			
             if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
             {
                 LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
@@ -1324,7 +1329,30 @@ void lm_wrapper_get_dhcpv4_client()
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
-
+			
+			
+			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+                {
+					strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
+					lmHosts.lastActivity++;
+				CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+					char buf[8];
+					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+					{
+						AnscTraceWarning(("syscfg_set failed\n"));
+					}
+					else 
+					{
+						if (syscfg_commit() != 0) 
+						{
+							AnscTraceWarning(("syscfg_commit failed\n"));
+						}
+		
+					}
+				}
+				
+			
             pIP = Host_AddIPv4Address
             (
                 pHost,
@@ -1399,7 +1427,9 @@ void lm_wrapper_get_dhcpv4_reserved()
         if ( pHost )
         {
             PRINTD("%s: %s %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.ipAddr, dhcpHost.hostName);
-
+			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
+				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
+				
             if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
             {
                 LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
@@ -1410,6 +1440,27 @@ void lm_wrapper_get_dhcpv4_reserved()
             }else
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
 
+			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+                {
+					strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
+					lmHosts.lastActivity++;
+				CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+					char buf[8];
+					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+					{
+						AnscTraceWarning(("syscfg_set failed\n"));
+					}
+					else 
+					{
+						if (syscfg_commit() != 0) 
+						{
+							AnscTraceWarning(("syscfg_commit failed\n"));
+						}
+		
+					}
+				}
+			
 		if ( pHost->pStringParaValue[LM_HOST_AddressSource] )	
 		{
 			LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
