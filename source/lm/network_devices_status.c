@@ -442,6 +442,7 @@ void GetLMHostData()
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AddressSource [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource]));
             
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, bClientReady [%d] \n", lmHosts.hostArray[i]->bClientReady ));
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, ipv4Active [%d] \n", lmHosts.hostArray[i]->ipv4Active ));
 
             if (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL)
                 {
@@ -454,7 +455,7 @@ void GetLMHostData()
 
             printf("RDK_LOG_DEBUG, bClientReady [%d] \n", lmHosts.hostArray[i]->bClientReady);
 
-            if ( (!lmHosts.hostArray[i]->bClientReady) && (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ))
+	    if ( (!lmHosts.hostArray[i]->bClientReady) && (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ) && (lmHosts.hostArray[i]->ipv4Active))
                 continue;
 
             if (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL)
