@@ -200,7 +200,7 @@ void Send_Notification(char* interface, char*mac , BOOL status)
 	else
 		strcpy(status_str,"Disconnected");
 		
-	sprintf(str,"Connected-Client,%s,%s,%s",interface,mac,status_str);
+	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s",interface,mac,status_str);
 	notif_val[0].parameterName =  param_name ;
 	notif_val[0].parameterValue = str;
 	notif_val[0].type = ccsp_string;
@@ -793,7 +793,7 @@ void _set_comment_(LM_cmd_comment_t *cmd)
     PLmObjectHost pHost;
     char mac[18];
 	
-    sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
+    snprintf(mac,sizeof(mac)/sizeof(mac[0]), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
 
     /* set comment value into syscfg */
     /* we don't check whether this device is in our LmObject list */
@@ -1112,7 +1112,7 @@ static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
     if(buf_size < sizeof(LM_cmd_get_host_by_mac_t))
         return;
     memset(&result, 0, sizeof(result));
-    sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
+    snprintf(mac,sizeof(mac)/sizeof(mac[0]), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
     pthread_mutex_lock(&LmHostObjectMutex);
     pHost = Hosts_FindHostByPhysAddress(mac);
     if(pHost){
@@ -1137,7 +1137,7 @@ static inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
         return;
 
     memset(&result, 0, sizeof(result));
-    sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
+    snprintf(mac,sizeof(mac)/sizeof(mac[0]), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
 
     /* set comment value into syscfg */
     /* we don't check whether this device is in our LmObject list */
@@ -1537,7 +1537,7 @@ void Hosts_SyncEthernetPort()
         {
             port = lm_wrapper_priv_getEthernetPort(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             if(port != -1){
-                sprintf(tmp, "Ethernet.%d", port);
+                snprintf(tmp,sizeof(tmp)/sizeof(tmp[0]), "Ethernet.%d", port);
                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(tmp);
             }
        
