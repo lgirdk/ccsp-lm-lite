@@ -341,9 +341,9 @@ void add_to_list_ndt(char* ip_table_line)
 
         ptr->external_bytes_up = external_bytes_up;
 
-        ptr->parent = strdup("11:22:33:44:55:66");
+        ptr->parent = strdup(NDT_DEFAULT_PARENT_MAC);
 
-        ptr->device_type = strdup("Gateway");
+        ptr->device_type = strdup(NDT_DEFAULT_DEVICE_TYPE);
 
         ptr->is_updated = TRUE;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
@@ -506,6 +506,8 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
                 {
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentNDTPollingPeriod [%ld] NDTReportingPeriod[%ld]  \n", currentNDTPollingPeriod, GetNDTReportingPeriod()));
                     network_devices_traffic_report(ptr, &reset_timestamp);
+		    /* RDKB-7047 : Cleanup of headnode after report is sent */
+    		    delete_list_ndt();
                 }
             currentNDTReportingPeriod = 0;
         }

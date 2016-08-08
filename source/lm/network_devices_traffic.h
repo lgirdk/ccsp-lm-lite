@@ -22,6 +22,10 @@
 
 #include "ansc_platform.h"
 
+// Default values
+#define NDT_DEFAULT_PARENT_MAC		"11:22:33:44:55:66"
+#define NDT_DEFAULT_DEVICE_TYPE		"empty"
+
 /**
  * @brief Set the Harvesting Status for Network Devices.
  *
