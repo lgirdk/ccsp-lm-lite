@@ -76,6 +76,7 @@
 #include "ansc_platform.h"
 #include "cosa_hosts_dml.h"
 #include "lm_main.h"
+#include "lm_util.h"
 
 extern LmObjectHosts lmHosts;
 
@@ -1193,12 +1194,7 @@ Host_SetParamStringValue
     if( AnscEqualString(ParamName, "Comments", TRUE))
     {
         /* save update to backup */
-        if( pHost->pStringParaValue[LM_HOST_Comments] )
-        {
-            LanManager_Free(pHost->pStringParaValue[LM_HOST_Comments]);
-        }
-
-        pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(pString);
+        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]) , pString);
 		pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }

@@ -283,14 +283,13 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 		if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )	
 		{
 			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
-      			 pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(IPAddress);
+      			  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , IPAddress);
 		}
 
 		getAddressSource(pHost->pStringParaValue[LM_HOST_PhysAddressId], addressSource);
 		if ( (pHost->pStringParaValue[LM_HOST_AddressSource]) && (strlen(addressSource)))	
 		{
-				LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
-   		        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString(addressSource);
+   		       LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , addressSource);
 		}
 	if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
 	{
@@ -805,10 +804,7 @@ void _set_comment_(LM_cmd_comment_t *cmd)
     pthread_mutex_lock(&LmHostObjectMutex);
     pHost = Hosts_FindHostByPhysAddress(mac);
     if(pHost){
-        if(pHost->pStringParaValue[LM_HOST_Comments]){
-            LanManager_Free(pHost->pStringParaValue[LM_HOST_Comments]);
-        }
-        pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(cmd->comment);
+        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), cmd->comment);
     }
     pthread_mutex_unlock(&LmHostObjectMutex);
 
@@ -1150,10 +1146,7 @@ static inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
     pthread_mutex_lock(&LmHostObjectMutex);
     pHost = Hosts_FindHostByPhysAddress(mac);
     if(pHost){
-        if(pHost->pStringParaValue[LM_HOST_Comments]){
-            LanManager_Free(pHost->pStringParaValue[LM_HOST_Comments]);
-        }
-        pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(cmd->comment);
+        LanManager_CheckCloneCopy( &(pHost->pStringParaValue[LM_HOST_Comments]) , cmd->comment);
     }
     pthread_mutex_unlock(&LmHostObjectMutex);
     result.result = LM_CMD_RESULT_OK;
@@ -1274,19 +1267,9 @@ void Hosts_SyncWifi()
 			if(hosts[i].Status)
 			{
 #endif
-		                if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-		                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                    
-		                
-		                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(hosts[i].ssid);
-
-		                
-		                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
-
-		                if(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] )
-		                    LanManager_Free(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]);
-		                
-		                pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] = LanManager_CloneString(hosts[i].AssociatedDevice);
-
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
+				 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
 		                pHost->l1unReachableCnt = 1;
 
 				LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
@@ -1299,15 +1282,8 @@ void Hosts_SyncWifi()
 #endif
 
 
-			if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] )
-			    LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
-
-			pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
-
-			if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] )
-			    LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
-
-			pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             }
         }
         pthread_mutex_unlock(&LmHostObjectMutex);
@@ -1358,17 +1334,11 @@ void Hosts_SyncArp()
                     continue;
                 }
 
-                if ( pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] )
-                {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]);
-                }
-                pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] = LanManager_CloneString(hosts[i].ifName);
-
+		  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName );
                 if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                 {
 
-                	pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
-        
+		        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr );
                     LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 
                     pIP = Host_AddIPv4Address
@@ -1385,11 +1355,7 @@ void Hosts_SyncArp()
                     _getLanHostComments(hosts[i].phyAddr, comments);
                     if ( comments[0] != 0 )
                     {
-                        if ( pHost->pStringParaValue[LM_HOST_Comments] )
-                        {
-                            LanManager_Free(pHost->pStringParaValue[LM_HOST_Comments]);
-                        }
-                        pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), comments);
                     }
                 }
                 else if(pHost->numIPv4Addr == 0)
@@ -1448,12 +1414,7 @@ void Hosts_SyncMoCA()
 
             if ( pHost )
             {
-                if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                    
-                }
-                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(hosts[i].ncId);
-
+		  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
                 pHost->l1unReachableCnt = 1;
 
 				if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
@@ -1471,10 +1432,9 @@ void Hosts_SyncMoCA()
 
 							if(!ret)
 							{
-								pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
+								LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+								LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "extender");
 								CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
-
-								pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("extender");
 								
 								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 
@@ -1482,7 +1442,7 @@ void Hosts_SyncMoCA()
 						}	
 						else
 						{
-							pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
+							LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
 							CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s LM_HOST_PhysAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_PhysAddressId] ));
 
 							char* parent_ipAddress = FindParentIPInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
@@ -1490,7 +1450,7 @@ void Hosts_SyncMoCA()
 
 							if(parent_ipAddress != NULL)
 								{
-									pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(FindMACByIPAddress(parent_ipAddress));
+									LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), FindMACByIPAddress(parent_ipAddress));
 									LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 								}
 							else
@@ -1501,8 +1461,8 @@ void Hosts_SyncMoCA()
 					}
 				else
 					{
-						pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
-						pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
+						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
 					}
             }
         }
@@ -1538,17 +1498,11 @@ void Hosts_SyncEthernetPort()
             port = lm_wrapper_priv_getEthernetPort(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             if(port != -1){
                 snprintf(tmp,sizeof(tmp)/sizeof(tmp[0]), "Ethernet.%d", port);
-                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(tmp);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), tmp);
             }
        
-       
-		if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] )
-			LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
-		pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] = LanManager_CloneString(getFullDeviceMac());
-
-		if ( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] )
-			LanManager_Free(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]);
-		pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] = LanManager_CloneString("empty");
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
 	}    
     }
     pthread_mutex_unlock(&LmHostObjectMutex);
@@ -1756,21 +1710,15 @@ void Hosts_StatSyncThreadFunc()
                         */
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
-                            if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                            {
-                                LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);                            
-                            }
-
-                            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
-                            pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
+                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet" );
+                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                             pHost->l1unReachableCnt = 0;
                         }
                     }
                     else if ( pHost && pHost->l1unReachableCnt == 0 )
                     {
 
-                       pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
-
+                       LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
                             if(_isIPv6Addr(hosts[i].ipAddr))
@@ -1785,7 +1733,7 @@ void Hosts_StatSyncThreadFunc()
                         }
 						if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                         {
-                            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
                         }
                        	       	
                     }
@@ -1800,12 +1748,8 @@ void Hosts_StatSyncThreadFunc()
                             else
                                 pIP = Host_AddIPv4Address ( pHost, hosts[i].ipAddr);
 
-                            if ( pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] )
-                            {
-                                LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]);
-                            }
-                            pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] = LanManager_CloneString(hosts[i].ifName);
-			    			pHost->pStringParaValue[LM_HOST_IPAddressId] = LanManager_CloneString(hosts[i].ipAddr);
+			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName);
+			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                         }
                     }
                 }
