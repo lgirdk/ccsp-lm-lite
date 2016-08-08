@@ -1320,15 +1320,11 @@ void lm_wrapper_get_dhcpv4_client()
 				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				
 			
-            if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
-            {
-                LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
-            }
             if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
             {
-                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
-                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
 			
 			
 			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
@@ -1360,9 +1356,7 @@ void lm_wrapper_get_dhcpv4_client()
             );
             if(pIP != NULL)
             {
-                if(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId])
-                    LanManager_Free(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
-                pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId] = LanManager_CloneString("DHCP");
+                LanManager_CheckCloneCopy(&(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]), "DHCP");
                 pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
 				pHost->LeaseTime = pIP->LeaseTime;
 				
@@ -1430,15 +1424,11 @@ void lm_wrapper_get_dhcpv4_reserved()
 			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
 				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				
-            if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
-            {
-                LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
-            }
             if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
             {
-                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
-                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
 
 			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
@@ -1461,12 +1451,8 @@ void lm_wrapper_get_dhcpv4_reserved()
 					}
 				}
 			
-		if ( pHost->pStringParaValue[LM_HOST_AddressSource] )	
-		{
-			LanManager_Free(pHost->pStringParaValue[LM_HOST_AddressSource]);
-   		       pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("Static");
-		}
 				
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "Static");
             pIP = Host_AddIPv4Address
                 (
                     pHost,
@@ -1474,9 +1460,7 @@ void lm_wrapper_get_dhcpv4_reserved()
                 );
             if(pIP != NULL)
             {
-                if(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId])
-                    LanManager_Free(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
-                pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId] = LanManager_CloneString("Static");
+                LanManager_CheckCloneCopy(&(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]), "Static");
                 pIP->LeaseTime = 0;
             }
 

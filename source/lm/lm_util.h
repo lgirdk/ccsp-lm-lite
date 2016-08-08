@@ -116,4 +116,5 @@ BOOL LanManager_CheckNoneEmpty
     const char * src
     );
 
+LanManager_CheckCloneCopy(char ** dest , const char * src);
 #endif
