@@ -670,7 +670,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 	
 	if(!strcmp(ATOM_MAC,physAddress))
 	{
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
+		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
 		return NULL;
 	}
     pHost = Hosts_AddHost(lmHosts.availableInstanceNum);
