@@ -682,6 +682,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         {
             pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
         }
+#ifdef USE_NOTIFY_COMPONENT
         if(bWifiHost)
         {
 			if(SearchWiFiClients(physAddress))
@@ -696,9 +697,9 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 
         }
         else
-        {
-        	pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
-        }
+#endif
+		pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+        
 		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
 		pHost->bClientReady = FALSE;
 		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
