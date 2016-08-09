@@ -44,19 +44,22 @@ extern int tm_offset;
 
 ULONG NetworkDeviceTrafficPeriods[10] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
 
-ULONG NDTPollingPeriodDefault = 300;
-ULONG NDTReportingPeriodDefault = 300;
+#define POLLING_INTERVAL 300
+#define REPORTING_INTERVAL POLLING_INTERVAL*3
 
-ULONG NDTPollingPeriod = 300;
-ULONG NDTReportingPeriod = 300;
+ULONG NDTPollingPeriodDefault = POLLING_INTERVAL;
+ULONG NDTReportingPeriodDefault = REPORTING_INTERVAL;
+
+ULONG NDTPollingPeriod = POLLING_INTERVAL;
+ULONG NDTReportingPeriod = REPORTING_INTERVAL;
 
 ULONG MinimumNDTPollingPeriod = 5;
 ULONG currentNDTPollingPeriod = 0;
 ULONG currentNDTReportingPeriod = 0;
 BOOL NDTReportStatus = FALSE;
 
-ULONG NDTOverrideTTL = 300;
-ULONG NDTOverrideTTLDefault = 300;
+ULONG NDTOverrideTTL = POLLING_INTERVAL;
+ULONG NDTOverrideTTLDefault = POLLING_INTERVAL;
 
 struct timeval reset_timestamp;
 
