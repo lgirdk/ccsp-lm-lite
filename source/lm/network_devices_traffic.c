@@ -93,25 +93,6 @@ void WaitForSamaphoreTimeoutNDT()
     sem_timedwait(&mutex, &ts); // Wait for trigger
 }
 
-struct networkdevicetrafficdata* FindMacInLinkedList(char* device_mac)
-{
-    struct networkdevicetrafficdata* ptr  = headnode;
-    struct networkdevicetrafficdata* retptr  = NULL;
-
-    while (ptr != NULL)
-    {
-        if(!strcmp(ptr->device_mac, device_mac))
-        {
-            retptr = ptr;
-            break;
-        }
-
-        ptr = ptr->next;
-    }
-
-    return retptr;
-}
-
 bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size)
 {
     int i;
@@ -323,69 +304,38 @@ void add_to_list_ndt(char* ip_table_line)
     external_bytes_up = atoi(strtok(NULL, delim));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%d] \n", external_bytes_up ));
 
-    ptr = FindMacInLinkedList(device_mac);
-
-    if(ptr == NULL)
+    ptr = malloc(sizeof(*ptr));
+    if (ptr == NULL)
     {
-        ptr = malloc(sizeof(*ptr));
-        if (ptr == NULL)
-        {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s :  Linked List Allocation Failed \n", __FUNCTION__ ));
-            return;
-        }
+       CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s :  Linked List Allocation Failed \n", __FUNCTION__ ));
+       return;
+    }
 
-        gettimeofday(&(ptr->timestamp), NULL);
-        ptr->timestamp.tv_sec -= tm_offset;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+    gettimeofday(&(ptr->timestamp), NULL);
+    ptr->timestamp.tv_sec -= tm_offset;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
-        ptr->device_mac = strdup(device_mac);
+    ptr->device_mac = strdup(device_mac);
 
-        ptr->external_bytes_down = external_bytes_down;
+    ptr->external_bytes_down = external_bytes_down;
 
-        ptr->external_bytes_up = external_bytes_up;
+    ptr->external_bytes_up = external_bytes_up;
 
-        ptr->parent = strdup(NDT_DEFAULT_PARENT_MAC);
+    ptr->parent = strdup(NDT_DEFAULT_PARENT_MAC);
 
-        ptr->device_type = strdup(NDT_DEFAULT_DEVICE_TYPE);
+    ptr->device_type = strdup(NDT_DEFAULT_DEVICE_TYPE);
 
-        ptr->is_updated = TRUE;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
+    ptr->next = NULL;
 
-        ptr->next = NULL;
-
-        if (headnode == NULL)
-        {
-            headnode = currnode = ptr;
-        }
-        else
-        {
-            currnode->next = ptr;
-            currnode = ptr;
-        }
+    if (headnode == NULL)
+    {
+        headnode = currnode = ptr;
     }
     else
     {
-        if((ptr->external_bytes_up != external_bytes_up) || (ptr->external_bytes_down != external_bytes_down))
-        {
-            ptr->external_bytes_up = external_bytes_up;
-            ptr->external_bytes_down = external_bytes_down;
-
-            gettimeofday(&(ptr->timestamp), NULL);
-            ptr->timestamp.tv_sec -= tm_offset;
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
-
-            ptr->is_updated = TRUE;
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
-        }
-        else
-        {
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
-
-            ptr->is_updated = FALSE;
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, is_updated[%d] \n",ptr->is_updated ));
-        }
+        currnode->next = ptr;
+        currnode = ptr;
     }
-
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
 
@@ -400,7 +350,7 @@ void print_list_ndt()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Head Ptr [%lx]\n", (ulong)headnode));
     while (ptr != NULL)
     {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Head Ptr [%lx] TimeStamp[%d] for Node[%d] with DeviceMAC[%s] Is_Updated[%d] \n", __FUNCTION__ ,(ulong)ptr, (int)ptr->timestamp.tv_sec, z, ptr->device_mac, ptr->is_updated));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Head Ptr [%lx] TimeStamp[%d] for Node[%d] with DeviceMAC[%s] \n", __FUNCTION__ ,(ulong)ptr, (int)ptr->timestamp.tv_sec, z, ptr->device_mac));
         ptr = ptr->next;
         z++;
     }
