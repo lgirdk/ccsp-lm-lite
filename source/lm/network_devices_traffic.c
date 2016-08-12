@@ -41,6 +41,11 @@ static pthread_mutex_t ndtMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t ndtCond = PTHREAD_COND_INITIALIZER;
 
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 static sem_t mutex;
 
 

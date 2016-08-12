@@ -33,6 +33,10 @@
 #if SIMULATION
 #include "dummy.h"
 #endif
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
 
 #define MAGIC_NUMBER      0x85
 #define MAGIC_NUMBER_SIZE 1

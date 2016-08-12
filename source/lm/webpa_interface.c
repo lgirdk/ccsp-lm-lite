@@ -27,6 +27,11 @@
 #include <libparodus.h>
 #include "webpa_pd.h"
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 #define MAX_PARAMETERNAME_LEN   512
 
 extern ANSC_HANDLE bus_handle;
