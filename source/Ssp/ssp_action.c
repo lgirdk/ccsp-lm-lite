@@ -53,6 +53,10 @@
 #include "plugin_main.h"
 #include "dslh_dmagnt_interface.h"
 #include "ccsp_trace.h"
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
 
 PDSLH_CPE_CONTROLLER_OBJECT     pDslhCpeController        = NULL;
 PCOMPONENT_COMMON_LMLITE          g_pComponent_COMMON_lmlite  = NULL;

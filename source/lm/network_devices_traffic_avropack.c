@@ -30,6 +30,11 @@
 #include "network_devices_traffic_avropack.h"
 #include "ccsp_lmliteLog_wrapper.h"
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 #define MAGIC_NUMBER      0x85
 #define MAGIC_NUMBER_SIZE 1
 #define SCHEMA_ID_LENGTH  32

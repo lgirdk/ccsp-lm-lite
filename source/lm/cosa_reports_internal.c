@@ -43,6 +43,10 @@
 #include "cosa_reports_internal.h"
 #include "cosa_ndstatus_dml.h"
 #include "cosa_ndtraffic_dml.h"
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
 
 //extern void* g_pDslhDmlAgent;
 

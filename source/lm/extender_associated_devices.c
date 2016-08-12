@@ -37,6 +37,11 @@
 #include "lm_main.h"
 #include "report_common.h"
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 #define PUBLIC  0
 #define PRIVATE 1
 
