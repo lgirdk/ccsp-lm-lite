@@ -36,6 +36,11 @@
 #include "lm_wrapper.h"   
 #include "lm_main.h"
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 #define PUBLIC  0
 #define PRIVATE 1
 

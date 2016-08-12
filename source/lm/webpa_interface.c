@@ -25,6 +25,11 @@
 #include "base64.h"
 #include "ccsp_lmliteLog_wrapper.h"
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 #define WEBPA_COMPONENT_NAME    "eRT.com.cisco.spvtg.ccsp.webpaagent"
 #define WEBPA_DBUS_PATH         "/com/cisco/spvtg/ccsp/webpaagent"
 #define WEBPA_PARAMETER_NAME    "Device.Webpa.PostData" 
