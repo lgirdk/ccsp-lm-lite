@@ -379,8 +379,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Current Link List Ptr = [0x%lx], numElements = %d\n", (ulong)ptr, numElements ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice entry #: %d\n", i + 1));
-    if(ptr->is_updated == TRUE)
-    {
+    
       //Append a DeviceReport item to array
       avro_value_append(&adrField, &dr, NULL);
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, \tDevice Traffic Report\tType: %d\n", avro_value_get_type(&dr)));
@@ -451,7 +450,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
       i++;
-    }
+    
     
 #if SIMULATION
     ptr = 0;
