@@ -56,6 +56,10 @@
 **********************************************************************************/
 #include "ansc_platform.h"
 #include "lm_util.h"
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
 
 
 

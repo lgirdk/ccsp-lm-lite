@@ -35,6 +35,11 @@
 #include "network_devices_traffic_avropack.h"
 #include "lm_main.h"
 
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
+
 static sem_t mutex;
 static int ThreadStarted;
 static struct timespec ts;

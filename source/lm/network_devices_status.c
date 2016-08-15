@@ -34,6 +34,10 @@
 #include "ccsp_lmliteLog_wrapper.h"
 #include "network_devices_status_avropack.h"
 #include "lm_main.h"
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
 
 static sem_t mutex;
 static int ThreadStarted;

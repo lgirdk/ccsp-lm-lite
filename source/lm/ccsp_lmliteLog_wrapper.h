@@ -2,6 +2,11 @@
 #define  _CCSP_LMLITELOG_WRPPER_H_
 
 #include "ccsp_custom_logs.h"
+
+#ifdef MLT_ENABLED
+#include "rpl_malloc.h"
+#include "mlt_malloc.h"
+#endif
 extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
 extern int consoleDebugEnable;
