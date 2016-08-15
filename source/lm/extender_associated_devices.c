@@ -35,6 +35,7 @@
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_wrapper.h"   
 #include "lm_main.h"
+#include "report_common.h"
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -57,21 +58,21 @@ extern LmObjectHosts lmHosts;
 extern ExtenderList *extenderlist;
 extern pthread_mutex_t LmHostObjectMutex;
 
-ULONG AssociatedDevicePeriods[13] = {1,5,15,30,60,300,900,1800,3600,10800,21600,43200,86400};
+ULONG AssociatedDevicePeriods[] = {1,5,10,15,30,60,300,900,1800,3600,10800,21600,43200,86400};
 
-ULONG IDWPollingPeriodDefault = 300;
-ULONG IDWReportingPeriodDefault = 300;
+ULONG IDWPollingPeriodDefault = DEFAULT_POLLING_INTERVAL;
+ULONG IDWReportingPeriodDefault = DEFAULT_REPORTING_INTERVAL;
 
-ULONG IDWPollingPeriod = 300;
-ULONG IDWReportingPeriod = 300;
+ULONG IDWPollingPeriod = DEFAULT_POLLING_INTERVAL;
+ULONG IDWReportingPeriod = DEFAULT_REPORTING_INTERVAL;
 
 ULONG MinimumIDWPollingPeriod = 5;
 ULONG currentIDWPollingPeriod = 0;
 ULONG currentIDWReportingPeriod = 0;
 BOOL IDWLMLiteStatus = FALSE;
 
-ULONG IDWOverrideTTL = 300;
-ULONG IDWOverrideTTLDefault = 300;
+ULONG IDWOverrideTTL = TTL_INTERVAL;
+ULONG IDWOverrideTTLDefault = DEFAULT_TTL_INTERVAL;
 
 bool isvalueinarray_idw(ULONG val, ULONG *arr, int size);
 

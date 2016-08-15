@@ -34,6 +34,7 @@
 #include "ccsp_lmliteLog_wrapper.h"
 #include "network_devices_traffic_avropack.h"
 #include "lm_main.h"
+#include "report_common.h"
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -47,24 +48,21 @@ static struct timespec ts;
 
 extern int tm_offset;
 
-ULONG NetworkDeviceTrafficPeriods[10] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
+ULONG NetworkDeviceTrafficPeriods[] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
 
-#define POLLING_INTERVAL 300
-#define REPORTING_INTERVAL POLLING_INTERVAL*3
+ULONG NDTPollingPeriodDefault = DEFAULT_TRAFFIC_POLLING_INTERVAL;
+ULONG NDTReportingPeriodDefault = DEFAULT_TRAFFIC_REPORTING_INTERVAL;
 
-ULONG NDTPollingPeriodDefault = POLLING_INTERVAL;
-ULONG NDTReportingPeriodDefault = REPORTING_INTERVAL;
-
-ULONG NDTPollingPeriod = POLLING_INTERVAL;
-ULONG NDTReportingPeriod = REPORTING_INTERVAL;
+ULONG NDTPollingPeriod = DEFAULT_TRAFFIC_POLLING_INTERVAL;
+ULONG NDTReportingPeriod = DEFAULT_TRAFFIC_REPORTING_INTERVAL;
 
 ULONG MinimumNDTPollingPeriod = 5;
 ULONG currentNDTPollingPeriod = 0;
 ULONG currentNDTReportingPeriod = 0;
 BOOL NDTReportStatus = FALSE;
 
-ULONG NDTOverrideTTL = POLLING_INTERVAL;
-ULONG NDTOverrideTTLDefault = POLLING_INTERVAL;
+ULONG NDTOverrideTTL = TTL_INTERVAL;
+ULONG NDTOverrideTTLDefault = DEFAULT_TTL_INTERVAL;
 
 struct timeval reset_timestamp;
 
