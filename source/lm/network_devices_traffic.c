@@ -76,6 +76,7 @@ int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize);
 void add_to_list_ndt(char* ip_table_line);
 void print_list_ndt();
 void delete_list_ndt();
+void delete_partial_list_ndt();
 
 extern int getTimeOffsetFromUtc();
 
@@ -387,6 +388,58 @@ void delete_list_ndt()
     return;
 }
 
+/* RDKB-6434 : Keep previous poll entries */
+/* Function to delete the selected entries in headnode */
+void delete_partial_list_ndt()
+{
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
+
+    struct networkdevicetrafficdata *list = headnode;
+    time_t last_timestamp = 0;
+    struct networkdevicetrafficdata* next = NULL;
+    struct networkdevicetrafficdata* prev = NULL;
+
+    if( currnode!=NULL )
+	last_timestamp = currnode->timestamp.tv_sec;
+
+    while (list != NULL)
+    {
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s],timestamp[%u] \n",__FUNCTION__, (ulong)list, list->device_mac, list->timestamp.tv_sec));
+
+        next = list->next;
+	
+	// retain the entries with timestamp from last polling cycle 
+	if( list->timestamp.tv_sec != last_timestamp )
+	{
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting node [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, list->device_mac));
+        	free(list->device_mac);
+        	free(list->parent);
+        	free(list->device_type);                
+        	free(list);
+		if( prev!= NULL )
+			prev->next = next;
+	}
+	else
+	{
+             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Last polled timestamp [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, list->device_mac));
+		if( prev == NULL )
+			headnode = list;
+		prev = list;
+	}
+
+       	list = next;
+    }//while
+	if( prev!=NULL )
+		currnode = prev;
+	else{
+    	    headnode = currnode = NULL;
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleted all nodes",__FUNCTION__));
+	}
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
+	
+    return;
+}
+
 void GetIPTableData()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
@@ -465,7 +518,10 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentNDTPollingPeriod [%ld] NDTReportingPeriod[%ld]  \n", currentNDTPollingPeriod, GetNDTReportingPeriod()));
                     network_devices_traffic_report(ptr, &reset_timestamp);
 		    /* RDKB-7047 : Cleanup of headnode after report is sent */
-    		    delete_list_ndt();
+    		    //delete_list_ndt();
+		    /* RDKB-6434 : Keep previous polling entries */
+	  	    // headnode needs to be cleanedup,retain the last poll entries
+		    delete_partial_list_ndt();
                 }
             currentNDTReportingPeriod = 0;
         }
