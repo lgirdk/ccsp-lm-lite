@@ -27,6 +27,13 @@ InterfaceDevicesWifiExtender_Default_GetParamUlongValue
                 ULONG*                      puLong
     );
 
+BOOL
+InterfaceDevicesWifiExtender_Default_SetParamUlongValue
+   (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+       ULONG                      uValue
+    );
 
 BOOL
 InterfaceDevicesWifiExtender_GetParamUlongValue
@@ -86,6 +93,26 @@ InterfaceDevicesWifiExtender_Validate
 
 ULONG
 InterfaceDevicesWifiExtender_Rollback
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ULONG
+InterfaceDevicesWifiExtender_Default_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+BOOL
+InterfaceDevicesWifiExtender_Default_Validate
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       pReturnParamName,
+        ULONG*                      puLength
+    );
+
+ULONG
+InterfaceDevicesWifiExtender_Default_Rollback
     (
         ANSC_HANDLE                 hInsContext
     );

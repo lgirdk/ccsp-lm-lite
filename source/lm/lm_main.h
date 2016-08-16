@@ -122,6 +122,8 @@
 #define IP_V6 6
 #define IP_V4 4
 
+#define  ARRAY_SZ(x)    (sizeof(x) / sizeof((x)[0]))
+
 typedef  struct
 _LmObjectHostPossibleDeviceTypeKeyWords
 {

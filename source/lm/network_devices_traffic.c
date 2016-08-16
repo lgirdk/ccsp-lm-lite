@@ -169,7 +169,15 @@ int SetNDTReportingPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTReportingPeriod, period ));
-    NDTReportingPeriod = period;
+    if (NDTReportingPeriod != period)
+    {
+        NDTReportingPeriod = period;
+    }
+    else
+    {
+        return 0;
+    }
+
     return 0;
 }
 
@@ -184,11 +192,18 @@ int SetNDTPollingPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTPollingPeriod, period ));
-    NDTPollingPeriod = period;
-    if(NDTPollingPeriod > 5)
-        MinimumNDTPollingPeriod = 5;
+    if (NDTPollingPeriod != period)
+    {
+        NDTPollingPeriod = period;
+        if(NDTPollingPeriod > 5)
+            MinimumNDTPollingPeriod = 5;
+        else
+            MinimumNDTPollingPeriod = NDTPollingPeriod;
+    }
     else
-        MinimumNDTPollingPeriod = NDTPollingPeriod;
+    {
+        return 0;
+    }
 
     return 0;
 }
@@ -197,7 +212,7 @@ BOOL ValidateNDTPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     BOOL ret = FALSE;
-    ret = isvalueinarray(period, NetworkDeviceTrafficPeriods, 10);
+    ret = isvalueinarray_ndt(period, NetworkDeviceTrafficPeriods, ARRAY_SZ(NetworkDeviceTrafficPeriods));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__ , ret ));
     return ret;
 } 
@@ -209,12 +224,43 @@ ULONG GetNDTPollingPeriod()
     return NDTPollingPeriod;
 }
 
+ULONG SetNDTReportingPeriodDefault(ULONG period)
+{
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTReportingPeriodDefault, period ));
+
+    if(NDTReportingPeriodDefault != period)
+    {
+       NDTReportingPeriodDefault = period;
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
+}
 
 ULONG GetNDTReportingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTReportingPeriodDefault ));
     return NDTReportingPeriodDefault;
+}
+
+ULONG SetNDTPollingPeriodDefault(ULONG period)
+{
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTPollingPeriodDefault, period ));
+
+   if(NDTPollingPeriodDefault != period)
+    {
+        NDTPollingPeriodDefault = period;
+    }
+    else
+    {
+        return 0;
+    }
+    return 0;
 }
 
 ULONG GetNDTPollingPeriodDefault()
