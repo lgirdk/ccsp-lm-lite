@@ -34,6 +34,8 @@
 #include "ccsp_lmliteLog_wrapper.h"
 #include "network_devices_status_avropack.h"
 #include "lm_main.h"
+#include "report_common.h"
+
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
@@ -43,21 +45,21 @@ static sem_t mutex;
 static int ThreadStarted;
 static struct timespec ts;
 extern LmObjectHosts lmHosts;
-ULONG NetworkDeviceStatusPeriods[10] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
+ULONG NetworkDeviceStatusPeriods[] = {5,10,15,30,60,300,900,1800,3600,10800,21600,43200,86400};
 
-ULONG NDSPollingPeriodDefault = 300;
-ULONG NDSReportingPeriodDefault = 300;
+ULONG NDSPollingPeriodDefault = DEFAULT_POLLING_INTERVAL;
+ULONG NDSReportingPeriodDefault = DEFAULT_REPORTING_INTERVAL;
 
-ULONG NDSPollingPeriod = 300;
-ULONG NDSReportingPeriod = 300;
+ULONG NDSPollingPeriod = DEFAULT_POLLING_INTERVAL;
+ULONG NDSReportingPeriod = DEFAULT_REPORTING_INTERVAL;
 
 ULONG MinimumAPPollingPeriod = 5;
 ULONG currentPollingPeriod = 0;
 ULONG currentReportingPeriod = 0;
 BOOL NDSReportStatus = FALSE;
 
-ULONG NDSOverrideTTL = 300;
-ULONG NDSOverrideTTLDefault = 300;
+ULONG NDSOverrideTTL = TTL_INTERVAL;
+ULONG NDSOverrideTTLDefault = DEFAULT_TTL_INTERVAL;
 
 int tm_offset = 0;
 bool isvalueinarray(ULONG val, ULONG *arr, int size);
