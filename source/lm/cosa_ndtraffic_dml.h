@@ -29,6 +29,14 @@ NetworkDevicesTraffic_Default_GetParamUlongValue
 
 
 BOOL
+NetworkDevicesTraffic_Default_SetParamUlongValue
+   (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+       ULONG                      uValue
+    );
+    
+BOOL
 NetworkDevicesTraffic_GetParamUlongValue
     (
 		ANSC_HANDLE                 hInsContext,
@@ -86,6 +94,26 @@ NetworkDevicesTraffic_Validate
 
 ULONG
 NetworkDevicesTraffic_Rollback
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ULONG
+NetworkDevicesTraffic_Default_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+BOOL
+NetworkDevicesTraffic_Default_Validate
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       pReturnParamName,
+        ULONG*                      puLength
+    );
+
+ULONG
+NetworkDevicesTraffic_Default_Rollback
     (
         ANSC_HANDLE                 hInsContext
     );

@@ -29,6 +29,14 @@ NetworkDevicesStatus_Default_GetParamUlongValue
 
 
 BOOL
+NetworkDevicesStatus_Default_SetParamUlongValue
+   (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+       ULONG                      uValue
+    );
+    
+BOOL
 NetworkDevicesStatus_GetParamUlongValue
     (
 		ANSC_HANDLE                 hInsContext,
@@ -86,6 +94,26 @@ NetworkDevicesStatus_Validate
 
 ULONG
 NetworkDevicesStatus_Rollback
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+ULONG
+NetworkDevicesStatus_Default_Commit
+    (
+        ANSC_HANDLE                 hInsContext
+    );
+
+BOOL
+NetworkDevicesStatus_Default_Validate
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       pReturnParamName,
+        ULONG*                      puLength
+    );
+
+ULONG
+NetworkDevicesStatus_Default_Rollback
     (
         ANSC_HANDLE                 hInsContext
     );

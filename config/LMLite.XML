@@ -262,19 +262,23 @@
                         <objectType>object</objectType>
                         <functions>
                             <func_GetParamUlongValue>NetworkDevicesStatus_Default_GetParamUlongValue</func_GetParamUlongValue>
+                            <func_SetParamUlongValue>NetworkDevicesStatus_Default_SetParamUlongValue</func_SetParamUlongValue>
+			    <func_Validate>NetworkDevicesStatus_Default_Validate</func_Validate>
+			    <func_Commit>NetworkDevicesStatus_Default_Commit</func_Commit>
+			    <func_Rollback>NetworkDevicesStatus_Default_Rollback</func_Rollback>
                         </functions>
                         <parameters>
                             <parameter>
                                 <name>ReportingPeriod</name>
                                 <type>unsignedInt</type>
                                 <syntax>uint32</syntax>
-                                <writable>false</writable>
+                                <writable>true</writable>
                             </parameter>
                             <parameter>
                                 <name>PollingPeriod</name>
                                 <type>unsignedInt</type>
                                 <syntax>uint32</syntax>
-                                <writable>false</writable>
+                                <writable>true</writable>
                             </parameter>
                             <parameter>
                                 <name>OverrideTTL</name>
@@ -337,19 +341,23 @@
                         <objectType>object</objectType>
                         <functions>
                             <func_GetParamUlongValue>NetworkDevicesTraffic_Default_GetParamUlongValue</func_GetParamUlongValue>
+                            <func_SetParamUlongValue>NetworkDevicesTraffic_Default_SetParamUlongValue</func_SetParamUlongValue>
+			    <func_Validate>NetworkDevicesTraffic_Default_Validate</func_Validate>
+			    <func_Commit>NetworkDevicesTraffic_Default_Commit</func_Commit>
+			    <func_Rollback>NetworkDevicesTraffic_Default_Rollback</func_Rollback>
                         </functions>
                         <parameters>
                             <parameter>
                                 <name>ReportingPeriod</name>
                                 <type>unsignedInt</type>
                                 <syntax>uint32</syntax>
-                                <writable>false</writable>
+                                <writable>true</writable>
                             </parameter>
                             <parameter>
                                 <name>PollingPeriod</name>
                                 <type>unsignedInt</type>
                                 <syntax>uint32</syntax>
-                                <writable>false</writable>
+                                <writable>true</writable>
                             </parameter>
                             <parameter>
                                 <name>OverrideTTL</name>
@@ -412,19 +420,23 @@
                         <objectType>object</objectType>
                         <functions>
                             <func_GetParamUlongValue>InterfaceDevicesWifiExtender_Default_GetParamUlongValue</func_GetParamUlongValue>
+                            <func_SetParamUlongValue>InterfaceDevicesWifiExtender_Default_SetParamUlongValue</func_SetParamUlongValue>
+			    <func_Validate>InterfaceDevicesWifiExtender_Default_Validate</func_Validate>
+			    <func_Commit>InterfaceDevicesWifiExtender_Default_Commit</func_Commit>
+			    <func_Rollback>InterfaceDevicesWifiExtender_Default_Rollback</func_Rollback>
                         </functions>
                         <parameters>
                             <parameter>
                                 <name>ReportingPeriod</name>
                                 <type>unsignedInt</type>
                                 <syntax>uint32</syntax>
-                                <writable>false</writable>
+                                <writable>true</writable>
                             </parameter>
                             <parameter>
                                 <name>PollingPeriod</name>
                                 <type>unsignedInt</type>
                                 <syntax>uint32</syntax>
-                                <writable>false</writable>
+                                <writable>true</writable>
                             </parameter>
                             <parameter>
                                 <name>OverrideTTL</name>

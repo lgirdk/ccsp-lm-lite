@@ -75,11 +75,25 @@ ULONG GetNDSPollingPeriod();
 ULONG GetNDSReportingPeriodDefault();
 
 /**
+ * @brief Sets the Default Network Devices Reporting Period
+ *
+ * @return period : The Current Reporting Period
+ */
+ULONG SetNDSReportingPeriodDefault();
+
+/**
  * @brief Gets the Default Network Devices Polling Period
  *
  * @return period : The Current Reporting Period
  */
 ULONG GetNDSPollingPeriodDefault();
+
+/**
+ * @brief Eets the Default Network Devices Polling Period
+ *
+ * @return period : The Current Reporting Period
+ */
+ULONG SetNDSPollingPeriodDefault();
 
 /**
  * @brief Gets the Default timeout for Accelerated Scans

@@ -154,7 +154,15 @@ int SetIDWReportingPeriod(ULONG interval)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%ld] New[%ld] \n", __FUNCTION__, IDWReportingPeriod, interval ));
-    IDWReportingPeriod = interval;
+    if (IDWReportingPeriod != interval)
+    {
+        IDWReportingPeriod = interval;
+    }
+    else
+    {
+        return 0;
+    }
+
     return 0;
 }
 
@@ -169,11 +177,18 @@ int SetIDWPollingPeriod(ULONG interval)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%ld] New[%ld] \n", __FUNCTION__, IDWPollingPeriod, interval ));
-    IDWPollingPeriod = interval;
-    if(IDWPollingPeriod > 5)
-        MinimumIDWPollingPeriod = 5;
+    if (IDWPollingPeriod != interval)
+    {
+       IDWPollingPeriod = interval;
+       if(IDWPollingPeriod > 5)
+            MinimumIDWPollingPeriod = 5;
+       else
+            MinimumIDWPollingPeriod = IDWPollingPeriod;
+    }
     else
-        MinimumIDWPollingPeriod = IDWPollingPeriod;
+    {
+        return 0;
+    }
 
     return 0;
 }
@@ -182,7 +197,7 @@ BOOL ValidateIDWPeriod(ULONG interval)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     BOOL ret = FALSE;
-    ret = isvalueinarray_idw(interval, AssociatedDevicePeriods, 13);
+    ret = isvalueinarray_idw(interval, AssociatedDevicePeriods, ARRAY_SZ(AssociatedDevicePeriods));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__ , ret ));
     return ret;
 } 
@@ -198,7 +213,15 @@ int SetIDWReportingPeriodDefault(ULONG interval)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%ld] New[%ld] \n", __FUNCTION__, IDWReportingPeriodDefault, interval ));
-    IDWReportingPeriodDefault = interval;
+    if (IDWReportingPeriodDefault != interval)
+    {
+        IDWReportingPeriodDefault = interval;
+    }
+    else
+    {
+        return 0;
+    }
+
     return 0;
 }
 
@@ -213,7 +236,15 @@ int SetIDWPollingPeriodDefault(ULONG interval)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%ld] New[%ld] \n", __FUNCTION__, IDWPollingPeriodDefault, interval ));
-    IDWPollingPeriodDefault = interval;
+    if (IDWPollingPeriodDefault != interval)
+    {
+       IDWPollingPeriodDefault = interval;
+    }
+    else
+    {
+        return 0;
+    }
+
     return 0;
 }
 

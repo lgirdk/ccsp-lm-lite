@@ -99,6 +99,10 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Rollback",  NetworkDevicesStatus_Rollback);
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_GetParamUlongValue",  NetworkDevicesStatus_Default_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_SetParamUlongValue",  NetworkDevicesStatus_Default_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_Validate",  NetworkDevicesStatus_Default_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_Commit",  NetworkDevicesStatus_Default_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_Default_Rollback",  NetworkDevicesStatus_Default_Rollback);
     
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_GetParamUlongValue",  NetworkDevicesTraffic_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_GetParamBoolValue",  NetworkDevicesTraffic_GetParamBoolValue);
@@ -110,6 +114,10 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Rollback",  NetworkDevicesTraffic_Rollback);
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_GetParamUlongValue",  NetworkDevicesTraffic_Default_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_SetParamUlongValue",  NetworkDevicesTraffic_Default_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Validate",  NetworkDevicesTraffic_Default_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Commit",  NetworkDevicesTraffic_Default_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Rollback",  NetworkDevicesTraffic_Default_Rollback);
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_GetParamUlongValue",  InterfaceDevicesWifiExtender_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_GetParamBoolValue",  InterfaceDevicesWifiExtender_GetParamBoolValue);
@@ -121,6 +129,10 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Rollback",  InterfaceDevicesWifiExtender_Rollback);
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Default_GetParamUlongValue",  InterfaceDevicesWifiExtender_Default_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Default_SetParamUlongValue",  InterfaceDevicesWifiExtender_Default_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Default_Validate",  InterfaceDevicesWifiExtender_Default_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Default_Commit",  InterfaceDevicesWifiExtender_Default_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "InterfaceDevicesWifiExtender_Default_Rollback",  InterfaceDevicesWifiExtender_Default_Rollback);
     
      /* Create LMLite Object for Settings */
     g_pReports = (PCOSA_DATAMODEL_REPORTS)CosaReportsCreate();

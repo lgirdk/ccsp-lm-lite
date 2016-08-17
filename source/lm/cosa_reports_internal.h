@@ -38,6 +38,8 @@
     BOOLEAN                         bNDSReportingPeriodChanged;    \
     ULONG                           uNDSPollingPeriodDefault;      \
     ULONG                           uNDSReportingPeriodDefault;    \
+    BOOLEAN                         bNDSDefPollingPeriodChanged;    \
+    BOOLEAN                         bNDSDefReportingPeriodChanged;    \
     ULONG                           uNDSOverrideTTL;                \
     BOOLEAN                         bNDTEnabled;                   \
     BOOLEAN                         bNDTEnabledChanged;            \
@@ -47,6 +49,8 @@
     BOOLEAN                         bNDTReportingPeriodChanged;    \
     ULONG                           uNDTPollingPeriodDefault;      \
     ULONG                           uNDTReportingPeriodDefault;    \
+    BOOLEAN                         bNDTDefPollingPeriodChanged;    \
+    BOOLEAN                         bNDTDefReportingPeriodChanged;    \
     ULONG                           uNDTOverrideTTL;                \
     BOOLEAN                         bIDWEnabled;                   \
     BOOLEAN                         bIDWEnabledChanged;            \
@@ -56,6 +60,8 @@
     BOOLEAN                         bIDWReportingPeriodChanged;    \
     ULONG                           uIDWPollingPeriodDefault;      \
     ULONG                           uIDWReportingPeriodDefault;    \
+    BOOLEAN                         bIDWDefPollingPeriodChanged;    \
+    BOOLEAN                         bIDWDefReportingPeriodChanged;    \
     ULONG                           uIDWOverrideTTL;
 
 
