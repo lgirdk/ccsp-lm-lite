@@ -28,6 +28,10 @@
 #include "breakpad_wrapper.h"
 #endif
 
+#ifdef MLT_ENABLED
+#include "sysResource.h"
+#endif
+
 #define DEBUG_INI_NAME "/etc/debug.ini"
 extern char*                                pComponentName;
 char                                        g_Subsystem[32]         = {0};
@@ -295,6 +299,9 @@ int main(int argc, char* argv[])
     rdk_logger_init(DEBUG_INI_NAME);
     system("touch /tmp/lmlite_initialized");
 
+#ifdef MLT_ENABLED
+    createSysResourceMonitor();
+#endif
     LM_main();
     if ( bRunAsDaemon )
     {
