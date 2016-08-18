@@ -584,7 +584,7 @@ BOOL SearchWiFiClients(char *phyAddr)
 	int i = 0;
 	for(i = 0; i < hosts.count ; i++)
 	{
-		if(!strcmp(hosts.host[i].phyAddr,phyAddr))
+		if(!strcasecmp(hosts.host[i].phyAddr,phyAddr))
 		{
 			return TRUE;
 		}
