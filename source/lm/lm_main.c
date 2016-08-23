@@ -387,6 +387,8 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 	
 		if(state == FALSE)
 		{
+			
+			#if 0
 			if(FindHostInLeases(pHost->pStringParaValue[LM_HOST_PhysAddressId], DNS_LEASE))
 			{
 			
@@ -418,9 +420,11 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 			}
 				
 			}
+			#endif
 		}
 		else
 		{
+			
 			{
 				if(pHost->bNotify == FALSE)
 				{
@@ -447,6 +451,7 @@ static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL 
 					pHost->bNotify = TRUE;
 				}
 			}
+			
 		}
 	}
 #endif
