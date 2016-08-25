@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
         daemonize();
 
 #ifndef INCLUDE_BREAKPAD
-    signal(SIGTERM, sig_handler);
+    /*signal(SIGTERM, sig_handler); NEVER Mask SIGTERM or reboot wont shutdown the process (XF3-1284) */
     signal(SIGINT, sig_handler);
     /*signal(SIGCHLD, sig_handler);*/
     signal(SIGUSR1, sig_handler);
