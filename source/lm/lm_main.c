@@ -869,6 +869,43 @@ char* FindParentIPInExtenderList(char* mac_address)
     return parent_ip;
 }
 
+char* FindRSSIInExtenderList(char* mac_address)
+{
+	ExtenderList *tmp = extenderlist;
+	char* rssi = NULL;
+    while(tmp)
+    {
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender IP [%s] \n", __FUNCTION__, tmp->info->extender_ip));
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoResult [%s] \n", __FUNCTION__, tmp->info->client_info_result));
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfolist [%x] \n", __FUNCTION__, tmp->info->list));
+
+	    if(tmp->info->list)
+	    {
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoList NumClients [%d] \n", __FUNCTION__, tmp->info->list->numClient));
+
+	    ClientInfo* temp = tmp->info->list->connectedDeviceList;
+
+	    while(temp)
+	        {
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender MACAddress [%s] \n", __FUNCTION__, temp->MAC_Address));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Type [%s] \n", __FUNCTION__, temp->SSID_Type));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__, temp->Device_Name));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__, temp->SSID_Name));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__, temp->RSSI));
+	        if(!strcasecmp(temp->MAC_Address, mac_address))
+	        	{
+	        		rssi = temp->RSSI;
+	        		break;
+	        	}
+	        temp = temp->next;
+	        }
+	    }
+	tmp = tmp->next;
+    }
+
+    return rssi;
+}
+
 inline int _mac_string_to_array(char *pStr, unsigned char array[6])
 {
     int tmp[6],n,i;
@@ -1420,56 +1457,52 @@ void Hosts_SyncMoCA()
 
             if ( pHost )
             {
-		  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
+		  		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
                 pHost->l1unReachableCnt = 1;
 
-				if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
-					{
-						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
-						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId] ));
 
-						//if(!IsExtenderSynced(pHost->pStringParaValue[LM_HOST_IPAddressId]))
-						int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-						if(!ret)						
-						{
-							//int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
+				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
+				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId] ));
 
-							CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s QueryMocaExtender ret value %d \n", __FUNCTION__, ret));
+				//if(!IsExtenderSynced(pHost->pStringParaValue[LM_HOST_IPAddressId]))
+				int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
+				if(!ret)						
+				{
+					//int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
 
-							if(!ret)
-							{
-								LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-								LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "extender");
-								CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
-								
-								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s QueryMocaExtender ret value %d \n", __FUNCTION__, ret));
 
-							}
-						}	
-						else
-						{
-							LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-							CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s LM_HOST_PhysAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_PhysAddressId] ));
-
-							char* parent_ipAddress = FindParentIPInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-							CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s parent_ipAddress %s  FindMACByIPAddress %s \n", __FUNCTION__, parent_ipAddress, FindMACByIPAddress(parent_ipAddress)));
-
-							if(parent_ipAddress != NULL)
-								{
-									LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), FindMACByIPAddress(parent_ipAddress));
-									LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-								}
-							else
-								{
-									LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-								}	
-						}
-					}
-				else
+					if(!ret)
 					{
 						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "extender");
+						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
+						
+						LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+
 					}
+				}	
+				else
+				{
+					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s LM_HOST_PhysAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_PhysAddressId] ));
+
+					char* parent_ipAddress = FindParentIPInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s parent_ipAddress %s  FindMACByIPAddress %s \n", __FUNCTION__, parent_ipAddress, FindMACByIPAddress(parent_ipAddress)));
+
+					if(parent_ipAddress != NULL)
+						{
+							LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), FindMACByIPAddress(parent_ipAddress));
+							char* device_rssi = FindRSSIInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);	
+							pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = atoi(device_rssi);
+							LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+						}
+					else
+						{
+							LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+						}	
+				}
+
             }
         }
         pthread_mutex_unlock(&LmHostObjectMutex);
