@@ -1651,6 +1651,28 @@ int IsExtenderSynced(char* ip)
     return ret;   
 }
 
+void DeleteExtenderClientInfoList(struct _ClientInfoLists* list)
+{
+	if(list->connectedDeviceList)
+	{
+    struct _ClientInfo* currnode = list->connectedDeviceList;
+    struct _ClientInfo* next = NULL;
+	while(currnode != NULL)
+		{
+			next = currnode->next;
+            free(currnode->MAC_Address);
+            free(currnode->SSID_Type);
+            free(currnode->Device_Name);
+            free(currnode->SSID_Name);
+            free(currnode->RSSI);
+            free(currnode);
+            currnode = next;
+		}
+    list->connectedDeviceList = NULL;
+	}
+}
+
+
 ExtenderInfo* FindExtenderInList(char* ip_address)
 {
     ExtenderList* tmp = extenderlist;
@@ -1784,6 +1806,7 @@ extract_elements(ExtenderInfo* extender, xmlNode * a_node)
 
     if(extender->list)
         {
+            DeleteExtenderClientInfoList(extender->list);
             free(extender->list);
             extender->list = NULL;
         }
