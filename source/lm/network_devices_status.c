@@ -74,6 +74,8 @@ static struct networkdevicestatusdata *headnode = NULL;
 static struct networkdevicestatusdata *headnodeextender = NULL;
 
 extern pthread_mutex_t LmHostObjectMutex;
+pthread_mutex_t NDSThreadMutex;
+
 
 int getTimeOffsetFromUtc()
 {
@@ -217,15 +219,15 @@ int SetNDSPollingPeriod(ULONG period)
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDSPollingPeriod, period ));
     if (NDSPollingPeriod != period)
     {
-       NDSPollingPeriod = period;
-        if(NDSPollingPeriod > 5)
-            MinimumAPPollingPeriod = 5;
-        else
-            MinimumAPPollingPeriod = NDSPollingPeriod;
+        NDSPollingPeriod = period;
+        pthread_mutex_lock(&NDSThreadMutex);
+        currentPollingPeriod = NDSReportingPeriod;
+        pthread_mutex_unlock(&NDSThreadMutex);
+        SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
     }
     else
     {
-	return 0;
+        return 0;
     }
 
     return 0;
@@ -542,6 +544,15 @@ void GetLMHostData()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 }
 
+void ResetNDSReportingConfiguration()
+{
+    SetNDSPollingPeriod(GetNDSPollingPeriodDefault());
+    SetNDSReportingPeriod(GetNDSReportingPeriodDefault());
+    SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
+    currentPollingPeriod = 0;
+    currentReportingPeriod = 0;
+}
+
 void* StartNetworkDeviceStatusHarvesting( void *arg )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
@@ -562,7 +573,11 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
     {
         GetLMHostData();
         currentReportingPeriod = currentReportingPeriod + currentPollingPeriod;
+        
+        pthread_mutex_lock(&NDSThreadMutex);
         currentPollingPeriod = 0;
+        pthread_mutex_unlock(&NDSThreadMutex);
+
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentReportingPeriod [%ld] GetNDSReportingPeriod()[%ld]  \n", currentReportingPeriod, GetNDSReportingPeriod()));
 
         if (currentReportingPeriod >= GetNDSReportingPeriod())
@@ -619,7 +634,10 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
 
         do
         {
+            pthread_mutex_lock(&NDSThreadMutex);
             currentPollingPeriod += MinimumAPPollingPeriod;
+            pthread_mutex_unlock(&NDSThreadMutex);
+
             WaitForSamaphoreTimeoutND();
             clock_gettime(CLOCK_REALTIME, &ts);    // Triggered, get current time
             ts.tv_sec += MinimumAPPollingPeriod; // setup next trigger time
@@ -630,6 +648,8 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
 
     } while (GetNDSHarvestingStatus());
     
+    ResetNDSReportingConfiguration();
+
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 
     return NULL; // shouldn't return;
