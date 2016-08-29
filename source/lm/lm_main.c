@@ -1749,7 +1749,10 @@ void Hosts_StatSyncThreadFunc()
                         */
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
+                           /* Fix for RDKB-7223 */
+                           if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet" );
+
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                             pHost->l1unReachableCnt = 0;
                         }
