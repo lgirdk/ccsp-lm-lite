@@ -76,7 +76,7 @@
 int lm_wrapper_priv_stop_scan()
 {
     UtopiaContext ctx = {0};
-    bridgeInfo_t bridge_info;
+    bridgeInfo_t bridge_info = {0}; /*RDKB-7350, CID-33409, init before use*/
     
     if (Utopia_Init(&ctx))
     {
@@ -98,10 +98,10 @@ void lm_wrapper_priv_getLanHostComments(char *physAddress, char *pComments)
     char buffer[256] = {0};
     UtopiaContext ctx;
 
-	pComments[0] = 0;
-
-    if ( physAddress == NULL && pComments == NULL)
+    if ( (physAddress == NULL) && (pComments == NULL) )
         return;
+
+    pComments[0] = 0; /*RDKB-7350, CID-33555, use after null check */
 
     if( !Utopia_Init(&ctx) )
         return;
