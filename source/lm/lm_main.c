@@ -738,7 +738,7 @@ void Host_FreeIPAddress(PLmObjectHost pHost, int version)
         LanManager_Free(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
         pCur = pIpAddrList;
         pIpAddrList = pIpAddrList->pNext;
-        LanManager_Free(pIpAddrList);
+        LanManager_Free(pCur); /*RDKB-7348, CID-33198, free current list*/
         *ppHeader = NULL;
     }
 }
