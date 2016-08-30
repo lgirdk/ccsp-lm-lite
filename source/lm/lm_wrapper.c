@@ -717,11 +717,11 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     /* if netName is "brlan0",  need to update only private network.*/
         interface_number = 2 ;
 
-    char *(*pReferenceParaNameArray)[] = malloc(sizeof(char*) * interface_number);
+    char *(*pReferenceParaNameArray)[] = calloc(1,sizeof(char*) * interface_number); /*RDKB-7349,CID-33112, initialize before use*/
     if(pReferenceParaNameArray == NULL)
         goto RET1;
 
-    char *(*pAssociatedDeviceNameArray)[] = malloc(sizeof(char*) * interface_number * 2);
+    char *(*pAssociatedDeviceNameArray)[] = calloc(1,sizeof(char*) * interface_number * 2); /*RDKB-7349,CID-33017, initialize before use*/
     if(pAssociatedDeviceNameArray == NULL)
         goto RET2;
 
