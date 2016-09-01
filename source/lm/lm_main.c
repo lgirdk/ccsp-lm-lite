@@ -1494,7 +1494,9 @@ void Hosts_SyncMoCA()
 						{
 							LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), FindMACByIPAddress(parent_ipAddress));
 							char* device_rssi = FindRSSIInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);	
-							pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = atoi(device_rssi);
+                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s FindRSSIInExtenderList ret value %s \n", __FUNCTION__, device_rssi));
+							if(device_rssi)
+								pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = atoi(device_rssi);
 							LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 						}
 					else
