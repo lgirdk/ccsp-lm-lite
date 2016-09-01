@@ -1819,6 +1819,13 @@ extract_elements(ExtenderInfo* extender, xmlNode * a_node)
         xmlNode* tmp = NULL;
         infolist->numClient++;
         ClientInfo* info = (ClientInfo*) malloc (sizeof(ClientInfo));
+
+        info->MAC_Address = NULL;
+        info->SSID_Type = NULL;
+        info->Device_Name = NULL;
+        info->SSID_Name = NULL;
+        info->RSSI = NULL;
+
         info->next = NULL;
         for(tmp = cur_node->children; tmp; tmp = tmp->next) 
             {
