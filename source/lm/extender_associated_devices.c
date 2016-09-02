@@ -50,9 +50,10 @@
 #define PRIVATE_WIFI_IDX_STARTS  0
 #define PRIVATE_WIFI_IDX_ENDS  1
 
+static pthread_mutex_t idwMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t idwCond = PTHREAD_COND_INITIALIZER;
+
 static sem_t mutex;
-static int ThreadStarted;
-static struct timespec ts;
 extern LmObjectHosts lmHosts;
 
 extern ExtenderList *extenderlist;
@@ -66,8 +67,6 @@ ULONG IDWReportingPeriodDefault = DEFAULT_REPORTING_INTERVAL;
 ULONG IDWPollingPeriod = DEFAULT_POLLING_INTERVAL;
 ULONG IDWReportingPeriod = DEFAULT_REPORTING_INTERVAL;
 
-ULONG MinimumIDWPollingPeriod = 5;
-ULONG currentIDWPollingPeriod = 0;
 ULONG currentIDWReportingPeriod = 0;
 BOOL IDWLMLiteStatus = FALSE;
 
@@ -87,21 +86,41 @@ static struct associateddevicedata *headnodepublic = NULL;
 
 extern int getTimeOffsetFromUtc();
 
-void WaitForSamaphoreTimeoutIDW()
+
+static void WaitForPthreadConditionTimeoutIDW()
 {
-    if ( ThreadStarted == TRUE )
+    struct timespec _ts;
+    struct timespec _now;
+    int n;
+
+    memset(&_ts, 0, sizeof(struct timespec));
+    memset(&_now, 0, sizeof(struct timespec));
+
+    pthread_mutex_lock(&idwMutex);
+
+    clock_gettime(CLOCK_REALTIME, &_now);
+    _ts.tv_sec = _now.tv_sec + GetIDWPollingPeriod();
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %d sec\n",__FUNCTION__,GetIDWPollingPeriod()));
+
+    n = pthread_cond_timedwait(&idwCond, &idwMutex, &_ts);
+    if(n == ETIMEDOUT)
     {
-        // First time thread starts, do not need to wait, report to Webpa now
-        clock_gettime(CLOCK_REALTIME, &ts);  // get current to clear any wait 
-        ThreadStarted = FALSE;
-        return; // no need to wait
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_timedwait TIMED OUT!!!\n",__FUNCTION__));
     }
-    if (( GetCurrentTimeInSecond() == (int)ts.tv_sec ))
+    else if (n == 0)
     {
-        return; // no need to wait
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_timedwait SIGNALLED OK!!!\n",__FUNCTION__));
     }
-    sem_timedwait(&mutex, &ts); // Wait for trigger
+    else
+    {
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_timedwait ERROR!!!\n",__FUNCTION__));
+    }
+
+    pthread_mutex_unlock(&idwMutex);
+
 }
+
 
 
 bool isvalueinarray_idw(ULONG val, ULONG *arr, int size)
@@ -138,6 +157,22 @@ int SetIDWHarvestingStatus(BOOL status)
         }
     }
     
+    else
+    {
+        int ret;
+        pthread_mutex_lock(&idwMutex);
+        ret = pthread_cond_signal(&idwCond);
+        pthread_mutex_unlock(&idwMutex);
+        if (ret == 0)
+        {
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_signal success\n", __FUNCTION__ ));
+        }
+        else
+        {
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_signal fail\n", __FUNCTION__ ));
+        }
+    }
+
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
     return 0;
@@ -175,19 +210,27 @@ ULONG GetIDWReportingPeriod()
 
 int SetIDWPollingPeriod(ULONG interval)
 {
+    int ret;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%ld] New[%ld] \n", __FUNCTION__, IDWPollingPeriod, interval ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Old[%ld] New[%ld] \n", __FUNCTION__, IDWPollingPeriod, interval ));
     if (IDWPollingPeriod != interval)
     {
        IDWPollingPeriod = interval;
-       if(IDWPollingPeriod > 5)
-            MinimumIDWPollingPeriod = 5;
+       SetIDWOverrideTTL(GetIDWOverrideTTLDefault());
+
+       pthread_mutex_lock(&idwMutex);
+       currentIDWReportingPeriod = GetIDWReportingPeriod();
+
+       ret = pthread_cond_signal(&idwCond);
+       pthread_mutex_unlock(&idwMutex);
+       if (ret == 0)
+       {
+          CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_signal success\n",__FUNCTION__));
+       }
        else
-            MinimumIDWPollingPeriod = IDWPollingPeriod;
-    }
-    else
-    {
-        return 0;
+       {
+          CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_signal fail\n",__FUNCTION__));
+       }
     }
 
     return 0;
@@ -487,10 +530,6 @@ void* StartAssociatedDeviceHarvesting( void *arg )
 
     int ret = 0;
 
-    ThreadStarted = TRUE;
-    sem_init(&mutex, 0, 0);      /* initialize mutex - binary semaphore */
-    clock_gettime(CLOCK_REALTIME, &ts);    // get current time
-    ts.tv_sec += MinimumIDWPollingPeriod; // next trigger time
     currentIDWReportingPeriod = GetIDWReportingPeriod();
 
     if(GetIDWOverrideTTL() < currentIDWReportingPeriod)
@@ -507,8 +546,8 @@ void* StartAssociatedDeviceHarvesting( void *arg )
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : GetWiFiApGetAssocDevicesData returned error [%d] \n",__FUNCTION__, ret));
         }
 
-        currentIDWReportingPeriod = currentIDWReportingPeriod + currentIDWPollingPeriod;
-        currentIDWPollingPeriod = 0;
+        currentIDWReportingPeriod = currentIDWReportingPeriod + GetIDWPollingPeriod();
+
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentIDWReportingPeriod [%ld] GetIDWReportingPeriod()[%ld]  \n", currentIDWReportingPeriod, GetIDWReportingPeriod()));
 
         if (currentIDWReportingPeriod >= GetIDWReportingPeriod())
@@ -517,7 +556,7 @@ void* StartAssociatedDeviceHarvesting( void *arg )
                 {
 
                     int i = 0;
-                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentIDWPollingPeriod [%ld] IDWReportingPeriod[%ld]  \n", currentIDWPollingPeriod, GetIDWReportingPeriod()));
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO IDWReportingPeriod[%ld]  \n", GetIDWReportingPeriod()));
                     pthread_mutex_lock(&LmHostObjectMutex);
                     int array_size = lmHosts.numHost;
                     if (array_size)
@@ -527,7 +566,7 @@ void* StartAssociatedDeviceHarvesting( void *arg )
                             if((lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType] != NULL) && !strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType], "extender"))
                                 {
                                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Calling extender_report_associateddevices with Extender [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId] ));
-                                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentIDWPollingPeriod [%ld] IDWReportingPeriod[%ld]  \n", currentIDWPollingPeriod, GetIDWReportingPeriod()));
+                                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO IDWReportingPeriod[%ld]  \n", GetIDWReportingPeriod()));
                                     extender_report_associateddevices(headnodeprivate, "PRIVATE", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
                                 }
                         }
@@ -553,17 +592,9 @@ void* StartAssociatedDeviceHarvesting( void *arg )
             SetIDWOverrideTTL(GetIDWOverrideTTL() - GetIDWPollingPeriod());
         }
 
-        do
-        {
-            currentIDWPollingPeriod += MinimumIDWPollingPeriod;
-            WaitForSamaphoreTimeoutIDW();
-            clock_gettime(CLOCK_REALTIME, &ts);    // Triggered, get current time
-            ts.tv_sec += MinimumIDWPollingPeriod; // setup next trigger time
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Sleeping Inside IDW Loop for currentIDWPollingPeriod[%ld] MinimumIDWPollingPeriod[%ld] \n", currentIDWPollingPeriod, MinimumIDWPollingPeriod));
-        }
-        while (currentIDWPollingPeriod < GetIDWPollingPeriod() && GetIDWHarvestingStatus());
+        WaitForPthreadConditionTimeoutIDW();
 
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, currentIDWPollingPeriod [%ld] GetIDWPollingPeriod[%ld]\n", currentIDWPollingPeriod, GetIDWPollingPeriod()));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,GetIDWPollingPeriod[%ld]\n", GetIDWPollingPeriod()));
     }
     
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
