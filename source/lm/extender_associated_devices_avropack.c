@@ -474,8 +474,8 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
       //Patch HAL values if necessary
       if ( strlen(ps->cli_OperatingStandard ) == 0 )      
       {
-          CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, operating_standard = \"%s\"\n", "Not defined, set to ac" ));
-          avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "ac" ));
+          CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, operating_standard = \"%s\"\n", "Not defined, set to NULL" ));
+          avro_value_set_null(&optional);
       }
       else
       {
@@ -495,8 +495,8 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
       //Patch HAL values if necessary
       if ( strlen( ps->cli_OperatingChannelBandwidth) == 0 )
       {
-          CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, operating_channel_bandwidth = \"%s\"\n", "Not defined, set to _20MHz" ));
-          avro_value_set_enum(&optional, avro_schema_enum_get_by_name(avro_value_get_schema(&optional), "_20MHz"));
+          CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, operating_channel_bandwidth = \"%s\"\n", "Not defined, set to NULL" ));
+          avro_value_set_null(&optional);
       }
       else
       {
