@@ -465,7 +465,7 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
             wifi_associated_dev_array->cli_AuthenticationState = 0;
             wifi_associated_dev_array->cli_LastDataDownlinkRate= 0;
             wifi_associated_dev_array->cli_LastDataUplinkRate= 0;
-            wifi_associated_dev_array->cli_SignalStrength= atoi(tmp->RSSI) + 100;
+            wifi_associated_dev_array->cli_SignalStrength= atoi(tmp->RSSI);
             wifi_associated_dev_array->cli_Retransmissions= 0;
             wifi_associated_dev_array->cli_Active= TRUE;
 
