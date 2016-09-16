@@ -22,6 +22,14 @@
 
 #include "ansc_platform.h"
 
+
+#define IDW_WIFI_BAND_2_4 			"Radio_2.4G"
+#define IDW_WIFI_BAND_5_0 			"Radio_5.0G"
+#define IDW_HOME_SECURITY_SSID_NAME "XHS-"
+#define IDW_LOST_FOUND_SSID_2_4 	"A16746DF2466410CA2ED9FB2E32FE7D9"
+#define IDW_LOST_FOUND_SSID_5_0		"A16746DF2466410CA2ED9FB2E32FE7D9"
+
+
 /**
  * @brief Set the Harvesting Status for Associated Devices.
  *

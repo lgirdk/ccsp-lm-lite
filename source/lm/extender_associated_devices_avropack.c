@@ -451,13 +451,29 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
       avro_value_set_enum(&drField, avro_schema_enum_get_by_name(avro_value_get_schema(&drField), ServiceType));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
+      /* RDKB-7592 : Extender connected device report should have correct interface_mac */
+      memset(CpeMacHoldingBuf, 0, sizeof CpeMacHoldingBuf);
+      memset(CpeMacid, 0, sizeof CpeMacid);
+
+      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Mac address BSSID  = %s \n", ptr->bssid ));
+
+      for (k = 0; k < 6; k++ )
+      {
+        /* copy 2 bytes */
+        CpeMacHoldingBuf[ k * 2 ] = ptr->bssid[ k * 3 ];
+        CpeMacHoldingBuf[ k * 2 + 1 ] = ptr->bssid[ k * 3 + 1 ];
+        CpeMacid[ k ] = (unsigned char)strtol(&CpeMacHoldingBuf[ k * 2 ], NULL, 16);
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Interface Mac address = %0x\n", CpeMacid[ k ] ));
+      }
+
       // interface_mac
       avro_value_get_by_name(&dr, "interface_mac", &drField, NULL);
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, interface_mac\tType: %d\n", avro_value_get_type(&drField)));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
-      avro_value_set_fixed(&drField, ps->cli_MACAddress, 6);
-      pMac = (unsigned char*)ps->cli_MACAddress;
+      /* RDKB-7592 : Extender connected device report should have correct interface_mac */
+      avro_value_set_fixed(&drField, CpeMacid, 6);
+      pMac = (unsigned char*)CpeMacid;
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, interface_mac = 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X\n", pMac[0], pMac[1], pMac[2], pMac[3], pMac[4], pMac[5] ));
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
 
