@@ -713,8 +713,6 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
       if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
       avro_value_set_branch(&drField, 1, &optional);
 
-      ps->cli_SignalStrength = ps->cli_RSSI + 100;
-
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, signal_strength = %d\n", ps->cli_SignalStrength));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, signal_strength\tType: %d\n", avro_value_get_type(&optional)));
       avro_value_set_float(&optional, (float)ps->cli_SignalStrength);
