@@ -100,6 +100,14 @@ static char pAtomBRMac[32] = {0};
 #define WIFIEXT_DM_NUMENTRIES  "Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDeviceNumberOfEntries"
 #define WIFIEXT_DM_EXTENDER_ENTRY_IPADDRESS  "Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.IPAddress"
 #define WIFIEXT_DM_EXTENDER_ENTRY_STATUS  "Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.Status"
+
+/* RDKB-7592 : Extender connected device report should have correct interface_mac */
+#define WIFIEXT_DM_EXTENDER_SSID_ENTRY_NAME		"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSID.%d.SSID"
+#define WIFIEXT_DM_EXTENDER_SSID_ENTRY_BSSID	"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSID.%d.BSSID"
+#define WIFIEXT_DM_EXTENDER_SSID_ENTRY_BAND		"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSID.%d.Band"
+#define WIFIEXT_DM_EXTENDER_SSID_ENTRIES_CNT	"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSIDNumberOfEntries"
+
+
 char *dstComponent = NULL;
 char *dstPath = NULL;
 
@@ -1879,8 +1887,289 @@ extract_elements(ExtenderInfo* extender, xmlNode * a_node)
                 }   
             }
         }
-
 }
+
+//Frees the ssid list associated with an extender
+void delete_ssid_list(Ssid *pSsidList)
+{
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
+    if( !pSsidList )
+    {
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT , null ssidlist \n", __FUNCTION__));
+	return;
+    }
+
+    Ssid *currSsidPtr = pSsidList;
+    Ssid *tmpSsidPtr = NULL;
+    while( currSsidPtr )
+    {
+	tmpSsidPtr = currSsidPtr->next;
+
+	LanManager_Free(currSsidPtr->name);
+	LanManager_Free(currSsidPtr->band);
+	LanManager_Free(currSsidPtr->bssid);
+
+	LanManager_Free(currSsidPtr);
+
+	currSsidPtr = tmpSsidPtr;
+    }//while
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
+}
+
+/* This function queries the data model for information of a particular SSID of a specific extender */
+Ssid* get_ssid(int pExtIndex, int pSsidIndex )
+{
+    char                    *paramNameList[1];
+    char                    tmpPath[128] = {0};
+    int                     valNum , ssidCount = 0;
+    parameterValStruct_t    **valStructsString = NULL;
+    Ssid* 					retSsid = NULL;
+	
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
+
+    retSsid = LanManager_Allocate(sizeof(Ssid));
+
+    memset(retSsid, 0, sizeof(Ssid));
+	
+    retSsid->index = pSsidIndex;
+
+    // SSID Name
+    memset(&tmpPath, '\0', sizeof(char) * 128);
+    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRY_NAME, pExtIndex,pSsidIndex);
+    paramNameList[0] = tmpPath;
+    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
+    {
+        free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+	valStructsString = NULL;
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query SSID name\n", __FUNCTION__));
+	goto error;
+    }
+    else
+    {
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s queried SSID name %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
+    	retSsid->name = LanManager_CloneString(valStructsString[0]->parameterValue);
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s extender SSID name  %s \n", __FUNCTION__, retSsid->name));
+		
+	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+	valStructsString = NULL;
+    }
+
+    //BSSID
+    memset(&tmpPath, '\0', sizeof(char) * 128);
+    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRY_BSSID, pExtIndex,pSsidIndex);
+    paramNameList[0] = tmpPath;
+    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
+    {
+  	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+  	valStructsString = NULL;
+  	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query BSSID\n", __FUNCTION__));
+  	goto error;
+    }
+    else
+    {
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s queried BSSID %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
+	retSsid->bssid = LanManager_CloneString(valStructsString[0]->parameterValue);
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s extender BSSID %s \n", __FUNCTION__, retSsid->bssid));
+	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+	valStructsString = NULL;
+    }
+
+    //Band
+    memset(&tmpPath, '\0', sizeof(char) * 128);
+    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRY_BAND, pExtIndex,pSsidIndex);
+    paramNameList[0] = tmpPath;
+    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
+    {
+	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+  	valStructsString = NULL;
+  	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query Band\n", __FUNCTION__));
+	goto error;
+    }
+    else
+    {
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s queried SSID Band %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
+	retSsid->band = LanManager_CloneString(valStructsString[0]->parameterValue);
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s extender SSID Band %s \n", __FUNCTION__, retSsid->band));
+	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+  	valStructsString = NULL;
+    }
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
+    return retSsid;
+	
+error :
+    if(retSsid)
+	LanManager_Free(retSsid);
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
+    return NULL;
+}
+
+/* 
+This function queries the data model for a specific extender, fetches the corresponding SSID information 
+and updates the extender info.
+*/
+int query_ccsp_data_model(ExtenderInfo* extender)
+{
+    //parameterValStruct_t    **valStructsNumExtenders = NULL;
+    //parameterValStruct_t    **valStructsIPAddress = NULL;
+    parameterValStruct_t    **valStructsString = NULL;
+    BOOL 					found = FALSE;
+
+    char                    *paramNameList[1];
+    char                    tmpPath[128] = {0};
+    int                     valNum, ret, ei, si = 0;
+    int                     numExtenders, ssidCount = 0;
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
+
+    if( extender==NULL  || !FindExtenderComponent())
+    {
+        //Error case
+        ret = -1;
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, LMLite %s EXIT @ extender not found %d \n", __FUNCTION__, ret));
+        return ret;
+    }
+	
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Query for IPaddress %s \n", __FUNCTION__ , extender->extender_ip ));
+
+    sprintf(tmpPath,"%s",WIFIEXT_DM_NUMENTRIES);
+    paramNameList[0] = tmpPath;
+    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
+    {
+       	//No extenders available
+        ret = -1;
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Cosa_GetParamValues Ret %d \n", __FUNCTION__, ret ));
+    }
+    else
+    {
+      	//Number of connected extenders
+        numExtenders = atoi(valStructsString[0]->parameterValue);
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s NumberofExtenders %d \n", __FUNCTION__, numExtenders));
+    }   
+    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+    valStructsString = NULL;
+	
+    for(ei = 1; ei <= numExtenders; ei++)
+    {
+        memset(&tmpPath, '\0', sizeof(char) * 128);
+        snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_ENTRY_IPADDRESS, ei);
+        paramNameList[0] = tmpPath;
+        if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
+        {
+            //IPAddress unavailable
+            ret = -1;
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s found  IP =false %d \n", __FUNCTION__, ret));
+            found = FALSE;
+	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+            valStructsString = NULL;
+	    continue;
+        }
+
+	//Found IPAddress, check if its the one being searched for.
+	ret = 0;
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s current IPAddress %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
+    	if( (extender->extender_ip) && (AnscEqualString(valStructsString[0]->parameterValue, extender->extender_ip, FALSE)) )
+       	{
+       	    //Found the required extender
+       	    found = TRUE;                    
+	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+	    valStructsString = NULL;
+			
+	    //Query for the number of SSIDs
+	    memset(&tmpPath, '\0', sizeof(char) * 128);
+	    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRIES_CNT, ei);
+	    paramNameList[0] = tmpPath;
+	    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
+	    {
+	        //ssid count unavailable
+	        ret = -1;
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s error @ querying ssid count %d \n", __FUNCTION__, ret));
+	        ssidCount = 0;				
+	    }
+	    else
+	    {
+		//Number of available SSIDs
+	  	ssidCount = atoi(valStructsString[0]->parameterValue);				
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s SSID COUNT %d \n", __FUNCTION__, ssidCount));
+	    }
+
+	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+	    valStructsString = NULL;
+		
+	    //Free previous data
+	    if( extender->ssid_list!=NULL )
+	    {
+		delete_ssid_list( extender->ssid_list );
+		extender->ssid_list = NULL;
+	    }
+			
+	    extender->ssid_count = ssidCount;
+		
+	    Ssid *currSsid = NULL;
+	    Ssid *prevSsid = NULL;
+
+	    //Populate all the available SSIDs in the extender datastructure
+	    for( si=1; si<=ssidCount ; si++ )
+	    {
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s querying ssid %d \n", __FUNCTION__, si));
+		currSsid = get_ssid(ei,si);
+		if( currSsid==NULL )
+		    break;
+				
+		if( prevSsid==NULL )
+		    extender->ssid_list = currSsid;
+		else
+		    prevSsid->next = currSsid;
+			
+		prevSsid = currSsid;				
+	     }//for
+		
+             break;
+        }//if extender_ip
+    }//for extender
+
+    if(!ret)
+    {
+        if (found == TRUE)
+        {
+            ret = 0;
+        }
+        else
+        {
+            ret = -1;
+        }
+    }
+    
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT %d \n", __FUNCTION__, ret));
+
+    return ret;   
+}
+
+/* Function to update the extender with it's available SSIDs. */
+void update_extender_ssid(ExtenderInfo* extender)
+{
+
+    /* The SSID of extender can be fetched either by executing a curl query on the extender, or
+    by query the cosa data model throught the DBUS */
+
+    /* RDKB-7592 : Extender connected device report should have correct interface_mac */
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
+    if( extender==NULL )
+    {
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT, null extender \n", __FUNCTION__));
+        return;
+    }
+
+    // Query the cosa data model through DBUS 
+    int ret = query_ccsp_data_model(extender );
+    //Ignore return value 'ret', as it's non-critical
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
+    return;
+}
+
 
 int
 ParseExtenderXML(char* ip_address, char* sourceXML, size_t newLen)
@@ -1916,11 +2205,17 @@ ParseExtenderXML(char* ip_address, char* sourceXML, size_t newLen)
     extender->client_info_result = NULL;
     extender->extender_ip = strdup(ip_address);
     extender->list = NULL;
+	/* RDKB-7592  */
+	extender->ssid_list = NULL;
+	extender->ssid_count = 0;
     add_to_extender_list(extender);
     }
 
     extract_elements(extender, cur);
 
+    /* RDKB-7592 : Extender connected device report should have correct interface_mac */
+    update_extender_ssid(extender);
+	
     //print_extender_list(extenderlist);
 
     /*free the document */

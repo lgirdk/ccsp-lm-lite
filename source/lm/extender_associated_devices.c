@@ -325,7 +325,9 @@ void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG d
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, SSID Input[%s] Devices[%ld] \n", ssid, devices));
+    if( ssid!=NULL)
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, SSID Input[%s] Devices[%ld] \n", ssid, devices));
+
     struct associateddevicedata *ptr = malloc(sizeof(*ptr));
     memset( ptr, 0, sizeof(*ptr));
     if (ptr == NULL)
@@ -335,7 +337,8 @@ void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG d
     }
     else
     {
-        ptr->sSidName = strdup(ssid);
+		if( ssid!=NULL)
+        	ptr->sSidName = strdup(ssid);
         ptr->bssid = strdup(intfcmacid);
         ptr->numAssocDevices = devices;
         ptr->devicedata = devicedata;
@@ -399,7 +402,8 @@ void delete_list_idw(  struct associateddevicedata *headnode )
     {
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting IDW Node Head Ptr [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)currnode, currnode->sSidName));
         next = currnode->next;
-        free(currnode->sSidName);
+		if( currnode->sSidName )
+        	free(currnode->sSidName);
         free(currnode->bssid);
         free(currnode->radioOperatingFrequencyBand);
         free(currnode->devicedata);
@@ -412,6 +416,7 @@ void delete_list_idw(  struct associateddevicedata *headnode )
     return;
 }
 
+
 int GetWiFiApGetAssocDevicesData(int ServiceType)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
@@ -420,7 +425,8 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
     int ret = 0;
     UINT array_size = 1;
     char interfaceMAC[128] = {0};
-    ULONG channel = 0;
+	char band_client[128] = {0};
+	ULONG channel = 0;
     char freqband[128] = {0};
     ExtenderList *list = extenderlist;
 
@@ -430,10 +436,11 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 
         if(list->info->list)
         {
-        printf("Extender ClientInfoList NumClients [%d] \n", list->info->list->numClient);
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoList NumClients [%d] \n", __FUNCTION__, list->info->list->numClient ));
 
         ClientInfo* tmp = list->info->list->connectedDeviceList;
         char* parentextender = FindMACByIPAddress(list->info->extender_ip);
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender IP [%s]\n", __FUNCTION__, parentextender ));
 
         for(i = 0; i < list->info->list->numClient; i++, tmp = tmp->next)
             {
@@ -442,15 +449,17 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
             int k = 0;
             char CpeMacHoldingBuf[ 20 ] = {0};
 
-            printf("Extender Device %x\n", tmp);
-            printf("Extender MACAddress [%s] \n", tmp->MAC_Address);
-            printf("Extender SSID_Type [%s] \n", tmp->SSID_Type);
-            printf("Extender Device_Name [%s] \n", tmp->Device_Name);
-            printf("Extender SSID_Name [%s] \n", tmp->SSID_Name);
-            printf("Extender RSSI [%s] \n", tmp->RSSI);
+			memset(interfaceMAC, 0, 128);
+			memset(band_client, 0, 128);
+
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device %x\n", __FUNCTION__,tmp ));
+   	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender MACAddress [%s]\n", __FUNCTION__,tmp->MAC_Address ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Type [%s]\n", __FUNCTION__, tmp->SSID_Type ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__,tmp->Device_Name ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__,tmp->SSID_Name ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__,tmp->RSSI ));
 
             wifi_associated_dev_array = malloc (sizeof(*wifi_associated_dev_array));
-
 
             for (k = 0; k < 6; k++ )
             {
@@ -465,18 +474,26 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
             wifi_associated_dev_array->cli_AuthenticationState = 0;
             wifi_associated_dev_array->cli_LastDataDownlinkRate= 0;
             wifi_associated_dev_array->cli_LastDataUplinkRate= 0;
-            wifi_associated_dev_array->cli_SignalStrength= atoi(tmp->RSSI);
+
+	    if( tmp->RSSI!=NULL )
+          	wifi_associated_dev_array->cli_SignalStrength= atoi(tmp->RSSI);
+	
             wifi_associated_dev_array->cli_Retransmissions= 0;
             wifi_associated_dev_array->cli_Active= TRUE;
 
             if((strstr(tmp->SSID_Type,"2.4"))) 
-                {
-                    strcpy(freqband, "_2_4GHz");
-                }
+            {
+                strcpy(freqband, "_2_4GHz");
+				/* RDKB-7592 : Extender connected device report should have correct interface_mac */
+				strcpy(band_client,IDW_WIFI_BAND_2_4);
+				
+            }
             else
-                {
-                    strcpy(freqband, "_5GHz");
-                }
+            {
+                strcpy(freqband, "_5GHz");
+				/* RDKB-7592 : Extender connected device report should have correct interface_mac */
+				strcpy(band_client,IDW_WIFI_BAND_5_0);
+            }
 
             memset(wifi_associated_dev_array->cli_OperatingStandard, 0, sizeof wifi_associated_dev_array->cli_OperatingStandard);
             memset(wifi_associated_dev_array->cli_OperatingChannelBandwidth, 0, sizeof wifi_associated_dev_array->cli_OperatingChannelBandwidth);
@@ -486,16 +503,62 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
             wifi_associated_dev_array->cli_DataFramesSentNoAck= 0;
             wifi_associated_dev_array->cli_BytesSent= 0;
             wifi_associated_dev_array->cli_BytesReceived= 0;
-            wifi_associated_dev_array->cli_RSSI = atoi(tmp->RSSI);
+	    	if( tmp->RSSI!=NULL )
+                wifi_associated_dev_array->cli_RSSI = atoi(tmp->RSSI);
+	    	else
+                wifi_associated_dev_array->cli_RSSI = 0;
             wifi_associated_dev_array->cli_MinRSSI= 0;
             wifi_associated_dev_array->cli_MaxRSSI= 0;
             wifi_associated_dev_array->cli_Disassociations= 0;
             wifi_associated_dev_array->cli_AuthenticationFailures= 0;
 
 
+			//Set interface_mac to corresponding bssid
+			
+			/* RDKB-7592 : Extender connected device report should have correct interface_mac */
+			if( list->info->ssid_count>0 )
+			{
+				Ssid *curSsid = list->info->ssid_list;
+
+				while( curSsid )
+				{
+					//Ignore the Home Security SSIDS, having names starting with 'XHS-'
+					if( (curSsid->name) && 
+						
+						(((strncmp(curSsid->name,IDW_HOME_SECURITY_SSID_NAME,4))==0) || 
+						 ((strncmp(curSsid->name,IDW_LOST_FOUND_SSID_2_4,4))==0)))
+					{
+						curSsid = curSsid->next;
+						continue;
+					}
+					
+					if( tmp->SSID_Name )
+					{
+						if( AnscEqualString(curSsid->band,band_client, FALSE) &&
+							AnscEqualString(curSsid->name,tmp->SSID_Name, FALSE) )
+						{
+							strcpy(interfaceMAC,curSsid->bssid);
+							break;
+						}
+					}
+					else
+					{
+						if( AnscEqualString(curSsid->band,band_client, FALSE) )
+						{
+							strcpy(interfaceMAC,curSsid->bssid);
+							break;
+						}
+					}
+					curSsid = curSsid->next;
+				}//while
+    				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s interface_mac [%s]\n",__FUNCTION__,interfaceMAC));
+			}//if ssidcount>0
+	
+
             if ( ServiceType == PUBLIC )
             {
                 headnode = (struct associateddevicedata **)headnodepublic;
+				
                 add_to_list_idw((struct associateddevicedata **)&headnode,  tmp->SSID_Name, array_size, wifi_associated_dev_array, (char*)&freqband, channel, (char*)&interfaceMAC, parentextender);
                 headnodepublic = (struct associateddevicedata *)headnode; //Important - headnode only change when it is a NEW list
             }
