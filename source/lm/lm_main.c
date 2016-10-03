@@ -643,6 +643,7 @@ PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress)
 }
 #define MACADDR_SZ          18
 #define ATOM_MAC "00:00:ca:01:02:03"
+#define ATOM_MAC_CSC "00:05:04:03:02:01"
 BOOL validate_mac(char * physAddress)
 {
 	if(physAddress[2] == ':')
@@ -673,7 +674,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
     PLmObjectHost pHost = Hosts_FindHostByPhysAddress(physAddress);
     if(pHost) return pHost;
 	
-	if(!strcmp(ATOM_MAC,physAddress))
+	if((!strcmp(ATOM_MAC,physAddress))||(!strcmp(ATOM_MAC_CSC,physAddress)))
 	{
 		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
 		return NULL;
