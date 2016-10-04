@@ -1123,10 +1123,12 @@ static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
     LM_hosts_t hosts;
 
     memset(&hosts, 0, sizeof(hosts));
+/*
     if(0 == Hosts_stop_scan()){
         PRINTD("bridge mode return 0\n");
         Hosts_PollHost();
     }
+*/
 
     pthread_mutex_lock(&LmHostObjectMutex);
     hosts.count = lmHosts.numHost;
@@ -1298,7 +1300,7 @@ void Hosts_SyncWifi()
 
     if (count > 0)
     {
-        pthread_mutex_lock(&LmHostObjectMutex);
+        //pthread_mutex_lock(&LmHostObjectMutex);
         for (i = 0; i < count; i++)
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
@@ -1321,7 +1323,9 @@ void Hosts_SyncWifi()
 			}
 			else
 			{
-					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
+				LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 			}
 #endif
 
@@ -1330,7 +1334,7 @@ void Hosts_SyncWifi()
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             }
         }
-        pthread_mutex_unlock(&LmHostObjectMutex);
+        //pthread_mutex_unlock(&LmHostObjectMutex);
     }
 
     if ( hosts )
@@ -1449,7 +1453,7 @@ void Hosts_SyncMoCA()
 
     if (count > 0)
     {
-        pthread_mutex_lock(&LmHostObjectMutex);
+        //pthread_mutex_lock(&LmHostObjectMutex);
         for (i = 0; i < count; i++)
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
@@ -1459,7 +1463,7 @@ void Hosts_SyncMoCA()
             if ( pHost )
             {
 		  		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
-                pHost->l1unReachableCnt = 1;
+                
 
 
 				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
@@ -1480,6 +1484,7 @@ void Hosts_SyncMoCA()
 						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
 						
 						LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+                				pHost->l1unReachableCnt = 1;
 
 					}
 				}	
@@ -1499,6 +1504,7 @@ void Hosts_SyncMoCA()
 							if(device_rssi)
 								pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = atoi(device_rssi);
 							LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+							pHost->l1unReachableCnt = 1;
 						}
 					else
 						{
@@ -1508,7 +1514,7 @@ void Hosts_SyncMoCA()
 
             }
         }
-        pthread_mutex_unlock(&LmHostObjectMutex);
+        //pthread_mutex_unlock(&LmHostObjectMutex);
     }
 
     if ( hosts )
@@ -1729,10 +1735,13 @@ void Hosts_StatSyncThreadFunc()
                 if(offline)LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 
             }
+
+            Hosts_SyncMoCA();
+            Hosts_SyncWifi();
+
             pthread_mutex_unlock(&LmHostObjectMutex);
 
-            Hosts_SyncWifi();
-            Hosts_SyncMoCA();
+            
 			Hosts_SyncDHCP(); 
 
             lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
@@ -1753,7 +1762,7 @@ void Hosts_StatSyncThreadFunc()
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
                            /* Fix for RDKB-7223 */
-                           if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                           if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] || strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") )
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet" );
 
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
@@ -2027,11 +2036,12 @@ LM_get_host_info()
         return;
     }
 	
+/*
 	if(0 == Hosts_stop_scan()){
 		printf("bridge mode return 0\n");
 		Hosts_PollHost();
 	}
-
+*/
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
 	_init_DM_List(&g_MoCAADListNum, &g_pMoCAADList, "Device.MoCA.Interface.1.AssociatedDevice.", "MACAddress");
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.1.Client.", "Chaddr");
