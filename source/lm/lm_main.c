@@ -1323,8 +1323,6 @@ void Hosts_SyncWifi()
 			}
 			else
 			{
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
 				LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 			}
 #endif
