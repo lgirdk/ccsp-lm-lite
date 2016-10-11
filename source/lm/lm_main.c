@@ -1463,8 +1463,7 @@ void Hosts_SyncMoCA()
             if ( pHost )
             {
 		  		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
-                
-
+               	pHost->l1unReachableCnt = 1;
 
 				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
 				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId] ));
@@ -1484,7 +1483,6 @@ void Hosts_SyncMoCA()
 						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
 						
 						LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-                				pHost->l1unReachableCnt = 1;
 
 					}
 				}	
@@ -1504,14 +1502,21 @@ void Hosts_SyncMoCA()
 							if(device_rssi)
 								pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = atoi(device_rssi);
 							LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-							pHost->l1unReachableCnt = 1;
 						}
 					else
 						{
-							LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+							//If parent not determined previously, then it could be either offline device or 
+							//a non-compliant extender. Active to be set TRUE for these devices.
+							if( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL ) 
+							{
+								LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+							}
+							else
+							{
+								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+							}
 						}	
 				}
-
             }
         }
         //pthread_mutex_unlock(&LmHostObjectMutex);
