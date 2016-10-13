@@ -1775,7 +1775,9 @@ void Hosts_StatSyncThreadFunc()
                     else if ( pHost && pHost->l1unReachableCnt == 0 )
                     {
 
-                       LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
                             if(_isIPv6Addr(hosts[i].ipAddr))
