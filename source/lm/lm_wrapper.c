@@ -1308,6 +1308,7 @@ void lm_wrapper_get_dhcpv4_client()
         {
 			 if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
 			 {
+			 	pthread_mutex_lock(&LmHostObjectMutex);
 		        		pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
 
 		    	    	if ( pHost )
@@ -1318,12 +1319,14 @@ void lm_wrapper_get_dhcpv4_client()
 			               		 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
 		           		 	}
 		        		}	
+				 pthread_mutex_unlock(&LmHostObjectMutex);
 			} 
         }
 		
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
+			pthread_mutex_lock(&LmHostObjectMutex);
 			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
 				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				
@@ -1333,7 +1336,8 @@ void lm_wrapper_get_dhcpv4_client()
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
-			
+
+			pthread_mutex_unlock(&LmHostObjectMutex);
 			
 			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
@@ -1356,7 +1360,7 @@ void lm_wrapper_get_dhcpv4_client()
 					}
 				}
 				
-			
+			pthread_mutex_lock(&LmHostObjectMutex);
             pIP = Host_AddIPv4Address
             (
                 pHost,
@@ -1369,6 +1373,7 @@ void lm_wrapper_get_dhcpv4_client()
 				pHost->LeaseTime = pIP->LeaseTime;
 				
             }
+			pthread_mutex_unlock(&LmHostObjectMutex);
         }
     }
 
@@ -1412,6 +1417,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 
         if ( !pHost )
         {
+        pthread_mutex_lock(&LmHostObjectMutex);
             pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
 
             if ( pHost )
@@ -1424,6 +1430,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 
 
             }
+		pthread_mutex_unlock(&LmHostObjectMutex);
         }
 
         if ( pHost )
@@ -1459,7 +1466,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 					}
 				}
 			
-				
+			 pthread_mutex_lock(&LmHostObjectMutex);
 		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "Static");
             pIP = Host_AddIPv4Address
                 (
@@ -1471,7 +1478,7 @@ void lm_wrapper_get_dhcpv4_reserved()
                 LanManager_CheckCloneCopy(&(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]), "Static");
                 pIP->LeaseTime = 0;
             }
-
+			pthread_mutex_unlock(&LmHostObjectMutex);
         }
     }
 
