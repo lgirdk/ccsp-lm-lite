@@ -721,7 +721,9 @@ Host_GetParamIntValue
     if( AnscEqualString(ParamName, "X_CISCO_COM_RSSI", TRUE))
     {
         /* collect value */
-        *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
+        //*pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
+        //X_CISCO_COM_RSSI is mapped to 0 from all PA's	
+        	*pInt=0;
 		pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
