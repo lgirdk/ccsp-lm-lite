@@ -660,7 +660,7 @@ BOOL validate_mac(char * physAddress)
 PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
-
+    char ssid[LM_GEN_STR_SIZE]={0};
 	if(!validate_mac(physAddress))
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
@@ -691,9 +691,9 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 #ifdef USE_NOTIFY_COMPONENT
         if(bWifiHost)
         {
-			if(SearchWiFiClients(physAddress))
+			if(SearchWiFiClients(physAddress,ssid))
 			{
-				pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("WiFi");
+				pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(ssid);
 				bWifiHost = FALSE;
 			}
 			else

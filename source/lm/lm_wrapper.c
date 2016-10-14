@@ -587,13 +587,14 @@ void Wifi_Server_Thread_func()
     }
 
 }
-BOOL SearchWiFiClients(char *phyAddr)
+BOOL SearchWiFiClients(char *phyAddr, char *ssid)
 {
 	int i = 0;
 	for(i = 0; i < hosts.count ; i++)
 	{
 		if(!strcasecmp(hosts.host[i].phyAddr,phyAddr))
 		{
+			strcpy(ssid,hosts.host[i].ssid);
 			return TRUE;
 		}
 	}
