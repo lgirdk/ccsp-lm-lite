@@ -271,7 +271,7 @@ int logOnlineDevicesCount()
 }
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
-static inline void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
+static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	char interface[32] = {0};
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
 
@@ -808,12 +808,14 @@ void _set_comment_(LM_cmd_comment_t *cmd)
 		return;
 
     /* But if this device is in LmObject list, update the comments value */
-    pthread_mutex_lock(&LmHostObjectMutex);
+    
     pHost = Hosts_FindHostByPhysAddress(mac);
     if(pHost){
+		pthread_mutex_lock(&LmHostObjectMutex);
         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), cmd->comment);
+		pthread_mutex_unlock(&LmHostObjectMutex);
     }
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    
 
 }
 
@@ -952,7 +954,7 @@ int LM_get_online_device()
 		return num;
     }
 	
-    pthread_mutex_lock(&LmHostObjectMutex);
+   // pthread_mutex_lock(&LmHostObjectMutex);
     for(i = 0; i < lmHosts.numHost; i++){
         if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
             /* Do NOT count TrueStaticIP client */
@@ -966,7 +968,7 @@ int LM_get_online_device()
             }
         }
     }
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    //pthread_mutex_unlock(&LmHostObjectMutex);
 	return num;
 }
 
@@ -1310,8 +1312,10 @@ void Hosts_SyncWifi()
             if ( pHost )
             {
 #ifdef USE_NOTIFY_COMPONENT
-			if(hosts[i].Status)
-			{
+            if(pHost->bBoolParaValue[LM_HOST_ActiveId] != hosts[i].Status)
+            	{
+					if(hosts[i].Status)
+					{
 #endif
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
@@ -1320,11 +1324,12 @@ void Hosts_SyncWifi()
 
 				LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 #ifdef USE_NOTIFY_COMPONENT
-			}
-			else
-			{
-				LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-			}
+					}
+					else
+					{
+						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+					}
+            	}
 #endif
 
 
@@ -1433,10 +1438,10 @@ void Hosts_SyncArp()
 
 void Hosts_SyncDHCP()
 {
-    pthread_mutex_lock(&LmHostObjectMutex);
+    //pthread_mutex_lock(&LmHostObjectMutex);
     lm_wrapper_get_dhcpv4_client();
     lm_wrapper_get_dhcpv4_reserved();
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    //pthread_mutex_unlock(&LmHostObjectMutex);
 }
 
 void Hosts_SyncMoCA()
@@ -1460,8 +1465,10 @@ void Hosts_SyncMoCA()
 
             if ( pHost )
             {
+            	pthread_mutex_lock(&LmHostObjectMutex);
 		  		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
                	pHost->l1unReachableCnt = 1;
+				pthread_mutex_unlock(&LmHostObjectMutex);
 
 				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
 				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId] ));
@@ -1476,16 +1483,20 @@ void Hosts_SyncMoCA()
 
 					if(!ret)
 					{
+						pthread_mutex_lock(&LmHostObjectMutex);
 						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
 						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "extender");
 						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
 						
 						LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+						pthread_mutex_unlock(&LmHostObjectMutex);
 
 					}
 				}	
 				else
 				{
+					pthread_mutex_lock(&LmHostObjectMutex);
+				
 					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
 					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s LM_HOST_PhysAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_PhysAddressId] ));
 
@@ -1513,7 +1524,8 @@ void Hosts_SyncMoCA()
 							{
 								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 							}
-						}	
+						}
+					pthread_mutex_unlock(&LmHostObjectMutex);
 				}
             }
         }
@@ -1667,7 +1679,7 @@ void Hosts_StatSyncThreadFunc()
             PRINTD("\n%s bridge mode, remove all host information\n", __FUNCTION__);
             Hosts_RmHosts();
         }else{
-            pthread_mutex_lock(&LmHostObjectMutex);
+            //pthread_mutex_lock(&LmHostObjectMutex);
             for ( i = 0; i < lmHosts.numHost; i++ )
             {
                 pHost = lmHosts.hostArray[i];
@@ -1693,7 +1705,9 @@ void Hosts_StatSyncThreadFunc()
 							#endif
 						#endif
 */
+						pthread_mutex_lock(&LmHostObjectMutex);
 						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+						pthread_mutex_unlock(&LmHostObjectMutex);
 					}
 					else
 					{
@@ -1735,14 +1749,19 @@ void Hosts_StatSyncThreadFunc()
                             ret);
                     }
                 }
-                if(offline)LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                if(offline)
+                	{
+                	pthread_mutex_lock(&LmHostObjectMutex);
+					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+					pthread_mutex_unlock(&LmHostObjectMutex);
+                	}
 
             }
 
             Hosts_SyncMoCA();
             Hosts_SyncWifi();
 
-            pthread_mutex_unlock(&LmHostObjectMutex);
+            //pthread_mutex_unlock(&LmHostObjectMutex);
 
             
 			Hosts_SyncDHCP(); 
@@ -1750,7 +1769,7 @@ void Hosts_StatSyncThreadFunc()
             lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
             if ( count > 0 )
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
+ //               pthread_mutex_lock(&LmHostObjectMutex);
                 for (i=0;i<count;i++)
                 {
                     pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
@@ -1765,10 +1784,12 @@ void Hosts_StatSyncThreadFunc()
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                         {
                            /* Fix for RDKB-7223 */
+                           pthread_mutex_lock(&LmHostObjectMutex);
                            if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] || strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") )
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet" );
 
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+                            pthread_mutex_unlock(&LmHostObjectMutex);
                             pHost->l1unReachableCnt = 0;
                         }
                     }
@@ -1785,12 +1806,15 @@ void Hosts_StatSyncThreadFunc()
                             if(pIP != NULL)
                                 pIP->l3unReachableCnt = 0;
 
-     
+     						pthread_mutex_lock(&LmHostObjectMutex);
                             LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+                            pthread_mutex_unlock(&LmHostObjectMutex);
                         }
 						if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                         {
+							pthread_mutex_lock(&LmHostObjectMutex);
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
+                            pthread_mutex_unlock(&LmHostObjectMutex);
                         }
                        	       	
                     }
@@ -1804,13 +1828,14 @@ void Hosts_StatSyncThreadFunc()
                                 pIP = Host_AddIPv6Address ( pHost, hosts[i].ipAddr);
                             else
                                 pIP = Host_AddIPv4Address ( pHost, hosts[i].ipAddr);
-
+				  pthread_mutex_lock(&LmHostObjectMutex);
 			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName);
 			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+			      pthread_mutex_unlock(&LmHostObjectMutex);
                         }
                     }
                 }
-                pthread_mutex_unlock(&LmHostObjectMutex);
+   //             pthread_mutex_unlock(&LmHostObjectMutex);
             }
             if ( hosts )
             {
