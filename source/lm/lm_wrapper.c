@@ -2159,7 +2159,7 @@ void update_extender_ssid(ExtenderInfo* extender)
 {
 
     /* The SSID of extender can be fetched either by executing a curl query on the extender, or
-    by query the cosa data model throught the DBUS */
+    by query the cosa data model through the DBUS */
 
     /* RDKB-7592 : Extender connected device report should have correct interface_mac */
 
@@ -2170,9 +2170,12 @@ void update_extender_ssid(ExtenderInfo* extender)
         return;
     }
 
-    // Query the cosa data model through DBUS 
-    int ret = query_ccsp_data_model(extender );
-    //Ignore return value 'ret', as it's non-critical
+	if( extender->ssid_count == 0 )
+	{
+    	// Query the cosa data model through DBUS 
+    	int ret = query_ccsp_data_model(extender );
+    	//Ignore return value 'ret', as it's non-critical
+	}
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
     return;
