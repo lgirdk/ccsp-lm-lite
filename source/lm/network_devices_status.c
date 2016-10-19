@@ -61,7 +61,6 @@ BOOL NDSReportStatus = FALSE;
 ULONG NDSOverrideTTL = TTL_INTERVAL;
 ULONG NDSOverrideTTLDefault = DEFAULT_TTL_INTERVAL;
 
-int tm_offset = 0;
 bool isvalueinarray(ULONG val, ULONG *arr, int size);
 
 void* StartNetworkDeviceStatusHarvesting( void *arg );
@@ -75,30 +74,6 @@ static struct networkdevicestatusdata *headnodeextender = NULL;
 
 extern pthread_mutex_t LmHostObjectMutex;
 
-int getTimeOffsetFromUtc()
-{
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    char timezonecmd[128] = {0};
-    char timezonearr[32] = {0};
-    int ret  = 0;
-    sprintf(timezonecmd, "dmcli eRT getv Device.Time.TimeOffset | grep value | awk '{print $5}'");
-    ret = _syscmd(timezonecmd, timezonearr, sizeof(timezonearr));
-    if(ret)
-    {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for DMCLI TimeOffset [%d] \n",__FUNCTION__, ret));
-        return ret;
-    }
-
-    if (sscanf(timezonearr, "%d", &tm_offset) != 1)
-    {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Parsing Error for TimeOffset \n", __FUNCTION__ ));
-        return -1;
-    }
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s TimeOffset[%d] EXIT \n", __FUNCTION__, tm_offset ));
-
-    return tm_offset;
-}
 
 char* GetCurrentTimeString()
 {
@@ -416,7 +391,6 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Active[%d] \n",ptr->is_active ));
         ptr->next = NULL;
         gettimeofday(&(ptr->timestamp), NULL);
-        ptr->timestamp.tv_sec -= tm_offset;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
          if(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent])
@@ -594,7 +568,6 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
     currentReportingPeriod = GetNDSReportingPeriod();
-    getTimeOffsetFromUtc();
 
     if(GetNDSOverrideTTL() < currentReportingPeriod)
     {

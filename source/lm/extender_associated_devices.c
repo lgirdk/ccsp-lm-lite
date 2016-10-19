@@ -84,7 +84,6 @@ int GetWiFiApGetAssocDevicesData(int ServiceType);
 static struct associateddevicedata *headnodeprivate = NULL;
 static struct associateddevicedata *headnodepublic = NULL;
 
-extern int getTimeOffsetFromUtc();
 
 
 static void WaitForPthreadConditionTimeoutIDW()
@@ -347,7 +346,6 @@ void add_to_list_idw(struct associateddevicedata **headnode, char* ssid, ULONG d
         ptr->parent = strdup(extenderMac);
         ptr->next = NULL;
         gettimeofday(&(ptr->timestamp), NULL);
-        ptr->timestamp.tv_sec -= getTimeOffsetFromUtc();
 
         if (*headnode == NULL)
         {

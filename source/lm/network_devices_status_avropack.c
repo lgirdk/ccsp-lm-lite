@@ -65,7 +65,6 @@ static size_t OneAvroSerializedSize;
 char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 extern LmObjectHosts lmHosts;
 extern pthread_mutex_t LmHostObjectMutex;
-extern int getTimeOffsetFromUtc();
 
 // local data, load it with real data if necessary
 char ReportSource[] = "LMLite";
@@ -243,7 +242,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   struct timeval ts;
   gettimeofday(&ts, NULL);
 
-  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec - getTimeOffsetFromUtc()) * 1000000) + (int64_t) ts.tv_usec;
+  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec) * 1000000) + (int64_t) ts.tv_usec;
   tstamp_av_main = tstamp_av_main/1000;
 
   avro_value_set_long(&optional, tstamp_av_main );
