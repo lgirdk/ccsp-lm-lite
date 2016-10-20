@@ -232,7 +232,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   struct timeval ts;
   gettimeofday(&ts, NULL);
 
-  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec - getTimeOffsetFromUtc()) * 1000000) + (int64_t) ts.tv_usec;
+  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec) * 1000000) + (int64_t) ts.tv_usec;
   tstamp_av_main = tstamp_av_main/1000;
 
   avro_value_set_long(&optional, tstamp_av_main );

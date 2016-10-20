@@ -58,7 +58,6 @@ int cpe_parent_exists_idw = false;
 
 /**** temperatory raw data ****/
 
-extern int getTimeOffsetFromUtc();
 
 static char *macStr = NULL;
 static char CpemacStr[ 32 ];
@@ -247,7 +246,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
   struct timeval ts;
   gettimeofday(&ts, NULL);
 
-  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec - getTimeOffsetFromUtc()) * 1000000) + (int64_t) ts.tv_usec;
+  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec) * 1000000) + (int64_t) ts.tv_usec;
   tstamp_av_main = tstamp_av_main/1000;
 
   avro_value_set_long(&optional, tstamp_av_main );
