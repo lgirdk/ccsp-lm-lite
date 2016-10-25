@@ -1294,6 +1294,12 @@ void lm_wrapper_get_dhcpv4_client()
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
         6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
         */
+
+	if(strstr(buf,"172.16.12."))
+	{
+		continue;
+	}
+
         ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
                  &(dhcpHost.LeaseTime),
                  dhcpHost.phyAddr,
