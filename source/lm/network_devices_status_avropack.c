@@ -62,7 +62,7 @@ char *ndsschemabuffer = NULL;
 char *nds_schemaidbuffer = "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca/da29287d0199d6279cf934ce884426af";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
-char AvroSerializedBuf[ WRITER_BUF_SIZE ];
+static char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 extern LmObjectHosts lmHosts;
 extern pthread_mutex_t LmHostObjectMutex;
 

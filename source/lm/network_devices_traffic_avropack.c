@@ -59,7 +59,7 @@ char *ndtschemabuffer = NULL;
 char *ndtschemaidbuffer = "5fc8321e-d8bf-45a7-8b3c-3dcdfd091092/1a73afad2380ee4730dacfcbf359222b";
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
-char AvroSerializedBuf[ WRITER_BUF_SIZE ];
+static char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 
 // local data, load it with real data if necessary
 char ReportSourceNDT[] = "LMLite";
