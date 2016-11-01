@@ -1681,6 +1681,10 @@ void DeleteExtenderClientInfoList(struct _ClientInfoLists* list)
             free(currnode->Device_Name);
             free(currnode->SSID_Name);
             free(currnode->RSSI);
+            if (currnode->RxRate)
+                free(currnode->RxRate);
+            if (currnode->TxRate)
+                free(currnode->TxRate);
             free(currnode);
             currnode = next;
 		}
@@ -1757,6 +1761,8 @@ void print_extender_list(ExtenderList* list)
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender Device_Name [%s] \n", tmp->Device_Name));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender SSID_Name [%s] \n", tmp->SSID_Name));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender RSSI [%s] \n", tmp->RSSI));
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender RxRate [%s] \n", tmp->RxRate));
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender TxRate [%s] \n", tmp->TxRate));
             }
         }
         
@@ -1841,6 +1847,8 @@ extract_elements(ExtenderInfo* extender, xmlNode * a_node)
         info->Device_Name = NULL;
         info->SSID_Name = NULL;
         info->RSSI = NULL;
+        info->RxRate = NULL;
+        info->TxRate = NULL;
 
         info->next = NULL;
         for(tmp = cur_node->children; tmp; tmp = tmp->next) 
@@ -1874,6 +1882,18 @@ extract_elements(ExtenderInfo* extender, xmlNode * a_node)
                         {
                             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
                             info->RSSI = strdup(xmlNodeGetContent(tmp));
+                        }
+
+                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"RxRate")))
+                        {
+                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
+                            info->RxRate = strdup(xmlNodeGetContent(tmp));
+                        }
+
+                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"TxRate")))
+                        {
+                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
+                            info->TxRate = strdup(xmlNodeGetContent(tmp));
                         }
 
             }   

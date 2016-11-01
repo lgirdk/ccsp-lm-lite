@@ -456,6 +456,8 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__,tmp->Device_Name ));
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__,tmp->SSID_Name ));
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__,tmp->RSSI ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RxRate [%s] \n", __FUNCTION__,tmp->RxRate ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender TxRate [%s] \n", __FUNCTION__,tmp->TxRate ));
 
             wifi_associated_dev_array = malloc (sizeof(*wifi_associated_dev_array));
 
@@ -470,8 +472,8 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
             memset(wifi_associated_dev_array->cli_IPAddress, 0, sizeof wifi_associated_dev_array->cli_IPAddress);
 
             wifi_associated_dev_array->cli_AuthenticationState = 0;
-            wifi_associated_dev_array->cli_LastDataDownlinkRate= 0;
-            wifi_associated_dev_array->cli_LastDataUplinkRate= 0;
+            wifi_associated_dev_array->cli_LastDataDownlinkRate = (tmp->RxRate != NULL) ? atoi(tmp->RxRate) : 0;
+            wifi_associated_dev_array->cli_LastDataUplinkRate = (tmp->TxRate != NULL) ? atoi(tmp->TxRate) : 0;
 
 	    if( tmp->RSSI!=NULL )
           	wifi_associated_dev_array->cli_SignalStrength= atoi(tmp->RSSI);

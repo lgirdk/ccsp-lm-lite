@@ -133,6 +133,8 @@ char* SSID_Type;
 char* Device_Name;
 char* SSID_Name;
 char* RSSI;
+char* RxRate;
+char* TxRate;
 
 struct _ClientInfo* next;
 
