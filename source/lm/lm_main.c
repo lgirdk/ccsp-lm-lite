@@ -858,6 +858,8 @@ char* FindParentIPInExtenderList(char* mac_address)
 	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__, temp->Device_Name));
 	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__, temp->SSID_Name));
 	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__, temp->RSSI));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RxRate [%s] \n", __FUNCTION__, temp->RxRate));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender TxRate [%s] \n", __FUNCTION__, temp->TxRate));
 	        if(!strcasecmp(temp->MAC_Address, mac_address))
 	        	{
 	        		parent_ip = tmp->info->extender_ip;
@@ -895,6 +897,8 @@ char* FindRSSIInExtenderList(char* mac_address)
 	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__, temp->Device_Name));
 	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__, temp->SSID_Name));
 	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__, temp->RSSI));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RxRate [%s] \n", __FUNCTION__, temp->RxRate));
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender TxRate [%s] \n", __FUNCTION__, temp->TxRate));
 	        if(!strcasecmp(temp->MAC_Address, mac_address))
 	        	{
 	        		rssi = temp->RSSI;
