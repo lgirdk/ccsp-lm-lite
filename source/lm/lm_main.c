@@ -1710,7 +1710,12 @@ void Hosts_StatSyncThreadFunc()
 						#endif
 */
 						pthread_mutex_lock(&LmHostObjectMutex);
-						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                                                if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
+                                                {
+                                                    if(!(strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
+                                                   LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                                                }
+
 						pthread_mutex_unlock(&LmHostObjectMutex);
 					}
 					else
@@ -1755,8 +1760,13 @@ void Hosts_StatSyncThreadFunc()
                 }
                 if(offline)
                 	{
-                	pthread_mutex_lock(&LmHostObjectMutex);
-					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                                     	pthread_mutex_lock(&LmHostObjectMutex);
+                                                if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
+                                                {
+                                                    if(!(strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
+                                                   LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                                                }
+
 					pthread_mutex_unlock(&LmHostObjectMutex);
                 	}
 
