@@ -315,6 +315,8 @@ Hosts_FreeHost(PLmObjectHost pHost);
 PLmObjectHost 
 Hosts_AddHost(int instanceNum);
 
+PLmObjectHost 
+XHosts_AddHost(int instanceNum);
 
 void Hosts_RmHosts();
 void LM_main();

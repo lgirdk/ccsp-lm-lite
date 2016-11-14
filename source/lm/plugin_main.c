@@ -30,6 +30,7 @@
 #include "cosa_plugin_api.h"
 #include "plugin_main.h"
 #include "cosa_hosts_dml.h"
+#include "cosa_xhosts_dml.h"
 #include "cosa_ndstatus_dml.h"
 #include "cosa_ndtraffic_dml.h"
 #include "cosa_extassocdevices_dml.h"
@@ -87,6 +88,29 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamIntValue",  Host_IPv6Address_GetParamIntValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamUlongValue",  Host_IPv6Address_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamStringValue",  Host_IPv6Address_GetParamStringValue);
+
+	/*Register XHS data model apis*/
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHosts_GetParamUlongValue",  XHosts_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetEntryCount",  XHost_GetEntryCount);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetEntry",  XHost_GetEntry);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IsUpdated",  XHost_IsUpdated);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_Synchronize",  XHost_Synchronize);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetParamBoolValue",  XHost_GetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetParamIntValue",  XHost_GetParamIntValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetParamUlongValue",  XHost_GetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetParamStringValue",  XHost_GetParamStringValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_SetParamStringValue",  XHost_SetParamStringValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_Validate",  XHost_Validate);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_Commit",  XHost_Commit);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_Rollback",  XHost_Rollback);
+
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv4Address_GetEntryCount",  XHost_IPv4Address_GetEntryCount);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv4Address_GetEntry",  XHost_IPv4Address_GetEntry);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv4Address_GetParamStringValue",  XHost_IPv4Address_GetParamStringValue);
+
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv6Address_GetEntryCount",  XHost_IPv6Address_GetEntryCount);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv6Address_GetEntry",  XHost_IPv6Address_GetEntry);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv6Address_GetParamStringValue",  XHost_IPv6Address_GetParamStringValue);
 
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_GetParamUlongValue",  NetworkDevicesStatus_GetParamUlongValue);
