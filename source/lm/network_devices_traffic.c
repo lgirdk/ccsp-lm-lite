@@ -47,6 +47,11 @@ static pthread_cond_t ndtCond = PTHREAD_COND_INITIALIZER;
 
 static sem_t mutex;
 
+
+#ifndef UTC_ENABLE
+extern int tm_offset;
+#endif
+
 ULONG NetworkDeviceTrafficPeriods[] = {30,60,300,900,1800,3600,10800,21600,43200,86400};
 
 ULONG NDTPollingPeriodDefault = DEFAULT_TRAFFIC_POLLING_INTERVAL;
@@ -73,6 +78,9 @@ void print_list_ndt();
 void delete_list_ndt();
 void delete_partial_list_ndt();
 
+#ifndef UTC_ENABLE
+extern int getTimeOffsetFromUtc();
+#endif
 
 static struct networkdevicetrafficdata *headnode = NULL;
 static struct networkdevicetrafficdata *currnode = NULL;
@@ -136,6 +144,9 @@ int ResetEBTables()
     else
     {
         gettimeofday(&(reset_timestamp), NULL);
+#ifndef UTC_ENABLE
+        reset_timestamp.tv_sec -= tm_offset;
+#endif
         CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Reset Timestamp[%u] \n", __FUNCTION__, reset_timestamp.tv_sec ));
@@ -398,6 +409,9 @@ void add_to_list_ndt(char* ip_table_line)
     }
 
     gettimeofday(&(ptr->timestamp), NULL);
+#ifndef UTC_ENABLE
+    ptr->timestamp.tv_sec -= tm_offset;
+#endif
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
     ptr->device_mac = strdup(device_mac);
@@ -565,6 +579,9 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
     currentNDTReportingPeriod = GetNDTReportingPeriod();
+#ifndef UTC_ENABLE
+    getTimeOffsetFromUtc();
+#endif
 
     if(GetNDTOverrideTTL() < currentNDTReportingPeriod)
     {
