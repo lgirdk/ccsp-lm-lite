@@ -238,8 +238,8 @@ char * getDeviceMac()
         parameterValStruct_t **parameterval = NULL;
     
         char *getList[] = {"Device.DeviceInfo.X_COMCAST-COM_CM_MAC"};
-        strcpy(compName,"eRT.com.cisco.spvtg.ccsp.pam");
-        strcpy(dbusPath,"/com/cisco/spvtg/ccsp/pam");
+        strcpy(compName,"eRT.com.cisco.spvtg.ccsp.cm");
+        strcpy(dbusPath,"/com/cisco/spvtg/ccsp/cm");
         
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before GPV\n"));
         ret = CcspBaseIf_getParameterValues(bus_handle,
