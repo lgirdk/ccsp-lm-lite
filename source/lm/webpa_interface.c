@@ -24,6 +24,7 @@
 #include "msgpack.h"
 #include "base64.h"
 #include "ccsp_lmliteLog_wrapper.h"
+#include "lm_util.h"
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -44,13 +45,48 @@
 
 extern ANSC_HANDLE bus_handle;
 pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char deviceMAC[32]={'\0'}; 
 char fullDeviceMAC[32]={'\0'}; 
-
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
 static void macToLower(char macValue[]);
-static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
+//static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
+
+
+int WebpaInterface_DiscoverComponent(char** pComponentName, char** pComponentPath )
+{
+    char CrName[256] = {0};
+    int ret = 0;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
+
+    CrName[0] = 0;
+    strcpy(CrName, "eRT.");
+    strcat(CrName, CCSP_DBUS_INTERFACE_CR);
+
+    componentStruct_t **components = NULL;
+    int compNum = 0;
+    int res = CcspBaseIf_discComponentSupportingNamespace (
+            bus_handle,
+            CrName,
+            "Device.DeviceInfo.X_COMCAST-COM_CM_MAC",
+            "",
+            &components,
+            &compNum);
+    if(res != CCSP_SUCCESS || compNum < 1){
+        CcspTraceError(("WebpaInterface_DiscoverComponent find eRT PAM component error %d\n", res));
+        ret = -1;
+    }
+    else{
+        *pComponentName = LanManager_CloneString(components[0]->componentName);
+        *pComponentPath = LanManager_CloneString(components[0]->dbusPath);
+        CcspTraceInfo(("WebpaInterface_DiscoverComponent find eRT PAM component %s--%s\n", *pComponentName, *pComponentPath));
+    }
+    free_componentStruct_t(bus_handle, compNum, components);
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
+
+    return ret;
+}
 
 void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentType, char *payload, unsigned int payload_len)
 {
@@ -233,17 +269,23 @@ char * getDeviceMac()
     if(strlen(deviceMAC) == 0)
     {
         int ret = -1, val_size =0,cnt =0;
-        char compName[MAX_PARAMETERNAME_LEN/2] = { 0 };
-        char dbusPath[MAX_PARAMETERNAME_LEN/2] = { 0 };
-        parameterValStruct_t **parameterval = NULL;
-    
+        char *pComponentName = NULL, *pComponentPath = NULL;
+	parameterValStruct_t **parameterval = NULL;
         char *getList[] = {"Device.DeviceInfo.X_COMCAST-COM_CM_MAC"};
-        strcpy(compName,"eRT.com.cisco.spvtg.ccsp.cm");
-        strcpy(dbusPath,"/com/cisco/spvtg/ccsp/cm");
-        
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before GPV\n"));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before WebpaInterface_DiscoverComponent ret: %d\n",ret));
+
+        if(pComponentPath == NULL || pComponentName == NULL)
+        {
+            if(-1 == WebpaInterface_DiscoverComponent(&pComponentName, &pComponentPath)){
+                CcspTraceError(("%s ComponentPath or pComponentName is NULL\n", __FUNCTION__));
+                return NULL;
+            }
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, WebpaInterface_DiscoverComponent ret: %d  ComponentPath %s ComponentName %s \n",ret, pComponentPath, pComponentName));
+        }
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before GPV ret: %d\n",ret));
         ret = CcspBaseIf_getParameterValues(bus_handle,
-                    compName, dbusPath,
+                    pComponentName, pComponentPath,
                     getList,
                     1, &val_size, &parameterval);
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After GPV ret: %d\n",ret));
@@ -259,7 +301,16 @@ char * getDeviceMac()
             }
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Calling macToLower to get deviceMacId\n"));
             strcpy(fullDeviceMAC, parameterval[0]->parameterValue);
-            macToLower(parameterval[0]->parameterValue);    
+            macToLower(parameterval[0]->parameterValue);
+            if(pComponentName)
+            {
+                AnscFreeMemory(pComponentName);
+            }
+            if(pComponentPath)
+            {
+                AnscFreeMemory(pComponentPath);
+            }
+
         }
         else
         {
