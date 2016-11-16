@@ -120,6 +120,8 @@ pthread_mutex_t GetARPEntryMutex;
 
 #ifdef USE_NOTIFY_COMPONENT
 LM_wifi_hosts_t hosts;
+LM_wifi_hosts_t Xhosts;
+
 pthread_mutex_t Wifi_Hosts_mutex;
 #endif
 
@@ -503,6 +505,8 @@ void Wifi_Server_Thread_func()
 	int n,i;
 	char *pos2=NULL;
 	char *pos5=NULL;
+	char *Xpos2=NULL;
+	char *Xpos5=NULL;
 #ifdef DUAL_CORE_XB3
 	struct sockaddr_in serv_addr, cli_addr;
 	char name[8]= {0};
@@ -556,25 +560,41 @@ void Wifi_Server_Thread_func()
 		else
 		{
 			hosts.count = ntohl(hosts.count);
-			
+			Xhosts.count = 0;
 			
 			for(i = 0; i < hosts.count ; i++)
 			{
-				hosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
-				hosts.host[i].Status = ntohl(hosts.host[i].Status);
-				pos2=strstr(hosts.host[i].ssid,".1");
-				pos5=strstr(hosts.host[i].ssid,".2");
-				hosts.host[i].phyAddr[17] = '\0';
-                if(hosts.host[i].Status)
+				Xpos2=strstr(hosts.host[i].ssid,".3");
+				Xpos5=strstr(hosts.host[i].ssid,".4");
+				if(Xpos2!=NULL || Xpos5!=NULL)
 				{
-					if(pos2!=NULL)
-					{
-						CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress %s connected(2.4 GHz)\n",hosts.host[i].phyAddr));
-					}
-					else if(pos5!=NULL)
-					{	
-						CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s connected(5 GHz)\n",hosts.host[i].phyAddr));
-					}
+					CcspTraceWarning(("%s, %d\n",__FUNCTION__, __LINE__));
+					Xhosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
+     				Xhosts.host[i].Status = ntohl(hosts.host[i].Status);
+					strcpy(Xhosts.host[i].phyAddr, hosts.host[i].phyAddr );
+					if(Xhosts.host[i].Status)
+						strcpy(Xhosts.host[i].AssociatedDevice,hosts.host[i].AssociatedDevice);
+					Xhosts.count++;
+					
+				}
+				else
+				{
+				    hosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
+     				hosts.host[i].Status = ntohl(hosts.host[i].Status);
+	    			pos2=strstr(hosts.host[i].ssid,".1");
+		    		pos5=strstr(hosts.host[i].ssid,".2");
+			    	hosts.host[i].phyAddr[17] = '\0';
+                    if(hosts.host[i].Status)
+				    {
+					    if(pos2!=NULL)
+					    {
+						    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress %s connected(2.4 GHz)\n",hosts.host[i].phyAddr));
+    					}
+	    				else if(pos5!=NULL)
+		    			{	
+			    			CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s connected(5 GHz)\n",hosts.host[i].phyAddr));
+				    	}
+				    }
 				}
 				
 			}
@@ -583,6 +603,7 @@ void Wifi_Server_Thread_func()
 		}
 		pthread_mutex_unlock(&Wifi_Hosts_mutex);
         close(newsockfd);
+		XHosts_SyncWifi();
 		sleep(1);
     }
 
@@ -600,6 +621,45 @@ BOOL SearchWiFiClients(char *phyAddr, char *ssid)
 	}
 	return FALSE;
 }
+
+int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray)
+{
+	LM_wifi_wsta_t *pwifi_wsta = NULL;
+	int i,band=0,retband;
+        char macstring[18]={0};
+        mac_band_record *hash_record=NULL;
+        char *pos;
+        
+	
+	/*TODO : Receive Data from WIFI Agent via Socket*/
+	pthread_mutex_lock(&Wifi_Hosts_mutex);
+
+	*pCount = Xhosts.count;
+		
+	pwifi_wsta = (LM_wifi_wsta_t *) malloc(sizeof(LM_wifi_wsta_t) * (*pCount));
+    if(pwifi_wsta == NULL )
+    {
+		pthread_mutex_unlock(&Wifi_Hosts_mutex);
+        return -1;
+    }	
+
+    *ppWstaArray = pwifi_wsta;
+
+	for(i=0 ; i < *pCount ; i++)
+	{
+		strcpy(pwifi_wsta[i].AssociatedDevice,Xhosts.host[i].AssociatedDevice);
+		strncpy(pwifi_wsta[i].phyAddr,Xhosts.host[i].phyAddr,17);
+		pwifi_wsta[i].phyAddr[17] = '\0';
+		strcpy(pwifi_wsta[i].ssid,Xhosts.host[i].ssid);
+		pwifi_wsta[i].RSSI = Xhosts.host[i].RSSI;
+		pwifi_wsta[i].Status = Xhosts.host[i].Status;
+                
+	}	
+	pthread_mutex_unlock(&Wifi_Hosts_mutex);
+
+	return 0;
+}
+
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
 	LM_wifi_wsta_t *pwifi_wsta = NULL;
@@ -1270,6 +1330,60 @@ int getIPAddress(char *physAddress,char *IPAddress)
     return 0;
 
 }
+
+void Xlm_wrapper_get_leasetime()
+{
+    FILE *fp = NULL;
+    char buf[200] = {0};
+    char stub[64];
+    int ret;
+    LM_host_entry_t dhcpHost;
+    PLmObjectHost pHost;
+
+    if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
+    {
+        return;
+    }
+
+    while ( fgets(buf, sizeof(buf), fp)!= NULL )
+    {
+        /*
+        Sample:sss
+        6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
+        6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
+        */
+        ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
+                 &(dhcpHost.LeaseTime),
+                 dhcpHost.phyAddr,
+                 dhcpHost.ipAddr,
+                 dhcpHost.hostName
+              );
+        if(ret != 4)
+            continue;
+
+		if(strstr(buf,"172.16.12."))
+		{
+			pHost = XHosts_FindHostByPhysAddress(dhcpHost.phyAddr);
+			if ( pHost )
+			{	
+				pthread_mutex_lock(&LmHostObjectMutex);
+				if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+            	  	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+            	else
+                	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+				
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), dhcpHost.ipAddr);
+				pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
+				pthread_mutex_unlock(&LmHostObjectMutex);
+			}
+		}            
+    }
+
+    fclose(fp);
+
+    return;
+}
+
 
 void lm_wrapper_get_dhcpv4_client()
 {
