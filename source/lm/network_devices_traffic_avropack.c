@@ -72,6 +72,12 @@ char PARENT_CPE_TYPE_STRING[] = "BBParent ExtenderBB";
 #endif
 // local data, load it with real data if necessary
 
+
+#ifndef UTC_ENABLE
+extern int getTimeOffsetFromUtc();
+#endif
+
+
 char* GetNDTrafficSchemaBuffer()
 {
   return ndtschemabuffer;
@@ -231,8 +237,11 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   struct timeval ts;
   gettimeofday(&ts, NULL);
-
+#ifndef UTC_ENABLE
+  int64_t tstamp_av_main = ((int64_t) (ts.tv_sec - getTimeOffsetFromUtc()) * 1000000) + (int64_t) ts.tv_usec;
+#else
   int64_t tstamp_av_main = ((int64_t) (ts.tv_sec) * 1000000) + (int64_t) ts.tv_usec;
+#endif
   tstamp_av_main = tstamp_av_main/1000;
 
   avro_value_set_long(&optional, tstamp_av_main );
