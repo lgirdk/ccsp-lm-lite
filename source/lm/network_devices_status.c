@@ -36,6 +36,7 @@
 #include "lm_main.h"
 #include "report_common.h"
 #include <stdint.h>
+
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
@@ -76,6 +77,10 @@ static struct networkdevicestatusdata *headnode = NULL;
 static struct networkdevicestatusdata *headnodeextender = NULL;
 
 extern pthread_mutex_t LmHostObjectMutex;
+
+// RDKB-9258 : set polling and reporting periods to NVRAM after TTL expiry
+extern ANSC_STATUS SetNDSPollingPeriodInNVRAM(ULONG pPollingVal);
+extern ANSC_STATUS SetNDSReportingPeriodInNVRAM(ULONG pReportingVal);
 
 #ifndef UTC_ENABLE
 int getTimeOffsetFromUtc()
@@ -606,6 +611,8 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
+	ULONG uDefaultVal = 0;
+
     currentReportingPeriod = GetNDSReportingPeriod();
 #ifndef UTC_ENABLE
     getTimeOffsetFromUtc();
@@ -660,13 +667,19 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
 
             currentReportingPeriod = 0;
         }
-
-
         
         if(!GetNDSOverrideTTL())
         {
-            SetNDSPollingPeriod(GetNDSPollingPeriodDefault());
-            SetNDSReportingPeriod(GetNDSReportingPeriodDefault());
+            uDefaultVal = GetNDSPollingPeriodDefault();
+            SetNDSPollingPeriod( uDefaultVal );
+            //RDKB-9258 : Saving polling period to NVRAM.
+            SetNDSPollingPeriodInNVRAM( uDefaultVal );
+
+            uDefaultVal = GetNDSReportingPeriodDefault();
+            SetNDSReportingPeriod( uDefaultVal );
+            //RDKB-9258 : Saving reporting period to NVRAM.
+            SetNDSReportingPeriodInNVRAM( uDefaultVal );
+
             SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
         }
 

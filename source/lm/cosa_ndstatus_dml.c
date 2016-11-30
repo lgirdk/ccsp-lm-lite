@@ -45,6 +45,8 @@ extern int GetNDStatusSchemaBufferSize();
 extern char* GetNDStatusSchemaIDBuffer();
 extern int GetNDStatusSchemaIDBufferSize();
 
+//RDKB-9258 : save periods after TTL expiry to NVRAM
+static pthread_mutex_t g_ndsNvramMutex = PTHREAD_MUTEX_INITIALIZER;
 
 ANSC_STATUS GetNVRamULONGConfiguration(char* setting, ULONG* value)
 {
@@ -75,6 +77,44 @@ ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value)
         CcspLMLiteConsoleTrace(("%s PSM_Set_Record_Value2 returned SUCCESS[%d] while Setting [%s] Value [%d]\n",__FUNCTION__, retPsmSet, setting, value)); 
         }
     return retPsmSet;
+}
+
+// Persisting Polling period
+ANSC_STATUS
+SetNDSPollingPeriodInNVRAM(ULONG pPollingVal)
+{
+    ANSC_STATUS     returnStatus = ANSC_STATUS_SUCCESS;
+
+    //Acquire mutex
+    pthread_mutex_lock(&g_ndsNvramMutex);	
+
+    g_pReports->uNDSPollingPeriod = pPollingVal;
+    returnStatus = SetNVRamULONGConfiguration(NetworkDevicesStatusPollingPeriod,  pPollingVal);
+    g_pReports->bNDSPollingPeriodChanged = false;
+
+    //Release mutex
+    pthread_mutex_unlock(&g_ndsNvramMutex);
+
+    return returnStatus;
+}
+
+// Persisting Reporting period
+ANSC_STATUS
+SetNDSReportingPeriodInNVRAM(ULONG pReportingVal)
+{
+    ANSC_STATUS     returnStatus = ANSC_STATUS_SUCCESS;
+
+    //Acquire mutex
+    pthread_mutex_lock(&g_ndsNvramMutex);	
+
+    g_pReports->uNDSReportingPeriod = pReportingVal;
+    returnStatus = SetNVRamULONGConfiguration(NetworkDevicesStatusReportingPeriod, pReportingVal);
+    g_pReports->bNDSReportingPeriodChanged = false;
+
+    //Release mutex
+    pthread_mutex_unlock(&g_ndsNvramMutex);
+
+    return returnStatus;
 }
 
 ANSC_STATUS
@@ -501,20 +541,18 @@ NetworkDevicesStatus_Commit
 
     if(g_pReports->bNDSPollingPeriodChanged)
     {
-    SetNDSPollingPeriod(g_pReports->uNDSPollingPeriod);
     psmValue = g_pReports->uNDSPollingPeriod;
-    SetNVRamULONGConfiguration(NetworkDevicesStatusPollingPeriod, psmValue);
+    SetNDSPollingPeriod(psmValue);
     SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
-    g_pReports->bNDSPollingPeriodChanged = false;
+    SetNDSPollingPeriodInNVRAM( psmValue );
     }
 
     if(g_pReports->bNDSReportingPeriodChanged)
     {
-    SetNDSReportingPeriod(g_pReports->uNDSReportingPeriod);
     psmValue = g_pReports->uNDSReportingPeriod;
-    SetNVRamULONGConfiguration(NetworkDevicesStatusReportingPeriod, psmValue);
+    SetNDSReportingPeriod(psmValue);
     SetNDSOverrideTTL(GetNDSOverrideTTLDefault());  
-    g_pReports->bNDSReportingPeriodChanged = false;
+    SetNDSReportingPeriodInNVRAM( psmValue );
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));

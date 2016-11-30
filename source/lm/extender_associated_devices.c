@@ -88,6 +88,11 @@ static struct associateddevicedata *headnodepublic = NULL;
 extern int getTimeOffsetFromUtc();
 #endif
 
+// RDKB-9258 : set polling and reporting periods to NVRAM after TTL expiry
+extern ANSC_STATUS SetIDWPollingPeriodInNVRAM(ULONG pPollingVal);
+extern ANSC_STATUS SetIDWReportingPeriodInNVRAM(ULONG pReportingVal);
+
+
 static void WaitForPthreadConditionTimeoutIDW()
 {
     struct timespec _ts;
@@ -596,6 +601,7 @@ void* StartAssociatedDeviceHarvesting( void *arg )
     CcspLMLiteEventTrace(("RDK_LOG_DEBUG, LMLite %s : Started Thread to start DeviceData Harvesting  \n", __FUNCTION__ ));
 
     int ret = 0;
+    ULONG uDefaultVal = 0;
 
     currentIDWReportingPeriod = GetIDWReportingPeriod();
 
@@ -649,8 +655,21 @@ void* StartAssociatedDeviceHarvesting( void *arg )
 
         if(!GetIDWOverrideTTL())
         {
-            SetIDWPollingPeriod(GetIDWPollingPeriodDefault());
-            SetIDWReportingPeriod(GetIDWReportingPeriodDefault());
+            //Polling
+            uDefaultVal = GetIDWPollingPeriodDefault();
+            SetIDWPollingPeriod( uDefaultVal );
+            //RDKB-9258
+            //Saving polling period to NVRAM.
+            SetIDWPollingPeriodInNVRAM( uDefaultVal );
+
+            //Reporting
+            uDefaultVal = GetIDWReportingPeriodDefault();
+            SetIDWReportingPeriod( uDefaultVal );
+            //RDKB-9258
+            //Saving reporting period to NVRAM.
+            SetIDWReportingPeriodInNVRAM( uDefaultVal );
+
+            //TTL
             SetIDWOverrideTTL(GetIDWOverrideTTLDefault());
         }
 
