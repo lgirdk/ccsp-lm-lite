@@ -69,7 +69,7 @@ int WebpaInterface_DiscoverComponent(char** pComponentName, char** pComponentPat
     int res = CcspBaseIf_discComponentSupportingNamespace (
             bus_handle,
             CrName,
-            "Device.DeviceInfo.X_COMCAST-COM_CM_MAC",
+            "Device.X_CISCO_COM_CableModem.MACAddress",
             "",
             &components,
             &compNum);
@@ -271,7 +271,7 @@ char * getDeviceMac()
         int ret = -1, val_size =0,cnt =0;
         char *pComponentName = NULL, *pComponentPath = NULL;
 	parameterValStruct_t **parameterval = NULL;
-        char *getList[] = {"Device.DeviceInfo.X_COMCAST-COM_CM_MAC"};
+        char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before WebpaInterface_DiscoverComponent ret: %d\n",ret));
 
         if(pComponentPath == NULL || pComponentName == NULL)
