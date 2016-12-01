@@ -1505,30 +1505,29 @@ void Hosts_SyncWifi()
 
             if ( pHost )
             {
+			pthread_mutex_lock(&LmHostObjectMutex);           	
 #ifdef USE_NOTIFY_COMPONENT
-            if(pHost->bBoolParaValue[LM_HOST_ActiveId] != hosts[i].Status)
-            	{
-					if(hosts[i].Status)
-					{
+			if(hosts[i].Status)
+			{
 #endif
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
-				 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
-		                pHost->l1unReachableCnt = 1;
+				pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
+				pHost->l1unReachableCnt = 1;
 
-				LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+				if(pHost->bBoolParaValue[LM_HOST_ActiveId] != hosts[i].Status)
+					LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 #ifdef USE_NOTIFY_COMPONENT
-					}
-					else
-					{
-						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-					}
-            	}
+			}
+			else
+			{
+				if(pHost->bBoolParaValue[LM_HOST_ActiveId] != hosts[i].Status)
+					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+			}
 #endif
-
-
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+			pthread_mutex_unlock(&LmHostObjectMutex);
             }
         }
         //pthread_mutex_unlock(&LmHostObjectMutex);
@@ -1900,12 +1899,7 @@ void Hosts_StatSyncThreadFunc()
 						#endif
 */
 						pthread_mutex_lock(&LmHostObjectMutex);
-                                                if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
-                                                {
-                                                    if(!(strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
-                                                   LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-                                                }
-
+                                           LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 						pthread_mutex_unlock(&LmHostObjectMutex);
 					}
 					else
@@ -1950,14 +1944,9 @@ void Hosts_StatSyncThreadFunc()
                 }
                 if(offline)
                 	{
-                                     	pthread_mutex_lock(&LmHostObjectMutex);
-                                                if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
-                                                {
-                                                    if(!(strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
-                                                   LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-                                                }
-
-					pthread_mutex_unlock(&LmHostObjectMutex);
+				pthread_mutex_lock(&LmHostObjectMutex);
+				LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+				pthread_mutex_unlock(&LmHostObjectMutex);
                 	}
 
             }
