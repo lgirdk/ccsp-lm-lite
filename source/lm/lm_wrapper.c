@@ -579,22 +579,9 @@ void Wifi_Server_Thread_func()
 				}
 				else
 				{
-				    hosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
-     				hosts.host[i].Status = ntohl(hosts.host[i].Status);
-	    			pos2=strstr(hosts.host[i].ssid,".1");
-		    		pos5=strstr(hosts.host[i].ssid,".2");
-			    	hosts.host[i].phyAddr[17] = '\0';
-                    if(hosts.host[i].Status)
-				    {
-					    if(pos2!=NULL)
-					    {
-						    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress %s connected(2.4 GHz)\n",hosts.host[i].phyAddr));
-    					}
-	    				else if(pos5!=NULL)
-		    			{	
-			    			CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s connected(5 GHz)\n",hosts.host[i].phyAddr));
-				    	}
-				    }
+					hosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
+     				   	hosts.host[i].Status = ntohl(hosts.host[i].Status);
+			    		hosts.host[i].phyAddr[17] = '\0';
 				}
 				
 			}
