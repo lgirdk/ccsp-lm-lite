@@ -506,9 +506,13 @@ void delete_partial_list_ndt()
 	{
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting node [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, list->device_mac));
         	free(list->device_mac);
+        	list->device_mac = NULL;
         	free(list->parent);
-        	free(list->device_type);                
+        	list->parent = NULL;
+        	free(list->device_type); 
+        	list->device_type = NULL;               
         	free(list);
+        	list = NULL;
 		if( prev!= NULL )
 			prev->next = next;
 	}

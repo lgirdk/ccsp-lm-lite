@@ -219,6 +219,7 @@ void remove_Mac_to_band_mapping(char *macstring)
 	{       tmp=curr;
                 curr=curr->next;
 		free(tmp);
+		tmp=NULL;
 		//CcspWifiTrace(("RDK_LOG_WARN,Wifi band %d \n",curr->band));
 	}
  
@@ -238,6 +239,7 @@ void remove_Mac_to_band_mapping(char *macstring)
 					//CcspWifiTrace(("RDK_LOG_WARN,Wifi kb -mac %s  band %d \n",curr->macAddress,curr->band));
 					prev->next=next;
 					free(curr);
+					curr=NULL;
                                         break;
 				}
                                 if(!next) break;
@@ -1085,12 +1087,16 @@ RET6:
     free_parameterValStruct_t (bus_handle, ref_size, parametervalSSIDRef);
 RET5:
     free(pAssociatedDeviceNameBuf);
+    pAssociatedDeviceNameBuf=NULL;
 RET4:
     free(pReferenceParaNameBuf);
+    pReferenceParaNameBuf = NULL;
 RET3:
     free(pAssociatedDeviceNameArray);
+    pAssociatedDeviceNameArray = NULL;
 RET2:
     free(pReferenceParaNameArray);
+    pReferenceParaNameArray = NULL;
 RET1:
     free_parameterInfoStruct_t (bus_handle, bkup_ifaceNumber, interfaceInfo);
 
@@ -1784,15 +1790,20 @@ void DeleteExtenderClientInfoList(struct _ClientInfoLists* list)
 		{
 			next = currnode->next;
             free(currnode->MAC_Address);
+	    currnode->MAC_Address = NULL;
             free(currnode->SSID_Type);
+	    currnode->SSID_Type = NULL;
             free(currnode->Device_Name);
+	    currnode->Device_Name = NULL;
             free(currnode->SSID_Name);
+	    currnode->SSID_Name = NULL;
             free(currnode->RSSI);
             if (currnode->RxRate)
                 free(currnode->RxRate);
             if (currnode->TxRate)
                 free(currnode->TxRate);
             free(currnode);
+            currnode=NULL;
             currnode = next;
 		}
     list->connectedDeviceList = NULL;
@@ -2547,6 +2558,7 @@ int QueryMocaExtender(char* ip_address)
         curl_easy_cleanup(curl);
         curl_slist_free_all(slist);
         free(chunk.memory);
+        chunk.memory = NULL;
 
     }
 

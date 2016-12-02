@@ -149,7 +149,7 @@ avro_writer_t prepare_writer()
 
     /* copy the file into the buffer */
     if ( 1 != fread( ndtschemabuffer , lSize, 1 , fp) )
-      fclose(fp), free(ndtschemabuffer), fputs("entire read fails", stderr), exit(1);
+      fclose(fp), free(ndtschemabuffer), ndtschemabuffer=NULL,  fputs("entire read fails", stderr), exit(1);
 
     fclose(fp);
 
@@ -496,13 +496,13 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   avro_writer_free(writer);
   //free(buffer);
 
-  /* b64 encoding */
-  decodesize = b64_get_encoded_buffer_size( AvroSerializedSize );
-  b64buffer = malloc(decodesize * sizeof(uint8_t));
-  b64_encode( (uint8_t*)AvroSerializedBuf, AvroSerializedSize, b64buffer);
 
 /*  if ( consoleDebugEnable )
   {
+      // b64 encoding 
+  decodesize = b64_get_encoded_buffer_size( AvroSerializedSize );
+  b64buffer = malloc(decodesize * sizeof(uint8_t));
+  b64_encode( (uint8_t*)AvroSerializedBuf, AvroSerializedSize, b64buffer);
     fprintf( stderr, "\nAVro serialized data\n");
     for (k = 0; k < (int)AvroSerializedSize ; k++)
     {
@@ -521,6 +521,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
       fprintf( stderr, "%c", b64buffer[k]);
     }
     fprintf( stderr, "\n\n");
+	free(b64buffer);
   }*/
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
@@ -530,7 +531,6 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After ND WebPA SEND message call\n"));
 
-  free(b64buffer);
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 

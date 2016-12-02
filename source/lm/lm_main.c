@@ -1479,6 +1479,7 @@ void XHosts_SyncWifi()
     if ( hosts )
     {
         free(hosts);
+        hosts=NULL;
     }
 	//Get the lease time as well as update host name.
 	
@@ -1536,6 +1537,7 @@ void Hosts_SyncWifi()
     if ( hosts )
     {
         free(hosts);
+        hosts=NULL;
     }
 
     return;
@@ -1624,6 +1626,7 @@ void Hosts_SyncArp()
     if ( hosts )
     {
         free(hosts);
+        hosts=NULL;
     }
 
     return;
@@ -1728,6 +1731,7 @@ void Hosts_SyncMoCA()
     if ( hosts )
     {
         free(hosts);
+        hosts=NULL;
     }
 
     return;
