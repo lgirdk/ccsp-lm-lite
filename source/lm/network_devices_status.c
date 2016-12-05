@@ -508,12 +508,19 @@ void delete_list(struct networkdevicestatusdata **head)
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)currnode, currnode->device_mac));
         next = currnode->next;
         free(currnode->device_mac);
+        currnode->device_mac = NULL;
         free(currnode->interface_name);
+        currnode->interface_name = NULL;
         free(currnode->parent);
-        free(currnode->device_type);        
+        currnode->parent = NULL;
+        free(currnode->device_type);
+        currnode->device_type = NULL;        
         free(currnode->hostname);
+        currnode->hostname = NULL;
         free(currnode->ipaddress);
+        currnode->ipaddress = NULL;
         free(currnode);
+        currnode=NULL;
         currnode = next;
     }
     
