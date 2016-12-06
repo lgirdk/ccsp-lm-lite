@@ -129,6 +129,7 @@ extern int g_Client_Poll_interval;
     *  Hosts_GetParamIntValue
     *  Hosts_GetParamUlongValue
     *  Hosts_GetParamStringValue
+    *  Hosts_SetParamStringValue
 
 ***********************************************************************/
 /**********************************************************************  
@@ -378,9 +379,86 @@ Hosts_GetParamStringValue
     )
 {
     /* check the parameter name and return the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
+    {
+        /* collect value */
+        AnscCopyString(pValue, "");
+        return 0;
+    }
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return -1;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Hosts_SetParamStringValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                char*                       pString
+            );
+
+    description:
+
+        This function is called to set string parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                char*                       pString
+                The updated string value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+Hosts_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    )
+{
+    /* check the parameter name and set the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
+    {
+#ifdef USE_NOTIFY_COMPONENT
+		char *st,
+			 *ssid, 
+			 *AssociatedDevice, 
+			 *phyAddr, 
+			 *RSSI, 
+			 *Status;
+		int  iRSSI,
+			 iStatus;
+			 
+
+        /* save update to backup */
+		phyAddr 		 = strtok_r(pString, ",", &st);
+		AssociatedDevice = strtok_r(NULL, ",", &st);
+		ssid 			 = strtok_r(NULL, ",", &st);
+		RSSI 			 = strtok_r(NULL, ",", &st);
+		Status 			 = strtok_r(NULL, ",", &st);
+
+		iRSSI 			 = atoi(RSSI);
+		iStatus 		 = atoi(Status);
+
+		Wifi_Server_Sync_Function( phyAddr, AssociatedDevice, ssid, iRSSI, iStatus );
+#endif /* USE_NOTIFY_COMPONENT */
+		
+        return TRUE;
+    }
+    /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
 }
 
 /***********************************************************************
