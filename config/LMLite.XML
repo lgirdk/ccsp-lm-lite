@@ -12,6 +12,8 @@
       <functions>
         <func_GetParamUlongValue>Hosts_GetParamUlongValue</func_GetParamUlongValue>
 		<func_SetParamUlongValue>Hosts_SetParamUlongValue</func_SetParamUlongValue>
+        <func_GetParamStringValue>Hosts_GetParamStringValue</func_GetParamStringValue>	
+        <func_SetParamStringValue>Hosts_SetParamStringValue</func_SetParamStringValue>
       </functions>
       <parameters>
             <parameter>
@@ -41,7 +43,13 @@
               <syntax>uint32</syntax>
 			  <writable>true</writable>
             </parameter>
-      </parameters>
+			<parameter>
+			  <name>X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi</name>
+			  <type>string(2048)</type>
+			  <syntax>string</syntax>
+			  <writable>true</writable>
+			</parameter>
+	    </parameters>
       <objects>
         <object>
           <name>Host</name>

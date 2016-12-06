@@ -118,7 +118,14 @@ Hosts_GetParamStringValue
         char*                       pValue,
         ULONG*                      pUlSize
     );
-	
+
+BOOL
+Hosts_SetParamStringValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        char*                       pString
+    );
 
 BOOL
 Hosts_SetParamUlongValue

@@ -807,7 +807,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         {
             pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
         }
-#ifdef USE_NOTIFY_COMPONENT
+/* #ifdef USE_NOTIFY_COMPONENT
         if(bWifiHost)
         {
 			if(SearchWiFiClients(physAddress,ssid))
@@ -823,6 +823,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         }
         else
 #endif
+*/
 		pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
         
 		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
@@ -2164,6 +2165,8 @@ void LM_main()
     }
 #endif
 #ifdef USE_NOTIFY_COMPONENT
+/* Use DBUS instead of socket */
+#if 0
 	printf("\n WIFI-CLIENT : Creating Wifi_Server_Thread \n");
 
 	pthread_t Wifi_Server_Thread;
@@ -2176,7 +2179,11 @@ void LM_main()
 		CcspTraceWarning(("\n WIFI-CLIENT : Create Wifi_Server_Thread success %d \n",res));
 	}
 	///pthread_join(Wifi_Server_Thread, &status);
+#else
+	printf("\n WIFI-CLIENT : Started Syncing WiFi\n");
 
+	SyncWiFi( );
+#endif /* 0 */
 #endif
     //pthread_join(Hosts_StatSyncThread, &status);
     //pthread_join(Hosts_CmdThread, &status);
@@ -2317,7 +2324,7 @@ XLM_get_host_info()
         xfirstFlg = 1;
         return;
     }
-	XHosts_SyncWifi();
+//	XHosts_SyncWifi();
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.2.Client.", "Chaddr");
 
@@ -2341,5 +2348,99 @@ XLM_get_host_info()
 
 }
 
+void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status )
+{
+	char 	*pos2			= NULL,
+			*pos5			= NULL,
+			*Xpos2			= NULL,
+			*Xpos5			= NULL;
 
+	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
+									__FUNCTION__,
+									(NULL != phyAddr) ? phyAddr : "NULL",
+									(NULL != AssociatedDevice) ? AssociatedDevice : "NULL",
+									(NULL != ssid) ? ssid : "NULL",
+									RSSI,
+									Status));
+	Xpos2	= strstr( ssid,".3" );
+	Xpos5	= strstr( ssid,".4" );
+	pos2	= strstr( ssid,".1" );
+	pos5	= strstr( ssid,".2" );
 
+	if( ( NULL != Xpos2 ) || \
+		( NULL != Xpos5 ) 
+	   )
+	{
+		PLmObjectHost pHost;
+
+		pHost = XHosts_FindHostByPhysAddress(phyAddr);
+		
+		if ( !pHost )
+		{
+			pHost = XHosts_AddHostByPhysAddress(phyAddr);
+			if ( pHost )
+			{	   
+				CcspTraceWarning(("%s, %d New XHS host added sucessfully\n",__FUNCTION__, __LINE__));
+			}
+		}
+		
+		Xlm_wrapper_get_leasetime();
+
+		pthread_mutex_lock(&LmHostObjectMutex);   
+		Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
+		pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
+		pHost->l1unReachableCnt = 1;
+		pHost->bBoolParaValue[LM_HOST_ActiveId] = Status;
+		pHost->activityChangeTime = time((time_t*)NULL);
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+		pthread_mutex_unlock(&LmHostObjectMutex);
+	}
+	else
+	{
+		PLmObjectHost pHost;
+
+		pthread_mutex_lock(&LmHostObjectMutex);   
+		
+		pHost = Hosts_AddHostByPhysAddress( phyAddr );
+		
+		if ( NULL != pHost )
+		{
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+
+			if(pHost->bBoolParaValue[LM_HOST_ActiveId] != Status)
+			{
+				if( Status )
+				{
+					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
+					pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
+					pHost->l1unReachableCnt = 1;
+					LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+				}
+				else
+				{
+					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+				}
+			}
+
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+
+		    if( Status )
+		    {
+			    if( NULL != pos2 )
+			    {
+				    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress %s connected(2.4 GHz)\n",phyAddr));
+				}
+				else if( NULL != pos5 )
+				{	
+	    			CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s connected(5 GHz)\n",phyAddr));
+		    	}
+		    }
+		}
+
+		pthread_mutex_unlock(&LmHostObjectMutex);
+	}
+}

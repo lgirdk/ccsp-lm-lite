@@ -59,6 +59,8 @@ COSA_Init
     /* register the back-end apis for the data model */
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_GetParamUlongValue",  Hosts_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_SetParamUlongValue",  Hosts_SetParamUlongValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_GetParamStringValue",  Hosts_GetParamStringValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_SetParamStringValue",  Hosts_SetParamStringValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_GetEntryCount",  Host_GetEntryCount);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_GetEntry",  Host_GetEntry);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IsUpdated",  Host_IsUpdated);
