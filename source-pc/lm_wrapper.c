@@ -52,7 +52,7 @@
 
 /* Fix RDKB-499 */
 #define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63[^,]"
-#define LM_DHCP_CLIENT_FORMAT   "%17s %15s %25s %63d"
+#define LM_DHCP_CLIENT_FORMAT   "%63d %17s %63s %63s"
 #define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
 
 extern ANSC_HANDLE bus_handle;
@@ -81,11 +81,11 @@ int LanManager_DiscoverComponent
     int ret = 0;
 
     CrName[0] = 0;
-    #if 0//LNT_EMU
+    #if 0//RDKB-EMULATOR
     strcpy(CrName, "eRT.");
     strcat(CrName, CCSP_DBUS_INTERFACE_CR);
     #endif
-    strcpy(CrName, CCSP_DBUS_INTERFACE_CR);//LNT_EMU
+    strcpy(CrName, CCSP_DBUS_INTERFACE_CR);//RDKB-EMULATOR
 
     componentStruct_t **components = NULL;
     int compNum = 0;
@@ -656,10 +656,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 
     unlink(ARP_CACHE_FILE);
    // snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10 > %s", netName, ARP_CACHE_FILE);
-    char cmd1[100]="dumpleases -f /var/lib/misc/udhcpd.leases > /tmp/udhcpd.leases";
-    system(cmd1);
-
-	// This is added to remove atom mac from the connected device list.
+   // This is added to remove atom mac from the connected device list.
     char            cmd[256]         = {0};
     char            out[32]         = {0};
 	
@@ -872,12 +869,13 @@ void lm_wrapper_get_dhcpv4_client()
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
         6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
         */
-        ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
+	ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
+                 &(dhcpHost.LeaseTime),
                  dhcpHost.phyAddr,
                  dhcpHost.ipAddr,
-                 dhcpHost.hostName,
-                 &(dhcpHost.LeaseTime)
+                 dhcpHost.hostName
               );
+
         if(ret != 4)
             continue;
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
@@ -968,8 +966,8 @@ void lm_wrapper_get_dhcpv4_reserved()
         if ( pHost )
         {
             PRINTD("%s: %s %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.ipAddr, dhcpHost.hostName);
-
-            if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
+//RDKB-EMULATOR
+        /*    if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
             {
                 LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
             }
@@ -977,7 +975,7 @@ void lm_wrapper_get_dhcpv4_reserved()
             {
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
-                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
+                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);*/
 
             pIP = Host_AddIPv4Address
                 (

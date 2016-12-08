@@ -48,7 +48,7 @@
 
 #define DEVICE_WIFI_ACCESS_POINT "Device.WiFi.AccessPoint." 
 #define ARP_CACHE_FILE "/var/arp_cache"
-#define DNSMASQ_LEASES_FILE "/tmp/udhcpd.leases"
+#define DNSMASQ_LEASES_FILE "/tmp/dnsmasq.leases"
 #define DNSMASQ_RESERVED_FILE "/etc/dhcp_static_hosts"
 
 //#define DEBUG
