@@ -32,28 +32,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 **********************************************************************/
-
-/***************************************************************************
- *                                  _   _ ____  _
- *  Project                     ___| | | |  _ \| |
- *                             / __| | | | |_) | |
- *                            | (__| |_| |  _ <| |___
- *                             \___|\___/|_| \_\_____|
- *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution. The terms
- * are also available at https://curl.haxx.se/docs/copyright.html.
- *
- * You may opt to use, copy, modify, merge, publish, distribute and/or sell
- * copies of the Software, and permit persons to whom the Software is
- * furnished to do so, under the terms of the COPYING file.
- *
- * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
- * KIND, either express or implied.
- *
- ***************************************************************************/ 
  
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -65,9 +43,6 @@
 #include <linux/if_ether.h>
 #include <netpacket/packet.h>
 #include <sys/un.h>
-#include <curl/curl.h>
-#include <libxml/parser.h>
-#include <libxml/tree.h>
 
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
@@ -99,18 +74,6 @@ static char pAtomBRMac[32] = {0};
 #define WIFI_DM_BSSID         "Device.WiFi.SSID.1.BSSID"
 #define HASHSIZE 1000
 
-
-#define WIFIEXT_DM_NUMENTRIES  "Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDeviceNumberOfEntries"
-#define WIFIEXT_DM_EXTENDER_ENTRY_IPADDRESS  "Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.IPAddress"
-#define WIFIEXT_DM_EXTENDER_ENTRY_STATUS  "Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.Status"
-
-/* RDKB-7592 : Extender connected device report should have correct interface_mac */
-#define WIFIEXT_DM_EXTENDER_SSID_ENTRY_NAME		"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSID.%d.SSID"
-#define WIFIEXT_DM_EXTENDER_SSID_ENTRY_BSSID	"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSID.%d.BSSID"
-#define WIFIEXT_DM_EXTENDER_SSID_ENTRY_BAND		"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSID.%d.Band"
-#define WIFIEXT_DM_EXTENDER_SSID_ENTRIES_CNT	"Device.MoCA.X_CISCO_COM_WiFi_Extender.ExtenderDevice.%d.SSIDNumberOfEntries"
-
-
 char *dstComponent = NULL;
 char *dstPath = NULL;
 
@@ -128,8 +91,6 @@ LM_wifi_hosts_t Xhosts;
 pthread_mutex_t Wifi_Hosts_mutex;
 #endif
 
-ExtenderList *extenderlist = NULL;
-
 typedef struct{
 int band;
 BOOL active;
@@ -138,6 +99,32 @@ struct mac_band_record *next;
 }mac_band_record;
 
 mac_band_record *Mac_to_band_mapping[HASHSIZE]={NULL};
+
+int AreIPv4AddressesInSameSubnet(char* ipaddress, char* ipaddres2, char* subnetmask)
+{
+    struct in_addr addr, addr2, mask;    
+    int ret = 0;
+
+    if (inet_pton(AF_INET, ipaddress, &addr) == 0) {
+        fprintf(stderr, "%s Invalid IPAddress1\n", __FUNCTION__);
+        return 0;
+    }
+
+   if (inet_pton(AF_INET, ipaddres2, &addr2) == 0) {
+        fprintf(stderr, "%s Invalid IPAddress2\n", __FUNCTION__);
+        return 0;
+    }
+
+   if (inet_pton(AF_INET, subnetmask, &mask) == 0) {
+        fprintf(stderr, "%s Invalid SubnetMask\n", __FUNCTION__);
+        return 0;
+    }
+   
+   if((addr.s_addr & mask.s_addr) == (addr2.s_addr & mask.s_addr))
+        ret = 1;
+
+    return ret;
+}
 
 unsigned long hash(char *s)
 {
@@ -417,38 +404,6 @@ int lm_wrapper_init(){
     return 0;
 }
 
-int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_moca_cpe_t **ppArray)
-{
-    int n=0,i,ret;
-    moca_cpe_list cpes[kMoca_MaxCpeList];
-    LM_moca_cpe_t *pMoca = NULL;
-
-#ifdef CONFIG_SYSTEM_MOCA
-    ret = moca_GetMocaCPEs(0, cpes, &n);
-#endif
-
-    if(n <= 0){
-        *pCount = 0;
-        return 0;
-    }
-
-    pMoca = (LM_moca_cpe_t *)malloc(sizeof(LM_moca_cpe_t) * n );
-    if(pMoca == NULL){
-        *pCount = 0;
-        return -1;
-    }
-
-    *pCount = n;
-    *ppArray = pMoca;
-
-    for(i = 0; i < n;i++){
-         sprintf(pMoca->phyAddr, "%02x:%02x:%02x:%02x:%02x:%02x",cpes[i].mac_addr[0],cpes[i].mac_addr[1],cpes[i].mac_addr[2],cpes[i].mac_addr[3],cpes[i].mac_addr[4],cpes[i].mac_addr[5]);
-         strncpy(pMoca->ncId, "Device.MoCA.Interface.1", LM_GEN_STR_SIZE);
-         pMoca++;
-    }
-
-    return 0;
-}
 static int _get_field_pos( char *field[], int field_num, int *pos, parameterValStruct_t **val, int val_num){
     int i, j;
     for(j = 0; j < field_num; j++){
@@ -1458,6 +1413,8 @@ void lm_wrapper_get_dhcpv4_client()
 {
     FILE *fp = NULL;
     char buf[200] = {0};
+    char lan_ip_address[32] = {0};
+    char lan_net_mask[32] = {0};
     char stub[64];
     int ret;
     PLmObjectHostIPAddress pIP;
@@ -1477,11 +1434,10 @@ void lm_wrapper_get_dhcpv4_client()
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
         6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
         */
+        syscfg_get( NULL, "lan_ipaddr", lan_ip_address, sizeof(lan_ip_address));
 
-	if(strstr(buf,"172.16.12."))
-	{
-		continue;
-	}
+        syscfg_get( NULL, "lan_netmask", lan_net_mask, sizeof(lan_net_mask));
+
 
         ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
                  &(dhcpHost.LeaseTime),
@@ -1491,67 +1447,72 @@ void lm_wrapper_get_dhcpv4_client()
               );
         if(ret != 4)
             continue;
+
+
+        if(!AreIPv4AddressesInSameSubnet(lan_ip_address,dhcpHost.ipAddr, lan_net_mask))
+        {
+            continue;
+        }
+
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
 
 		
         if ( !pHost )
         {
-			 if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
-			 {
-			 	pthread_mutex_lock(&LmHostObjectMutex);
-		        		pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
+            if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
 
-		    	    	if ( pHost )
-		        		{
-		            		if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-		            		{
-		    	           		 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-			               		 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
-		           		 	}
-		        		}	
-				 pthread_mutex_unlock(&LmHostObjectMutex);
-			} 
+                if ( pHost )
+                {
+                    if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                    {
+                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                    }
+                }   
+                pthread_mutex_unlock(&LmHostObjectMutex);
+            }
         }
 		
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
-			pthread_mutex_lock(&LmHostObjectMutex);
-			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
-				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
-				
-			
+            pthread_mutex_lock(&LmHostObjectMutex);
+            if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
+                strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
             if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
 
-			pthread_mutex_unlock(&LmHostObjectMutex);
-			
-			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            
+            if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
-					strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
-					lmHosts.lastActivity++;
-				CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
-					char buf[8];
-					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
-					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
-					{
-						AnscTraceWarning(("syscfg_set failed\n"));
-					}
-					else 
-					{
-						if (syscfg_commit() != 0) 
-						{
-							AnscTraceWarning(("syscfg_commit failed\n"));
-						}
-		
-					}
-				}
-				
-			pthread_mutex_lock(&LmHostObjectMutex);
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "DHCP");
+                    strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
+                    lmHosts.lastActivity++;
+                CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+                    char buf[8];
+                    snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+                    if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+                    {
+                        AnscTraceWarning(("syscfg_set failed\n"));
+                    }
+                    else 
+                    {
+                        if (syscfg_commit() != 0) 
+                        {
+                            AnscTraceWarning(("syscfg_commit failed\n"));
+                        }
+        
+                    }
+                }
+                
+            pthread_mutex_lock(&LmHostObjectMutex);
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "DHCP");
             pIP = Host_AddIPv4Address
             (
                 pHost,
@@ -1561,10 +1522,10 @@ void lm_wrapper_get_dhcpv4_client()
             {
                 LanManager_CheckCloneCopy(&(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]), "DHCP");
                 pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
-				pHost->LeaseTime = pIP->LeaseTime;
-				
+                pHost->LeaseTime = pIP->LeaseTime;
+                
             }
-			pthread_mutex_unlock(&LmHostObjectMutex);
+            pthread_mutex_unlock(&LmHostObjectMutex);
         }
     }
 
@@ -1677,977 +1638,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 
     return;
 }
-/* retrieve the CCSP Component name and path who supports specified name space */
-BOOL Cosa_FindDestComp(char* pObjName,char** ppDestComponentName, char** ppDestPath)
-{
-        int                         ret;
-        int                         size = 0;
-        componentStruct_t **        ppComponents = NULL;
-        char CrName[256] = {0};
 
-        CrName[0] = 0;
-        strcpy(CrName, "eRT.");
-        strcat(CrName, CCSP_DBUS_INTERFACE_CR);
 
-        ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle,
-                                CrName,
-                                pObjName,
-                                "",        /* prefix */
-                                &ppComponents,
-                                &size);
-
-        if ( ret == CCSP_SUCCESS && size >= 1)
-        {
-                *ppDestComponentName = AnscCloneString(ppComponents[0]->componentName);
-                *ppDestPath    = AnscCloneString(ppComponents[0]->dbusPath);
-
-                free_componentStruct_t(bus_handle, size, ppComponents);
-                return  TRUE;
-        }
-        else
-        {
-                return  FALSE;
-        }
-}
-
-/* GetParameterValues */
-BOOL Cosa_GetParamValues
-        (
-                char*                                       pDestComp,
-                char*                                           pDestPath,
-                char**                                          pParamArray,
-                int                                             uParamSize,
-                int*                                            puValueSize,
-                parameterValStruct_t***         pppValueArray
-        )
-{
-                int                                                     iStatus = 0;
-                iStatus =
-                        CcspBaseIf_getParameterValues
-                                (
-                                        bus_handle,
-                                        pDestComp,
-                                        pDestPath,
-                                        pParamArray,
-                                        uParamSize,
-                                        puValueSize,
-                                        pppValueArray
-                                );
-
-                return iStatus == CCSP_SUCCESS;
-}
-
-
-
-BOOL FindExtenderComponent()
-{
-    if(!dstComponent || !dstPath)
-        {
-            return Cosa_FindDestComp(WIFIEXT_DM_NUMENTRIES, &dstComponent, &dstPath);
-        }
-    else
-        {
-            return TRUE;
-        }
-}
-
-int IsExtenderSynced(char* ip)
-{
-    parameterValStruct_t    **valStructsNumExtenders = NULL;
-    parameterValStruct_t    **valStructsIPAddress = NULL;
-    parameterValStruct_t    **valStructsStatus = NULL;
-    BOOL found = FALSE;
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : IPaddress %s \n", __FUNCTION__ , ip ));
-
-    int i = 0;
-    char                    *paramNameList[1];
-    char                    tmpPath[128] = {0};
-    int                     valNum = 0;
-    int                     ret = 0;
-    int                     numExtenders = 0;
-    
-    if (!FindExtenderComponent())
-        {
-            ret = -1;
-            return ret;
-        }
-
-    sprintf(tmpPath,"%s",WIFIEXT_DM_NUMENTRIES);
-    paramNameList[0] = tmpPath;
-    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsNumExtenders))
-        {
-            ret = -1;
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Cosa_GetParamValues Ret %d \n", __FUNCTION__, ret ));
-        }
-     else
-        {
-            numExtenders = atoi(valStructsNumExtenders[0]->parameterValue);
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s NumberofExtenders %d \n", __FUNCTION__, numExtenders));
-            free_parameterValStruct_t(bus_handle, valNum, valStructsNumExtenders);
-            valStructsNumExtenders = NULL;
-        }   
-
-    if(!ret && numExtenders)
-    {
-        for(i = 0; i < numExtenders; i++)
-        {
-            memset(&tmpPath, '\0', sizeof(char) * 128);
-            snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_ENTRY_IPADDRESS, numExtenders);
-            paramNameList[0] = tmpPath;
-            if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsIPAddress))
-            {
-                ret = -1;
-                valStructsIPAddress = NULL;
-            }
-
-            memset(&tmpPath, '\0', sizeof(char) * 128);
-            snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_ENTRY_STATUS, numExtenders);
-            paramNameList[0] = tmpPath;
-            if(!ret && !Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsStatus))
-            {
-                ret = -1;
-                free_parameterValStruct_t(bus_handle, valNum, valStructsIPAddress);
-                valStructsIPAddress = NULL;
-                valStructsStatus = NULL; 
-            }
-
-            if(!ret)
-            {
-                CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddress %s  Status %s \n", __FUNCTION__, valStructsIPAddress[0]->parameterValue, valStructsStatus[0]->parameterValue));
-                if( AnscEqualString(valStructsIPAddress[0]->parameterValue, ip, FALSE) && AnscEqualString(valStructsStatus[0]->parameterValue, "Synced", FALSE))
-                    {
-                        found = TRUE;
-                        free_parameterValStruct_t(bus_handle, valNum, valStructsIPAddress);
-                        valStructsIPAddress = NULL;
-                        free_parameterValStruct_t(bus_handle, valNum, valStructsStatus);
-                        valStructsStatus = NULL;                        
-                        break;
-                    }
-                else
-                    {
-                        found = FALSE;
-                        free_parameterValStruct_t(bus_handle, valNum, valStructsIPAddress);
-                        valStructsIPAddress = NULL;
-                        free_parameterValStruct_t(bus_handle, valNum, valStructsStatus);
-                        valStructsStatus = NULL;
-                    }
-            }
-        }
-    }
-
-
-    if(!ret)
-    {
-        if (found == TRUE)
-        {
-            ret = 0;
-        }
-        else
-        {
-            ret = -1;
-        }
-    }
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT %d \n", __FUNCTION__, ret));
-
-    return ret;   
-}
-
-void DeleteExtenderClientInfoList(struct _ClientInfoLists* list)
-{
-	if(list->connectedDeviceList)
-	{
-    struct _ClientInfo* currnode = list->connectedDeviceList;
-    struct _ClientInfo* next = NULL;
-	while(currnode != NULL)
-		{
-			next = currnode->next;
-            free(currnode->MAC_Address);
-	    currnode->MAC_Address = NULL;
-            free(currnode->SSID_Type);
-	    currnode->SSID_Type = NULL;
-            free(currnode->Device_Name);
-	    currnode->Device_Name = NULL;
-            free(currnode->SSID_Name);
-	    currnode->SSID_Name = NULL;
-            free(currnode->RSSI);
-            if (currnode->RxRate)
-                free(currnode->RxRate);
-            if (currnode->TxRate)
-                free(currnode->TxRate);
-            free(currnode);
-            currnode=NULL;
-            currnode = next;
-		}
-    list->connectedDeviceList = NULL;
-	}
-}
-
-
-ExtenderInfo* FindExtenderInList(char* ip_address)
-{
-    ExtenderList* tmp = extenderlist;
-    while(tmp)
-    {
-        if(!strcasecmp(tmp->info->extender_ip, ip_address))
-        {
-            return tmp->info;
-        }
-
-        tmp = tmp->next;    
-    }
-    
-    return NULL;    
-}
-
-void add_to_extender_list(ExtenderInfo* extender)
-{
-    printf("%s \n", __FUNCTION__);
-    if(!extenderlist)
-    {
-        extenderlist = malloc(sizeof(*extenderlist));
-        extenderlist->info = extender;
-        extenderlist->next = NULL;
-    }
-    else
-    {
-        ExtenderList *prevnode = NULL, *curnode = NULL;
-        prevnode = extenderlist;
-        curnode = prevnode->next;
-
-        while(curnode != NULL)
-        {
-            prevnode = curnode;
-            curnode = curnode->next;
-        }
-
-        prevnode->next = malloc(sizeof(*extenderlist));
-        prevnode->next->info = extender;
-        prevnode->next->next = NULL;
-    }
-}
-
-void print_extender_list(ExtenderList* list)
-{
-    while(list)
-    {
-        int i = 0;
-
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender IP [%s] \n", list->info->extender_ip));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender ClientInfoResult [%s] \n", list->info->client_info_result));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender ClientInfolist [%x] \n", list->info->list));
-
-        if(list->info->list)
-        {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender ClientInfoList NumClients [%d] \n", list->info->list->numClient));
-
-        ClientInfo* tmp = list->info->list->connectedDeviceList;
-
-
-        for(i = 0; i < list->info->list->numClient; i++, tmp = tmp->next)
-            {
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite connecteddevicelist %x\n", tmp));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender MACAddress [%s] \n", tmp->MAC_Address));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender SSID_Type [%s] \n", tmp->SSID_Type));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender Device_Name [%s] \n", tmp->Device_Name));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender SSID_Name [%s] \n", tmp->SSID_Name));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender RSSI [%s] \n", tmp->RSSI));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender RxRate [%s] \n", tmp->RxRate));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite Extender TxRate [%s] \n", tmp->TxRate));
-            }
-        }
-        
-        list = list->next;
-    }
-
-}
-
-xmlNodePtr findNodeByName(xmlNodePtr rootnode, const xmlChar * nodename)
-{
-    xmlNodePtr node = rootnode;
-    if(node == NULL){
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Document is empty!", __FUNCTION__ ));
-        return NULL;
-    }
-
-    while(node != NULL){
-
-        if(!xmlStrcmp(node->name, nodename)){
-            return node; 
-        }
-        else if (node->children != NULL) {
-            xmlNodePtr intNode =  findNodeByName(node->children, nodename); 
-            if(intNode != NULL) {
-                return intNode;
-            }
-        }
-        node = node->next;
-    }
-    return NULL;
-}
-
-static void
-extract_elements(ExtenderInfo* extender, xmlNode * a_node)
-{
-    xmlNode *cur_node = a_node;
-    xmlNode *query_node = NULL;
-
-    xmlChar *clientInfoResultContent = "GetClientInfoResult";
-
-    query_node = findNodeByName(cur_node,clientInfoResultContent);
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite NodeName [%s] NodeContent: %s \n", query_node->name, xmlNodeGetContent(query_node) ));
-    
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite ClientInfoResult %s \n", extender->client_info_result));
-
-
-    if(extender->client_info_result)
-        {
-            free(extender->client_info_result);
-            extender->client_info_result = NULL;
-        }
-
-    extender->client_info_result = strdup(xmlNodeGetContent(query_node));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite ClientInfoResult %s \n", extender->client_info_result));
-
-    query_node = findNodeByName(cur_node, "ClientInfoLists");
-
-    //struct _ClientInfoLists infolist = {0};
-    struct _ClientInfoLists * infolist = malloc(sizeof(struct _ClientInfoLists));
-
-    infolist->numClient = 0;
-    infolist->connectedDeviceList = NULL;
-
-    if(extender->list)
-        {
-            DeleteExtenderClientInfoList(extender->list);
-            free(extender->list);
-            extender->list = NULL;
-        }
-
-    extender->list = infolist;
-    for (cur_node = query_node->children; cur_node; cur_node = cur_node->next) 
-    {   
-        if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"ClientInfo"))) 
-        {
-        xmlNode* tmp = NULL;
-        infolist->numClient++;
-        ClientInfo* info = (ClientInfo*) malloc (sizeof(ClientInfo));
-
-        info->MAC_Address = NULL;
-        info->SSID_Type = NULL;
-        info->Device_Name = NULL;
-        info->SSID_Name = NULL;
-        info->RSSI = NULL;
-        info->RxRate = NULL;
-        info->TxRate = NULL;
-
-        info->next = NULL;
-        for(tmp = cur_node->children; tmp; tmp = tmp->next) 
-            {
-                        //printf("node name: [%s] \n", tmp->name);
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"MACAddress"))) 
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->MAC_Address = strdup(xmlNodeGetContent(tmp));
-                        }
-
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"Type"))) 
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->SSID_Type = strdup(xmlNodeGetContent(tmp));
-                        }
-
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"DeviceName"))) 
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->Device_Name = strdup(xmlNodeGetContent(tmp));
-                        }
-
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"SSID"))) 
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->SSID_Name = strdup(xmlNodeGetContent(tmp));
-                        }
-
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"RSSI"))) 
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->RSSI = strdup(xmlNodeGetContent(tmp));
-                        }
-
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"RxRate")))
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->RxRate = strdup(xmlNodeGetContent(tmp));
-                        }
-
-                    if ((!xmlStrcmp(tmp->name, (const xmlChar *)"TxRate")))
-                        {
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite node name: [%s] , Content: %s \n", tmp->name, xmlNodeGetContent(tmp) ));
-                            info->TxRate = strdup(xmlNodeGetContent(tmp));
-                        }
-
-            }   
-            
-            ClientInfo* temp = infolist->connectedDeviceList;   
-        
-            if(!temp)
-                {
-                infolist->connectedDeviceList = info;
-                }
-            else
-                {   
-                while(temp->next != NULL)
-                    {
-                    temp = temp->next;
-                    }
-            
-                temp->next = info;
-                }   
-            }
-        }
-}
-
-//Frees the ssid list associated with an extender
-void delete_ssid_list(Ssid *pSsidList)
-{
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    if( !pSsidList )
-    {
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT , null ssidlist \n", __FUNCTION__));
-	return;
-    }
-
-    Ssid *currSsidPtr = pSsidList;
-    Ssid *tmpSsidPtr = NULL;
-    while( currSsidPtr )
-    {
-	tmpSsidPtr = currSsidPtr->next;
-
-	LanManager_Free(currSsidPtr->name);
-	LanManager_Free(currSsidPtr->band);
-	LanManager_Free(currSsidPtr->bssid);
-
-	LanManager_Free(currSsidPtr);
-
-	currSsidPtr = tmpSsidPtr;
-    }//while
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
-}
-
-/* This function queries the data model for information of a particular SSID of a specific extender */
-Ssid* get_ssid(int pExtIndex, int pSsidIndex )
-{
-    char                    *paramNameList[1];
-    char                    tmpPath[128] = {0};
-    int                     valNum , ssidCount = 0;
-    parameterValStruct_t    **valStructsString = NULL;
-    Ssid* 					retSsid = NULL;
-	
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-
-    retSsid = LanManager_Allocate(sizeof(Ssid));
-
-    memset(retSsid, 0, sizeof(Ssid));
-	
-    retSsid->index = pSsidIndex;
-
-    // SSID Name
-    memset(&tmpPath, '\0', sizeof(char) * 128);
-    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRY_NAME, pExtIndex,pSsidIndex);
-    paramNameList[0] = tmpPath;
-    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
-    {
-	valStructsString = NULL;
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query SSID name\n", __FUNCTION__));
-	goto error;
-    }
-    else
-    {
-    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s queried SSID name %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
-    	retSsid->name = LanManager_CloneString(valStructsString[0]->parameterValue);
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s extender SSID name  %s \n", __FUNCTION__, retSsid->name));
-		
-	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-	valStructsString = NULL;
-    }
-
-    //BSSID
-    memset(&tmpPath, '\0', sizeof(char) * 128);
-    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRY_BSSID, pExtIndex,pSsidIndex);
-    paramNameList[0] = tmpPath;
-    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
-    {
-  	valStructsString = NULL;
-  	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query BSSID\n", __FUNCTION__));
-  	goto error;
-    }
-    else
-    {
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s queried BSSID %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
-	retSsid->bssid = LanManager_CloneString(valStructsString[0]->parameterValue);
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s extender BSSID %s \n", __FUNCTION__, retSsid->bssid));
-	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-	valStructsString = NULL;
-    }
-
-    //Band
-    memset(&tmpPath, '\0', sizeof(char) * 128);
-    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRY_BAND, pExtIndex,pSsidIndex);
-    paramNameList[0] = tmpPath;
-    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
-    {
-  	valStructsString = NULL;
-  	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query Band\n", __FUNCTION__));
-	goto error;
-    }
-    else
-    {
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s queried SSID Band %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
-	retSsid->band = LanManager_CloneString(valStructsString[0]->parameterValue);
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s extender SSID Band %s \n", __FUNCTION__, retSsid->band));
-	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-  	valStructsString = NULL;
-    }
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
-    return retSsid;
-	
-error :
-    if(retSsid)
-	LanManager_Free(retSsid);
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
-    return NULL;
-}
-
-/* 
-This function queries the data model for a specific extender, fetches the corresponding SSID information 
-and updates the extender info.
-*/
-int query_ccsp_data_model(ExtenderInfo* extender)
-{
-    //parameterValStruct_t    **valStructsNumExtenders = NULL;
-    //parameterValStruct_t    **valStructsIPAddress = NULL;
-    parameterValStruct_t    **valStructsString = NULL;
-    BOOL 					found = FALSE;
-
-    char                    *paramNameList[1];
-    char                    tmpPath[128] = {0};
-    int                     valNum, ret, ei, si = 0;
-    int                     numExtenders, ssidCount = 0;
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-
-    if( extender==NULL  || !FindExtenderComponent())
-    {
-        //Error case
-        ret = -1;
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, LMLite %s EXIT @ extender not found %d \n", __FUNCTION__, ret));
-        return ret;
-    }
-	
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Query for IPaddress %s \n", __FUNCTION__ , extender->extender_ip ));
-
-    sprintf(tmpPath,"%s",WIFIEXT_DM_NUMENTRIES);
-    paramNameList[0] = tmpPath;
-    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
-    {
-       	//No extenders available
-        ret = -1;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Cosa_GetParamValues Ret %d \n", __FUNCTION__, ret ));
-    }
-    else
-    {
-      	//Number of connected extenders
-        numExtenders = atoi(valStructsString[0]->parameterValue);
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s NumberofExtenders %d \n", __FUNCTION__, numExtenders));
-    	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-    }   
-    valStructsString = NULL;
-	
-    for(ei = 1; ei <= numExtenders; ei++)
-    {
-        memset(&tmpPath, '\0', sizeof(char) * 128);
-        snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_ENTRY_IPADDRESS, ei);
-        paramNameList[0] = tmpPath;
-        if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
-        {
-            //IPAddress unavailable
-            ret = -1;
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s found  IP =false %d \n", __FUNCTION__, ret));
-            found = FALSE;
-            valStructsString = NULL;
-	    continue;
-        }
-
-	//Found IPAddress, check if its the one being searched for.
-	ret = 0;
-    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s current IPAddress %s \n", __FUNCTION__, valStructsString[0]->parameterValue));
-    	if( (extender->extender_ip) && (AnscEqualString(valStructsString[0]->parameterValue, extender->extender_ip, FALSE)) )
-       	{
-       	    //Found the required extender
-       	    found = TRUE;                    
-	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-	    valStructsString = NULL;
-			
-	    //Query for the number of SSIDs
-	    memset(&tmpPath, '\0', sizeof(char) * 128);
-	    snprintf(tmpPath, sizeof(tmpPath), WIFIEXT_DM_EXTENDER_SSID_ENTRIES_CNT, ei);
-	    paramNameList[0] = tmpPath;
-	    if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
-	    {
-	        //ssid count unavailable
-	        ret = -1;
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s error @ querying ssid count %d \n", __FUNCTION__, ret));
-	        ssidCount = 0;				
-	    }
-	    else
-	    {
-		//Number of available SSIDs
-	  	ssidCount = atoi(valStructsString[0]->parameterValue);				
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s SSID COUNT %d \n", __FUNCTION__, ssidCount));
-	    	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-	    }
-
-	    valStructsString = NULL;
-		
-	    //Free previous data
-	    if( extender->ssid_list!=NULL )
-	    {
-		delete_ssid_list( extender->ssid_list );
-		extender->ssid_list = NULL;
-	    }
-			
-	    extender->ssid_count = ssidCount;
-		
-	    Ssid *currSsid = NULL;
-	    Ssid *prevSsid = NULL;
-
-	    //Populate all the available SSIDs in the extender datastructure
-	    for( si=1; si<=ssidCount ; si++ )
-	    {
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s querying ssid %d \n", __FUNCTION__, si));
-		currSsid = get_ssid(ei,si);
-		if( currSsid==NULL )
-		    break;
-				
-		if( prevSsid==NULL )
-		    extender->ssid_list = currSsid;
-		else
-		    prevSsid->next = currSsid;
-			
-		prevSsid = currSsid;				
-	     }//for
-		
-             break;
-        }//if extender_ip
-	else
-	{
-	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
-	    valStructsString = NULL;
-	}
-    }//for extender
-
-    if(!ret)
-    {
-        if (found == TRUE)
-        {
-            ret = 0;
-        }
-        else
-        {
-            ret = -1;
-        }
-    }
-    
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT %d \n", __FUNCTION__, ret));
-
-    return ret;   
-}
-
-/* Function to update the extender with it's available SSIDs. */
-void update_extender_ssid(ExtenderInfo* extender)
-{
-
-    /* The SSID of extender can be fetched either by executing a curl query on the extender, or
-    by query the cosa data model through the DBUS */
-
-    /* RDKB-7592 : Extender connected device report should have correct interface_mac */
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    if( extender==NULL )
-    {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT, null extender \n", __FUNCTION__));
-        return;
-    }
-
-	if( extender->ssid_count == 0 )
-	{
-    	// Query the cosa data model through DBUS 
-    	int ret = query_ccsp_data_model(extender );
-    	//Ignore return value 'ret', as it's non-critical
-	}
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__));
-    return;
-}
-
-
-int
-ParseExtenderXML(char* ip_address, char* sourceXML, size_t newLen)
-{
-    xmlDoc *doc = NULL;
-    xmlNode *cur = NULL;
-    xmlChar * nodename = "ClientInfoLists";
-
-    /*
-     * this initialize the library and check potential ABI mismatches
-     * between the version it was compiled for and the actual shared
-     * library used.
-     */
-    LIBXML_TEST_VERSION
-
-    /*
-     * The document being in memory, it have no base per RFC 2396,
-     * and the "noname.xml" argument will serve as its base.
-     */
-    doc = xmlReadMemory(sourceXML, newLen, "noname.xml", NULL, 0);
-    if (doc == NULL) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Failed to parse document\n", __FUNCTION__ ));
-    return -1;
-    }
-
-    /*Get the root element node */
-    cur = xmlDocGetRootElement(doc);
-
-    ExtenderInfo* extender = FindExtenderInList(ip_address);
-    if(!extender)
-    {
-    extender = (ExtenderInfo*) malloc(sizeof(ExtenderInfo));
-    extender->client_info_result = NULL;
-    extender->extender_ip = strdup(ip_address);
-    extender->list = NULL;
-	/* RDKB-7592  */
-	extender->ssid_list = NULL;
-	extender->ssid_count = 0;
-    add_to_extender_list(extender);
-    }
-
-    extract_elements(extender, cur);
-
-    /* RDKB-7592 : Extender connected device report should have correct interface_mac */
-    update_extender_ssid(extender);
-	
-    //print_extender_list(extenderlist);
-
-    /*free the document */
-    xmlFreeDoc(doc);
-
-    /*
-     *Free the global variables that may
-     *have been allocated by the parser.
-     */
-    xmlCleanupParser();
-
-    return 0;
-}
-
-static
-void dump(const char *text,
-          FILE *stream, unsigned char *ptr, size_t size)
-{
-  size_t i;
-  size_t c;
-  unsigned int width=0x10;
- 
-    if(consoleDebugEnable)
-    {
-
-        stream = debugLogFile;
-
-        fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
-              text, (long)size, (long)size);
- 
-        for(i=0; i<size; i+= width) 
-        {
-            fprintf(stream, "%4.4lx: ", (long)i);
-         
-            /* show hex to the left */
-            for(c = 0; c < width; c++) 
-            {
-              if(i+c < size)
-                fprintf(stream, "%02x ", ptr[i+c]);
-              else
-                fputs("   ", stream);
-            }
-         
-            /* show data on the right */
-            for(c = 0; (c < width) && (i+c < size); c++) 
-            {
-              char x = (ptr[i+c] >= 0x20 && ptr[i+c] < 0x80) ? ptr[i+c] : '.';
-              fputc(x, stream);
-            }
-
-            fputc('\n', stream); /* newline */
-        }
-    }
-}
- 
-static
-int my_trace(CURL *handle, curl_infotype type,
-             char *data, size_t size,
-             void *userp)
-{
-  const char *text;
-  (void)handle; /* prevent compiler warning */
- 
-  if(CURLINFO_TEXT == type)
-  {
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, == Info: %s", data));
-  }
-  else if(CURLINFO_HEADER_OUT == type)
-  {
-    text = "=> Send header";
-  }
-  else if(CURLINFO_DATA_OUT == type)
-  {
-    text = "=> Send data";
-  }
-  else if(CURLINFO_SSL_DATA_OUT == type)
-  {
-    text = "=> Send SSL data";
-  }
-  else if(CURLINFO_HEADER_IN == type)
-  {
-    text = "=> Recv header";
-  }
-  else if(CURLINFO_DATA_IN == type)
-  {
-    text = "=> Recv data";
-  }
-  else if(CURLINFO_SSL_DATA_IN == type)
-  {
-    text = "=> Recv SSL data";
-  }
-  else
-  {
-    return 0;
-  }
- 
-  dump(text, stderr, (unsigned char *)data, size);
-  return 0;
-}
-
-
-static size_t
-WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-  size_t realsize = size * nmemb;
-  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
- 
-  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-  if(mem->memory == NULL) {
-    /* out of memory! */ 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s not enough memory (realloc returned NULL)\n", __FUNCTION__ ));
-    return 0;
-  }
- 
-  memcpy(&(mem->memory[mem->size]), contents, realsize);
-  mem->size += realsize;
-  mem->memory[mem->size] = 0;
- 
-  //printf("%s \n", mem->memory);
-
-  return realsize;
-}
-
-
-int QueryMocaExtender(char* ip_address)
-{
-    CURL *curl;
-    int ret = 0;
-
-    if(!ip_address)
-    {
-        ret = -1;
-        return ret;
-    }
-
-
-    struct MemoryStruct chunk;
-
-    chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */ 
-    chunk.size = 0;    /* no data at this point */
-    CURLcode res;
-    char extenderurl[128] = {0};
-    char *post = "<?xml version=\"1.0\" encoding=\"utf-8\"?> \
-                    <soap:Envelope   \
-                        xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \
-                        xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" \
-                        xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" \
-                        soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" > \
-                        <soap:Body> \
-                            <GetClientInfo xmlns=\"http://cisco.com/HNAPExt/\"/> \
-                        </soap:Body> \
-                    </soap:Envelope>";
-
-    sprintf(extenderurl, "https://%s:2241/HNAP1/", ip_address);
-    curl = curl_easy_init();
-      
-    if(curl)
-      {
-        struct curl_slist *slist = NULL;
-      
-        slist = curl_slist_append(slist, "SOAPAction: http://cisco.com/HNAPExt/GetClientInfo");
-        slist = curl_slist_append(slist, "Content-Type: text/xml");
-        
-        
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
-        curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
-        //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-        curl_easy_setopt(curl, CURLOPT_USERPWD, "cusadmin:Xfinity");
-        curl_easy_setopt(curl, CURLOPT_INTERFACE,  "brlan0");
-        curl_easy_setopt(curl, CURLOPT_URL, extenderurl);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-
-        res = curl_easy_perform(curl);
-
-        /* check for errors */ 
-          if(res != CURLE_OK) {
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s curl_easy_perform() failed: %s\n", __FUNCTION__, curl_easy_strerror(res)));
-            ret = -1;
-          }
-          else {
-            /*
-             * Now, our chunk.memory points to a memory block that is chunk.size
-             * bytes big and contains the remote file.
-             *
-             * Do something nice with it!
-             */ 
-            ParseExtenderXML(ip_address, chunk.memory, chunk.size);
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite  %s %lu bytes retrieved\n", __FUNCTION__, (long)chunk.size));
-          }
-
-        curl_easy_cleanup(curl);
-        curl_slist_free_all(slist);
-        free(chunk.memory);
-        chunk.memory = NULL;
-
-    }
-
-    curl_global_cleanup();
-
-    return ret;
-}
 
 

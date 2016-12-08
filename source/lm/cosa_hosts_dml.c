@@ -457,6 +457,60 @@ Hosts_SetParamStringValue
 		
         return TRUE;
     }
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_EthHost_Sync", TRUE))
+    {
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > X_RDKCENTRAL-COM_EthHost_Sync Param received\n",__FUNCTION__,__LINE__));
+        printf(" \n Notification : < %s : %d > ParamName = %s \n",__FUNCTION__,__LINE__, pString);
+
+        char* st;
+        char *macAddr = strtok_r(pString, ",", &st);
+        char *status = strtok_r(NULL, ",", &st);
+		int active;
+		
+
+       if(AnscEqualString(status, "true", TRUE))
+	   {
+		   active = 1;
+	   }
+       else
+       {
+			active = 0;
+       }
+        EthClient_AddtoQueue(macAddr,active);
+        return TRUE;
+    }
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_MoCA", TRUE))
+    {
+#ifdef USE_NOTIFY_COMPONENT
+        char *st,
+             *ssid, 
+             *AssociatedDevice, 
+             *phyAddr, 
+             *deviceType, 
+             *parentMac, 
+             *RSSI, 
+             *Status;
+        int  iRSSI,
+             iStatus;
+             
+
+        /* save update to backup */
+        phyAddr             = strtok_r(pString, ",", &st);
+        AssociatedDevice    = strtok_r(NULL, ",", &st);
+        ssid                = strtok_r(NULL, ",", &st);
+        parentMac           = strtok_r(NULL, ",", &st);
+        deviceType          = strtok_r(NULL, ",", &st);
+        RSSI                = strtok_r(NULL, ",", &st);
+        Status              = strtok_r(NULL, ",", &st);
+
+        iRSSI            = atoi(RSSI);
+        iStatus          = atoi(Status);
+
+        MoCA_Server_Sync_Function( phyAddr, AssociatedDevice, ssid, parentMac, deviceType, iRSSI, iStatus );
+#endif /* USE_NOTIFY_COMPONENT */
+        
+        return TRUE;
+    }
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }

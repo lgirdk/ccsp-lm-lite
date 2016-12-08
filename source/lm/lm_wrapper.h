@@ -118,70 +118,15 @@ typedef struct{
 #endif
 
 typedef struct {
-	unsigned char phyAddr[18];
-    	unsigned char ncId[LM_GEN_STR_SIZE];
+  unsigned char ssid[LM_GEN_STR_SIZE];
+  unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
+  unsigned char phyAddr[18];
+  unsigned char parentMac[18];
+  unsigned char deviceType[18];
+  unsigned char ncId[LM_GEN_STR_SIZE];
+  int Status;
+  int RSSI;
 }LM_moca_cpe_t;
-
-struct MemoryStruct {
-  char *memory;
-  size_t size;
-};
-
-typedef struct _ClientInfo
-{
-
-char* MAC_Address;
-char* SSID_Type;
-char* Device_Name;
-char* SSID_Name;
-char* RSSI;
-char* RxRate;
-char* TxRate;
-
-struct _ClientInfo* next;
-
-} ClientInfo;
-
-typedef struct _ClientInfoLists
-{
-int numClient;
-ClientInfo* connectedDeviceList;
-
-} ClientInfoLists;
-
-//RDKB-7592
-typedef struct _Ssid
-{
-int 	index;
-char* 	name;
-char* 	bssid;
-char* 	band;
-
-/* for future use
-int 				channel;
-char* 			mode;
-security_mode* 	security_mode;
-encrption_type*	encryption;
-*/
-struct _Ssid* next;
-
-} Ssid;
-
-typedef struct _ExtenderInfo
-{
-
-char* extender_ip;
-char* client_info_result;
-ClientInfoLists* list;
-Ssid*  	ssid_list;
-int   	ssid_count;
-} ExtenderInfo;
-
-typedef struct _ExtenderList
-{
-ExtenderInfo* info;
-struct _ExtenderList* next;
-} ExtenderList;
 
 typedef struct{
 	unsigned char phyAddr[18];
@@ -212,7 +157,6 @@ ANSC_HANDLE bus_handle;
  */
 int lm_wrapper_init();
 int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[4]);
-int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_moca_cpe_t **ppArray);
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray);
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray);
 void lm_wrapper_get_dhcpv4_client();
@@ -229,7 +173,5 @@ void Wifi_Server_Thread_func();
 int getIPAddress(char *physAddress,char *IPAddress);
 int get_HostName(char *physAddress,char *HostName);
 
-int QueryMocaExtender(char* ip_address);
-int IsExtenderSynced(char* extender_ip);
 
 #endif

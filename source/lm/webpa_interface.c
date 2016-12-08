@@ -87,7 +87,11 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
     int res = CcspBaseIf_discComponentSupportingNamespace (
             bus_handle,
             CrName,
+#ifndef _XF3_PRODUCT_REQ_
             "Device.X_CISCO_COM_CableModem.MACAddress",
+#else
+            "Device.DPoE.Mac_address",
+#endif      
             "",
             &components,
             &compNum);
@@ -495,9 +499,13 @@ char * getDeviceMac()
         pthread_mutex_lock(&device_mac_mutex);
         int ret = -1, val_size =0,cnt =0;
         char *pcomponentName = NULL, *pcomponentPath = NULL;
-	parameterValStruct_t **parameterval = NULL;
+        parameterValStruct_t **parameterval = NULL;
+#ifndef _XF3_PRODUCT_REQ_
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
-
+#else
+        char *getList[] = {"Device.DPoE.Mac_address"};
+#endif
+        
         if (strlen(deviceMAC))
         {
             pthread_mutex_unlock(&device_mac_mutex);

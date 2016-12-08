@@ -56,9 +56,6 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						network_devices_traffic_avropack.c  \
 						cosa_ndtraffic_dml.c \ 
 						network_devices_traffic.c \
-						extender_associated_devices.c \
-						extender_associated_devices_avropack.c \
-						cosa_extassocdevices_dml.c \ 
 						cosa_xhosts_dml.c 
 
 if PARODUS_ENABLE

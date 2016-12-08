@@ -74,7 +74,6 @@
 **************************************************************************/
 
 #include <time.h>
-#include <curl/curl.h>
 
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
@@ -103,6 +102,45 @@
 #define ARP_IPv6 0
 #define DIBBLER_IPv6 1
 
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+#include <mqueue.h>
+
+#define EVENT_QUEUE_NAME  "/Event_queue"
+
+#define MAX_SIZE    2048
+#define MAX_SIZE_EVT    1024
+
+#define CHECK(x) \
+    do { \
+        if (!(x)) { \
+            fprintf(stderr, "%s:%d: ", __func__, __LINE__); \
+            perror(#x); \
+            return; \
+        } \
+    } while (0) \
+
+#define MSG_TYPE_EMPTY  0
+#define MSG_TYPE_ETH    1
+#define MSG_TYPE_WIFI   2
+#define MSG_TYPE_MOCA   3
+	
+typedef struct _EventQData 
+{
+    char Msg[MAX_SIZE_EVT];
+    int MsgType; // Ethernet = 1, WiFi = 2, MoCA = 3
+}EventQData;
+
+typedef struct _Eth_data
+{
+    char MacAddr[18];
+    int Active; // Online = 1, offline = 0
+}Eth_data;
+
 typedef struct _Name_DM 
 {
     char name[NAME_DM_LEN];
@@ -127,7 +165,7 @@ extern int bWifiHost;
 extern char*                                pComponentName;
 
 int g_Client_Poll_interval;
-extern ExtenderList *extenderlist;
+
 /***********************************************************************
  IMPORTANT NOTE:
 
@@ -355,7 +393,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			}
 			strcpy(interface,"WiFi");
 		}
-
+#ifndef _CBR_PRODUCT_REQ_ 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 		{
 			if(pHost->ipv4Active == TRUE)
@@ -370,7 +408,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			}
 			strcpy(interface,"MoCA");
 		}
-
+#endif
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
 		{
 			if(pHost->ipv4Active == TRUE)
@@ -1051,6 +1089,7 @@ void Add_IPv6_from_Dibbler()
 		fclose(fptr);
 	}
 }
+
 PLmObjectHostIPAddress
 Host_AddIPAddress
     (
@@ -1114,85 +1153,6 @@ char* FindMACByIPAddress(char * ip_address)
 	}
 
     return NULL;
-}
-
-
-char* FindParentIPInExtenderList(char* mac_address)
-{
-	ExtenderList *tmp = extenderlist;
-	char* parent_ip = NULL;
-    while(tmp)
-    {
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender IP [%s] \n", __FUNCTION__, tmp->info->extender_ip));
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoResult [%s] \n", __FUNCTION__, tmp->info->client_info_result));
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfolist [%x] \n", __FUNCTION__, tmp->info->list));
-
-	    if(tmp->info->list)
-	    {
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoList NumClients [%d] \n", __FUNCTION__, tmp->info->list->numClient));
-
-	    ClientInfo* temp = tmp->info->list->connectedDeviceList;
-
-	    while(temp)
-	        {
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender MACAddress [%s] \n", __FUNCTION__, temp->MAC_Address));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Type [%s] \n", __FUNCTION__, temp->SSID_Type));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__, temp->Device_Name));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__, temp->SSID_Name));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__, temp->RSSI));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RxRate [%s] \n", __FUNCTION__, temp->RxRate));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender TxRate [%s] \n", __FUNCTION__, temp->TxRate));
-	        if(!strcasecmp(temp->MAC_Address, mac_address))
-	        	{
-	        		parent_ip = tmp->info->extender_ip;
-	        		break;
-	        	}
-	        temp = temp->next;
-	        }
-	    }
-	tmp = tmp->next;
-    }
-
-    return parent_ip;
-}
-
-char* FindRSSIInExtenderList(char* mac_address)
-{
-	ExtenderList *tmp = extenderlist;
-	char* rssi = NULL;
-    while(tmp)
-    {
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender IP [%s] \n", __FUNCTION__, tmp->info->extender_ip));
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoResult [%s] \n", __FUNCTION__, tmp->info->client_info_result));
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfolist [%x] \n", __FUNCTION__, tmp->info->list));
-
-	    if(tmp->info->list)
-	    {
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender ClientInfoList NumClients [%d] \n", __FUNCTION__, tmp->info->list->numClient));
-
-	    ClientInfo* temp = tmp->info->list->connectedDeviceList;
-
-	    while(temp)
-	        {
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender MACAddress [%s] \n", __FUNCTION__, temp->MAC_Address));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Type [%s] \n", __FUNCTION__, temp->SSID_Type));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__, temp->Device_Name));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__, temp->SSID_Name));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RSSI [%s] \n", __FUNCTION__, temp->RSSI));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender RxRate [%s] \n", __FUNCTION__, temp->RxRate));
-	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender TxRate [%s] \n", __FUNCTION__, temp->TxRate));
-	        if(!strcasecmp(temp->MAC_Address, mac_address))
-	        	{
-	        		rssi = temp->RSSI;
-	        		break;
-	        	}
-	        temp = temp->next;
-	        }
-	    }
-	tmp = tmp->next;
-    }
-
-    return rssi;
 }
 
 inline int _mac_string_to_array(char *pStr, unsigned char array[6])
@@ -1703,6 +1663,198 @@ void Hosts_SyncWifi()
     return;
 }
 
+void *Event_HandlerThread(void *threadid)
+{
+    long tid;
+    tid = (long)threadid;
+    LM_wifi_wsta_t hosts;
+    LM_moca_cpe_t mhosts;
+    PLmObjectHost pHost;
+    //printf("Hello World! It's me, thread #%ld!\n", tid);
+    mqd_t mq;
+    struct mq_attr attr;
+    char buffer[MAX_SIZE + 1];
+    int must_stop = 0;
+
+    /* initialize the queue attributes */
+    attr.mq_flags = 0;
+    attr.mq_maxmsg = 100;
+    attr.mq_msgsize = MAX_SIZE;
+    attr.mq_curmsgs = 0;
+
+    /* create the message queue */
+    mq = mq_open(EVENT_QUEUE_NAME, O_CREAT | O_RDONLY, 0644, &attr);
+
+    CHECK((mqd_t)-1 != mq);
+    do
+    {
+        ssize_t bytes_read;
+        EventQData EventMsg;
+        Eth_data EthHost;
+
+        /* receive the message */
+        bytes_read = mq_receive(mq, buffer, MAX_SIZE, NULL);
+
+        CHECK(bytes_read >= 0);
+
+        buffer[bytes_read] = '\0';
+
+        memcpy(&EventMsg,buffer,sizeof(buffer));
+
+        if(EventMsg.MsgType == MSG_TYPE_ETH)
+        {
+            char Mac_Id[18];
+            memcpy(&EthHost,EventMsg.Msg,sizeof(EventMsg.Msg));
+
+            pHost = Hosts_FindHostByPhysAddress(EthHost.MacAddr);
+
+            if ( !pHost )
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_AddHostByPhysAddress(EthHost.MacAddr);
+
+                if ( pHost )
+                {
+                    if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                    {
+                         LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                         pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                        }
+                }   
+                pthread_mutex_unlock(&LmHostObjectMutex);
+            }
+
+
+            if(EthHost.Active)
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
+                pthread_mutex_unlock(&LmHostObjectMutex);
+                if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
+                {
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    Hosts_SyncDHCP();
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
+                }
+                LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+            }
+            else
+            {
+                LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+            }
+            
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+        }
+        else if(EventMsg.MsgType == MSG_TYPE_WIFI)
+        {
+            memcpy(&hosts,EventMsg.Msg,sizeof(EventMsg.Msg));
+            pHost = Hosts_FindHostByPhysAddress(hosts.phyAddr);
+            if ( !pHost )
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_AddHostByPhysAddress(hosts.phyAddr);
+
+                 if ( pHost )
+                        {
+                            if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                            {
+                                 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                            }
+                        }   
+                 pthread_mutex_unlock(&LmHostObjectMutex);
+
+            }
+
+            if(hosts.Status)
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
+                pHost->l1unReachableCnt = 1;
+                pthread_mutex_unlock(&LmHostObjectMutex);
+                if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
+                {
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    Hosts_SyncDHCP();
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
+                }
+
+                LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+            }
+            else
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+                pthread_mutex_unlock(&LmHostObjectMutex);
+
+                LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+            }
+            
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+        }
+        else if(EventMsg.MsgType == MSG_TYPE_MOCA)
+        {
+            memcpy(&mhosts,EventMsg.Msg,sizeof(EventMsg.Msg));
+            pHost = Hosts_FindHostByPhysAddress(mhosts.phyAddr);
+            if ( !pHost )
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_AddHostByPhysAddress(mhosts.phyAddr);
+
+                 if ( pHost )
+                        {
+                            if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                            {
+                                 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                            }
+                        }   
+                 pthread_mutex_unlock(&LmHostObjectMutex);
+
+            }
+
+            if(mhosts.Status)
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), mhosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), mhosts.AssociatedDevice);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), mhosts.parentMac);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), mhosts.deviceType);
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = mhosts.RSSI;
+                pHost->l1unReachableCnt = 1;
+                pthread_mutex_unlock(&LmHostObjectMutex);
+
+                if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
+                {
+                    printf("<<< %s client type is MoCA, IPAddr is not updated in ARP %d >>\n>",__FUNCTION__,__LINE__);
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    Hosts_SyncDHCP();
+                    printf("<<< %s client type is MoCA, IPAddr is not updated in ARP %d %s >>\n>",__FUNCTION__,__LINE__,pHost->pStringParaValue[LM_HOST_IPAddressId]);
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
+                }
+                
+                LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+            }
+            else
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), mhosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), mhosts.AssociatedDevice);
+                pthread_mutex_unlock(&LmHostObjectMutex);
+
+                LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+            }       
+        }           
+
+    } while(1);
+   pthread_exit(NULL);
+}
+
 void Hosts_SyncArp()
 {
     char comments[256] = {0};
@@ -1712,8 +1864,8 @@ void Hosts_SyncArp()
     PLmObjectHost pHost = NULL;
     LM_host_entry_t *hosts = NULL;
     PLmObjectHostIPAddress pIP;
+    
     lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
-
     if (count > 0)
     {
         pthread_mutex_lock(&LmHostObjectMutex);
@@ -1722,7 +1874,7 @@ void Hosts_SyncArp()
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
 
-            pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
+            pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
 
             if ( pHost )
             {
@@ -1737,46 +1889,27 @@ void Hosts_SyncArp()
                     {
                         Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
                     }
-                    continue;
                 }
-
-		  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName );
-                if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
+                else
                 {
-
-		        //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr );
-                    LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-
-                    pIP = Host_AddIPv4Address
-                    (
-                        pHost,
-                        hosts[i].ipAddr
-                    );
-
-                    if(pIP != NULL){
-                        Host_SetIPAddress(pIP, 0, "NONE"); 
-                    }
-
-
-                    _getLanHostComments(hosts[i].phyAddr, comments);
-                    if ( comments[0] != 0 )
+                    pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
+                    if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
                     {
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), comments);
+                        Host_SetIPAddress(pIP, 0, "NONE");
+
+                        _getLanHostComments(hosts[i].phyAddr, comments);
+                        if ( comments[0] != 0 )
+                        {
+                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), comments);
+                        }
                     }
-                }
-                else if(pHost->numIPv4Addr == 0)
-                {
-
-                    pIP = Host_AddIPv4Address
-                    (
-                        pHost,
-                        hosts[i].ipAddr
-                    );
-
-                    if(pIP != NULL){
+                    else
+                    {
                         Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
                     }
                 }
+
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName );
             }
         }
 
@@ -1794,138 +1927,8 @@ void Hosts_SyncArp()
 
 void Hosts_SyncDHCP()
 {
-    //pthread_mutex_lock(&LmHostObjectMutex);
     lm_wrapper_get_dhcpv4_client();
     lm_wrapper_get_dhcpv4_reserved();
-    //pthread_mutex_unlock(&LmHostObjectMutex);
-}
-#ifndef _CBR_PRODUCT_REQ_ 
-void Hosts_SyncMoCA()
-{
-    int count = 0;
-    int i,j;
-
-    PLmObjectHost pHost;
-    LM_moca_cpe_t *hosts = NULL;
-
-    lm_wrapper_get_moca_cpe_list("brlan0", &count, &hosts);
-
-    if (count > 0)
-    {
-        //pthread_mutex_lock(&LmHostObjectMutex);
-        for (i = 0; i < count; i++)
-        {
-            PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
-
-            pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
-
-            if ( pHost )
-            {
-            	pthread_mutex_lock(&LmHostObjectMutex);
-		  		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ncId);
-               	pHost->l1unReachableCnt = 1;
-				pthread_mutex_unlock(&LmHostObjectMutex);
-
-				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Layer1Interface %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] ));
-				CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s IPAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId] ));
-
-				//if(!IsExtenderSynced(pHost->pStringParaValue[LM_HOST_IPAddressId]))
-				int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-				if(!ret)						
-				{
-					//int ret  = QueryMocaExtender(pHost->pStringParaValue[LM_HOST_IPAddressId]);
-
-					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s QueryMocaExtender ret value %d \n", __FUNCTION__, ret));
-
-					if(!ret)
-					{
-						pthread_mutex_lock(&LmHostObjectMutex);
-						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "extender");
-						CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Parent Mac %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] ));
-						
-						LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-						pthread_mutex_unlock(&LmHostObjectMutex);
-
-					}
-				}	
-				else
-				{
-					pthread_mutex_lock(&LmHostObjectMutex);
-				
-					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s LM_HOST_PhysAddressId %s \n", __FUNCTION__, pHost->pStringParaValue[LM_HOST_PhysAddressId] ));
-
-					char* parent_ipAddress = FindParentIPInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-					CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s parent_ipAddress %s  FindMACByIPAddress %s \n", __FUNCTION__, parent_ipAddress, FindMACByIPAddress(parent_ipAddress)));
-
-					if(parent_ipAddress != NULL)
-						{
-							LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), FindMACByIPAddress(parent_ipAddress));
-							char* device_rssi = FindRSSIInExtenderList(pHost->pStringParaValue[LM_HOST_PhysAddressId]);	
-                            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s FindRSSIInExtenderList ret value %s \n", __FUNCTION__, device_rssi));
-							if(device_rssi)
-								pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = atoi(device_rssi);
-							LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-						}
-					else
-						{
-							//If parent not determined previously, then it could be either offline device or 
-							//a non-compliant extender. Active to be set TRUE for these devices.
-							if( pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL ) 
-							{
-								LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-							}
-							else
-							{
-								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-							}
-						}
-					pthread_mutex_unlock(&LmHostObjectMutex);
-				}
-            }
-        }
-        //pthread_mutex_unlock(&LmHostObjectMutex);
-    }
-
-    if ( hosts )
-    {
-        free(hosts);
-        hosts=NULL;
-    }
-
-    return;
-}
-#endif
-void Hosts_SyncEthernetPort()
-{
-    int i;
-    int port;
-    char tmp[20];
-    PLmObjectHost pHost;
-    pthread_mutex_lock(&LmHostObjectMutex);
-    for ( i = 0; i < lmHosts.numHost; i++ )
-    {
-
-
-        pHost = lmHosts.hostArray[i];
-        if ( !pHost )
-            continue;
-        if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL &&\
-                NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Ethernet") && \
-                pHost->bBoolParaValue[LM_HOST_ActiveId] == TRUE)
-        {
-            port = lm_wrapper_priv_getEthernetPort(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            if(port != -1){
-                snprintf(tmp,sizeof(tmp)/sizeof(tmp[0]), "Ethernet.%d", port);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), tmp);
-            }
-       
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-	}    
-    }
-    pthread_mutex_unlock(&LmHostObjectMutex);
 }
 
 void Hosts_LoggingThread()
@@ -1943,9 +1946,6 @@ void Hosts_LoggingThread()
 	sleep(30);
 	while(1)
 	{
-
-		
-
 		TotalDevCount = lmHosts.numHost;
 
 		for ( i = 0; i < lmHosts.numHost; i++ )
@@ -2022,7 +2022,7 @@ void Hosts_StatSyncThreadFunc()
     int i,count;
     char cmd[64] = {0};
     int ret;
-
+    static BOOL bridgemode = FALSE;
     PLmObjectHost   pHost      = NULL;
     LM_host_entry_t *hosts     = NULL;
     LM_wifi_wsta_t  *wifiHosts = NULL;
@@ -2031,244 +2031,32 @@ void Hosts_StatSyncThreadFunc()
     
     while (1)
     {
-        PRINTD("\n%s start\n", __FUNCTION__);
-        if(Hosts_stop_scan() ){
+        if(Hosts_stop_scan() )
+        {
             PRINTD("\n%s bridge mode, remove all host information\n", __FUNCTION__);
-			pthread_mutex_lock(&LmHostObjectMutex);
+            bridgemode = TRUE;
+            pthread_mutex_lock(&LmHostObjectMutex);
             Hosts_RmHosts();
-			pthread_mutex_unlock(&LmHostObjectMutex);			
-			
-        }else{
-            //pthread_mutex_lock(&LmHostObjectMutex);
-            for ( i = 0; i < lmHosts.numHost; i++ )
-            {
-                pHost = lmHosts.hostArray[i];
-
-                if ( !pHost )
-                {
-                    continue;
-                }
-		
-                /* This is a WiFi or MoCA host if l1unReachableCnt is NOT zero.
-                 * When we cannot find a host in WiFi or MoCA assocaite table for 3 times,
-                 * we think the host is offline.
-                 */
-						if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-							 ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))))
-						{
-							pHost->l1unReachableCnt = 1;
-							continue;
-						}	
-#if 0
-
-					if ( pHost->l1unReachableCnt != 0 )
-					{
-						if(pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT)
-						{
-							/*
-								#ifdef USE_NOTIFY_COMPONENT						
-									#ifndef IW_EVENT_SUPPORT
-															pHost->bNotify = TRUE;
-									#endif
-								#endif
-							*/
-							if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-								 (NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))
-								)
-							{
-								pthread_mutex_lock(&LmHostObjectMutex);
-							    LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-								pthread_mutex_unlock(&LmHostObjectMutex);
-							}								
-						}
-						else
-						{
-							pHost->l1unReachableCnt++;
-						}
-
-						if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-							 ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) && \
-							 ( TRUE == pHost->bBoolParaValue[LM_HOST_ActiveId])
-							)
-						{
-							pHost->l1unReachableCnt = 1;
-						}								
-						
-						continue;
-					}
-#endif
-//#if 0
-                /* The left hosts are from ethernet.
-                 * We will send arping to this host.
-                 * When we see the host as STALE in arp table for 3 times,
-                 * we think the host'IP is offline.
-                 */
-                int offline = 1;
-                for(pIP = pHost->ipv4AddrArray; pIP != NULL; pIP = pIP->pNext)
-                {
-  /*                  if(pIP->l3unReachableCnt + 1 >= LM_HOST_RETRY_LIMIT)
-                        offline &= 1;
-                    else
-                    {
-                        pIP->l3unReachableCnt++;
-                        offline &=0;
-                    }
-*/
-                    /* Send arping to hosts which are from ethernet */
-                    if (pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] &&
-                        pHost->pStringParaValue[LM_HOST_PhysAddressId]     &&
-                        pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
-                    {
-
-                        ret = lm_arping_v4_send(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
-                                      pHost->pStringParaValue[LM_HOST_PhysAddressId],
-                                      pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
-  /*                      PRINTD("%s: arping %s, %s, %s, ret %d\n",
-                            __FUNCTION__,
-                            pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
-                            pHost->pStringParaValue[LM_HOST_PhysAddressId],
-                            pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId],
-                            ret);*/
-                    }
-                }
-#if 0
-                if(offline)
-            	{
-					if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-						 (NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))
-						)
-					{
-						pthread_mutex_lock(&LmHostObjectMutex);
-						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-						pthread_mutex_unlock(&LmHostObjectMutex);
-					}
-            	}
-
-#endif
-            }
-#ifndef _CBR_PRODUCT_REQ_ 
-            Hosts_SyncMoCA();
-#endif
-            //Hosts_SyncWifi();
-
-            //pthread_mutex_unlock(&LmHostObjectMutex);
-
-            
-			Hosts_SyncDHCP(); 
-
-            lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
-            if ( count > 0 )
-            {
- //               pthread_mutex_lock(&LmHostObjectMutex);
-                for (i=0;i<count;i++)
-                {
-                    pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
-     
-                    if ( pHost && pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT )
-                    {
-                        /* This is very tricky. Sometime a mac, which is originally from WiFi or MoCA,
-                        *  maybe moved to ethernet later. Its Layer1 unreachable counter will be
-                        *  greater than LM_HOST_RETRY_LIMIT. But at the sametime, it is REACHABLE in 
-                        *  arp table. We must mark this kind of host's Connection as Etherenet.
-                        */
-                        if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
-                        {
-                           /* Fix for RDKB-7223 */
-                           pthread_mutex_lock(&LmHostObjectMutex);
-                           if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] || strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") )
-                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet" );
-
-                            //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
-                            pthread_mutex_unlock(&LmHostObjectMutex);
-                            pHost->l1unReachableCnt = 0;
-                        }
-						else			
-						{	
-						   if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-							 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
-							)
-							{
-								pthread_mutex_lock(&LmHostObjectMutex);
-								LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-								pthread_mutex_unlock(&LmHostObjectMutex);
-							}
-						}
-                    }
-                    else if ( pHost /*&& pHost->l1unReachableCnt == 0 */ )
-                    {
-                        //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-                        if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
-                        {
-                            if(_isIPv6Addr(hosts[i].ipAddr))
-                                pIP = Host_AddIPv6Address(pHost, hosts[i].ipAddr);
-                            else
-                                pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
-                            if(pIP != NULL)
-                                pIP->l3unReachableCnt = 0;
-							    
-								pHost->l1unReachableCnt = 0;
-							if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-								 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
-								)
-							{
-								pthread_mutex_lock(&LmHostObjectMutex);
-								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-								pthread_mutex_unlock(&LmHostObjectMutex);
-							}
-                        }
-						else
-						{
-							if ( hosts[i].status == LM_NEIGHBOR_STATE_STALE )
-							{
-								if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-								 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
-								)
-								{
-									pHost->l1unReachableCnt++;
-								}
-
-							}
-						}
-			if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                        {
-							pthread_mutex_lock(&LmHostObjectMutex);
-                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
-                            pthread_mutex_unlock(&LmHostObjectMutex);
-                        }
-                       	       	
-                    }
-					else if ( !pHost ) 
-                    {
-                        pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
-
-                        if ( pHost )
-                        {
-                            if(_isIPv6Addr(hosts[i].ipAddr))
-                                pIP = Host_AddIPv6Address ( pHost, hosts[i].ipAddr);
-                            else
-                                pIP = Host_AddIPv4Address ( pHost, hosts[i].ipAddr);
-				  pthread_mutex_lock(&LmHostObjectMutex);
-			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName);
-			      //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
-			      pthread_mutex_unlock(&LmHostObjectMutex);
-                        }
-                    }
-                }
-   //             pthread_mutex_unlock(&LmHostObjectMutex);
-            }
-            if ( hosts )
-            {
-                free(hosts);
-                hosts = NULL;
-            }
-            count = 0;
-	    Add_IPv6_from_Dibbler();
-
-            PRINTD("%s end\n\n", __FUNCTION__);
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            sleep(30);
         }
-        sleep(LM_HOST_POLLINGINTERVAL);
+        else
+        {
+            if(bridgemode)
+            {
+                Send_Eth_Host_Sync_Req(); 
+#ifndef _CBR_PRODUCT_REQ_ 
+                Send_MoCA_Host_Sync_Req(); 
+#endif
+                SyncWiFi();
+                bridgemode = FALSE;
+            }
+
+            sleep(30);
+            Hosts_SyncDHCP();
+            Hosts_SyncArp();
+            Add_IPv6_from_Dibbler();
+        }
     }
 }
 
@@ -2278,27 +2066,7 @@ Hosts_PollHost()
     pthread_mutex_lock(&PollHostMutex);
     Hosts_SyncArp();
     Hosts_SyncDHCP();
-  /*  Hosts_SyncWifi();
-    Hosts_SyncMoCA();*/
-    Hosts_SyncEthernetPort(); 
     pthread_mutex_unlock(&PollHostMutex);
-}
-
-/* Periodically synchronize host table.
- * */
-void
-Hosts_PollHostThreadFunc()
-{
-    /* At the very beginning, wait a little bit for P&M to be fully loaded. */
-    sleep(10);
-    while(TRUE){
-        Hosts_PollHost();
-        if(LM_HOST_POLLINGINTERVAL > 0)
-            sleep(LM_HOST_POLLINGINTERVAL);
-        else break;
-
-        //PRINTD("Hosts_PollHost end %d \n", bHostsUpdated);
-    }
 }
 
 const char compName[25]="LOG.RDK.LM";
@@ -2367,12 +2135,22 @@ void LM_main()
 #ifdef PARODUS_ENABLE    
     initparodusTask();
 #endif
-    curl_global_init(CURL_GLOBAL_ALL);
+
+	pthread_t Event_HandlerThreadID;
+    res = pthread_create(&Event_HandlerThreadID, NULL, Event_HandlerThread, "Event_HandlerThread");
+    if(res != 0) {
+        CcspTraceError(("Create Event_HandlerThread error %d\n", res));
+    }
 
     Hosts_PollHost();
 
     sleep(5);
 
+    Send_Eth_Host_Sync_Req(); 
+#ifndef _CBR_PRODUCT_REQ_ 
+    Send_MoCA_Host_Sync_Req(); 
+#endif
+    
     pthread_t Hosts_StatSyncThread;
     res = pthread_create(&Hosts_StatSyncThread, NULL, Hosts_StatSyncThreadFunc, "Hosts_StatSyncThreadFunc");
     if(res != 0) {
@@ -2534,8 +2312,8 @@ void LM_get_host_info()
 			}
 		}
 		
-		
-		if(lmHosts.hostArray[i]->numIPv4Addr)
+
+		if((lmHosts.hostArray[i]->numIPv4Addr) && (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource] != NULL))
 		{
 			if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource],LM_ADDRESS_SOURCE_DHCP_STR)	!= NULL){
                 _get_dmbyname(g_DHCPv4ListNum, g_pDHCPv4List, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
@@ -2628,55 +2406,35 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 	}
 	else
 	{
-		PLmObjectHost pHost;
 
-		pthread_mutex_lock(&LmHostObjectMutex);   
+		LM_wifi_wsta_t hosts;
+		strcpy(hosts.AssociatedDevice,AssociatedDevice);
+		strncpy(hosts.phyAddr,phyAddr,17);
+		hosts.phyAddr[17] = '\0';
+		strcpy(hosts.ssid,ssid);
+		hosts.RSSI = RSSI;
+		hosts.Status = Status;
+		EventQData EventMsg;
+		mqd_t mq;
+        char buffer[MAX_SIZE];
 		
-		pHost = Hosts_AddHostByPhysAddress( phyAddr );
-		
-		if ( NULL != pHost )
-		{
-			if((pHost->bBoolParaValue[LM_HOST_ActiveId] != Status) || ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid))))
-			{
-				if( Status )
-				{
 
-					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
-					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
-					pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
-					pHost->l1unReachableCnt = 1;
-					LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-				}
-				else
-				{       
-                                        if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid))
-                                        {
+		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
+        CHECK((mqd_t)-1 != mq);
+				printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		memset(buffer, 0, MAX_SIZE);
+		EventMsg.MsgType = MSG_TYPE_WIFI;
 
-					   DelAndShuffleAssoDevIndx(pHost);
-					   LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-                                        }
-				}
-			}
-
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-
-		    if( Status )
-		    {
-			    if( NULL != pos2 )
-			    {
-				    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress %s connected(2.4 GHz)\n",phyAddr));
-				}
-				else if( NULL != pos5 )
-				{	
-	    			CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s connected(5 GHz)\n",phyAddr));
-		    	}
-		    }
-		}
-
-		pthread_mutex_unlock(&LmHostObjectMutex);
+				printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
+		memcpy(buffer,&EventMsg,sizeof(EventMsg));
+		printf("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType);
+		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
+		CHECK((mqd_t)-1 != mq_close(mq));
+		printf("<<< %s close event queue >>>\n",__FUNCTION__);
 	}
 }
+
 int Hosts_FindHostIndexByPhysAddress(char * physAddress)
 {
     int i = 0;
@@ -2752,3 +2510,139 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
 	}
 }
 
+void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, char* parentMac, char* deviceType, int RSSI, int Status )
+{
+	CcspTraceWarning(("%s [%s %s %s %s %s %d %d]\n",
+									__FUNCTION__,
+									(NULL != phyAddr) ? phyAddr : "NULL",
+									(NULL != AssociatedDevice) ? AssociatedDevice : "NULL",
+									(NULL != ssid) ? ssid : "NULL",
+									(NULL != parentMac) ? parentMac : "NULL", 
+									(NULL != deviceType) ? deviceType : "NULL", 
+									RSSI,
+									Status));
+
+		LM_moca_cpe_t hosts;
+		strcpy(hosts.AssociatedDevice,AssociatedDevice);
+		strncpy(hosts.phyAddr,phyAddr,17);
+		hosts.phyAddr[17] = '\0';
+		strcpy(hosts.ssid,ssid);
+		strcpy(hosts.parentMac,parentMac);
+		strcpy(hosts.deviceType,deviceType);
+		hosts.RSSI = RSSI;
+		hosts.Status = Status;
+		EventQData EventMsg;
+		mqd_t mq;
+        char buffer[MAX_SIZE];
+		
+
+		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
+        CHECK((mqd_t)-1 != mq);
+		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		memset(buffer, 0, MAX_SIZE);
+		EventMsg.MsgType = MSG_TYPE_MOCA;
+
+		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
+		memcpy(buffer,&EventMsg,sizeof(EventMsg));
+		printf("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType);
+		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
+		CHECK((mqd_t)-1 != mq_close(mq));
+		printf("<<< %s close event queue >>>\n",__FUNCTION__);
+}
+
+
+void Send_MoCA_Host_Sync_Req()
+{
+        parameterValStruct_t  value = {"Device.MoCA.X_RDKCENTRAL-COM_MoCAHost_Sync", "true", ccsp_boolean};
+        char compo[256] = "eRT.com.cisco.spvtg.ccsp.moca";
+        char bus[256] = "/com/cisco/spvtg/ccsp/moca";
+        char* faultParam = NULL;
+        int ret = CCSP_FAILURE;
+
+        CcspTraceWarning(("%s : Get MoCA Clients \n",__FUNCTION__));
+        printf("%s : Get MoCA Clients \n",__FUNCTION__);
+		CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+        ret = CcspBaseIf_setParameterValues(
+                  bus_handle,
+                  compo,
+                  bus,
+                  0,
+                  0,
+                  &value,
+                  1,
+                  TRUE,
+                  &faultParam
+                  );
+
+	if(ret != CCSP_SUCCESS)
+	{
+		CcspWifiTrace(("RDK_LOG_WARN,MoCA %s : Failed ret %d\n",__FUNCTION__,ret));
+		if(faultParam)
+		{
+			bus_info->freefunc(faultParam);
+		}
+	}
+}
+
+void Send_Eth_Host_Sync_Req()
+{
+        parameterValStruct_t  value = {"Device.Ethernet.X_RDKCENTRAL-COM_EthHost_Sync", "true", ccsp_boolean};
+        char compo[256] = "eRT.com.cisco.spvtg.ccsp.ethagent";
+        char bus[256] = "/com/cisco/spvtg/ccsp/ethagent";
+        char* faultParam = NULL;
+        int ret = CCSP_FAILURE;
+
+        CcspTraceWarning(("%s : Get Ethernet Clients \n",__FUNCTION__));
+        printf("%s : Get Ethernet Clients \n",__FUNCTION__);
+		CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+
+        ret = CcspBaseIf_setParameterValues(
+                  bus_handle,
+                  compo,
+                  bus,
+                  0,
+                  0,
+                  &value,
+                  1,
+                  TRUE,
+                  &faultParam
+                  );
+
+	if(ret != CCSP_SUCCESS)
+	{
+		CcspWifiTrace(("RDK_LOG_WARN,Ethernet %s : Failed ret %d\n",__FUNCTION__,ret));
+		if(faultParam)
+		{
+			bus_info->freefunc(faultParam);
+		}
+	}
+}
+
+void EthClient_AddtoQueue(char *phyAddr,int Status )
+{
+		EventQData EventMsg;
+		Eth_data EthHost;
+		mqd_t mq;
+        char buffer[MAX_SIZE];
+		
+		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
+		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+        CHECK((mqd_t)-1 != mq);
+		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		memset(buffer, 0, MAX_SIZE);
+		EventMsg.MsgType = MSG_TYPE_ETH;
+
+				printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		strcpy(EthHost.MacAddr,phyAddr);
+		EthHost.Active = Status;
+		memcpy(EventMsg.Msg,&EthHost,sizeof(EthHost));
+		memcpy(buffer,&EventMsg,sizeof(EventMsg));
+		printf("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType);
+		printf("<<< %s Send msg to event queue EthHost.MacAddr %s>>>\n",__FUNCTION__,EthHost.MacAddr);
+		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
+		CHECK((mqd_t)-1 != mq_close(mq));
+		printf("<<< %s close event queue >>>\n",__FUNCTION__);
+}

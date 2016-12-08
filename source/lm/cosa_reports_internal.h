@@ -51,18 +51,7 @@
     ULONG                           uNDTReportingPeriodDefault;    \
     BOOLEAN                         bNDTDefPollingPeriodChanged;    \
     BOOLEAN                         bNDTDefReportingPeriodChanged;    \
-    ULONG                           uNDTOverrideTTL;                \
-    BOOLEAN                         bIDWEnabled;                   \
-    BOOLEAN                         bIDWEnabledChanged;            \
-    ULONG                           uIDWPollingPeriod;             \
-    BOOLEAN                         bIDWPollingPeriodChanged;      \
-    ULONG                           uIDWReportingPeriod;           \
-    BOOLEAN                         bIDWReportingPeriodChanged;    \
-    ULONG                           uIDWPollingPeriodDefault;      \
-    ULONG                           uIDWReportingPeriodDefault;    \
-    BOOLEAN                         bIDWDefPollingPeriodChanged;    \
-    BOOLEAN                         bIDWDefReportingPeriodChanged;    \
-    ULONG                           uIDWOverrideTTL;
+    ULONG                           uNDTOverrideTTL;
 
 
 typedef  struct

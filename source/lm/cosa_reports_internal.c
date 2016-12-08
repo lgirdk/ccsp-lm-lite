@@ -43,7 +43,6 @@
 #include "cosa_reports_internal.h"
 #include "cosa_ndstatus_dml.h"
 #include "cosa_ndtraffic_dml.h"
-#include "cosa_extassocdevices_dml.h"
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
@@ -142,12 +141,6 @@ CosaReportsInitialize
         return  returnStatus;
     }
 
-    returnStatus = CosaDmlInterfaceDevicesWifiExtenderInit((ANSC_HANDLE)pMyObject);
-    
-    if ( returnStatus != ANSC_STATUS_SUCCESS )
-    {        
-        return  returnStatus;
-    }
     return returnStatus;
 }
 
