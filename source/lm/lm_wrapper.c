@@ -492,7 +492,8 @@ void SyncWiFi()
 		  TRUE,
 		  &faultParam
 		  );
-	if(ret == CCSP_SUCCESS)
+
+	if(ret != CCSP_SUCCESS)
 	{
 		CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Failed ret %d\n",__FUNCTION__,ret));
 	}	
