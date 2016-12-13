@@ -40,6 +40,9 @@ static char *NetworkDevicesTrafficPollingPeriod        = "eRT.com.cisco.spvtg.cc
 static char *NetworkDevicesTrafficDefReportingPeriod   = "eRT.com.cisco.spvtg.ccsp.lmlite.NetworkDevicesTrafficDefReportingPeriod";
 static char *NetworkDevicesTrafficDefPollingPeriod     = "eRT.com.cisco.spvtg.ccsp.lmlite.NetworkDevicesTrafficDefPollingPeriod";
 
+//RDKB-9258 : save periods after TTL expiry to NVRAM
+static pthread_mutex_t g_ndtNvramMutex = PTHREAD_MUTEX_INITIALIZER;
+
 extern char* GetNDTrafficSchemaBuffer();
 extern int GetNDTrafficSchemaBufferSize();
 extern char* GetNDTrafficSchemaIDBuffer();
@@ -48,6 +51,45 @@ extern int GetNDTrafficSchemaIDBufferSize();
 
 extern ANSC_STATUS GetNVRamULONGConfiguration(char* setting, ULONG* value);
 extern ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value);
+
+
+// Persisting Polling period
+ANSC_STATUS
+SetNDTPollingPeriodInNVRAM(ULONG pPollingVal)
+{
+    ANSC_STATUS     returnStatus = ANSC_STATUS_SUCCESS;
+
+    //Acquire mutex
+    pthread_mutex_lock(&g_ndtNvramMutex);
+
+    g_pReports->uNDTPollingPeriod = pPollingVal;
+    returnStatus = SetNVRamULONGConfiguration(NetworkDevicesTrafficPollingPeriod, pPollingVal);
+    g_pReports->bNDTPollingPeriodChanged = false;
+
+    //Release mutex
+    pthread_mutex_unlock(&g_ndtNvramMutex);
+
+    return returnStatus;
+}
+
+// Persisting Reporting period
+ANSC_STATUS
+SetNDTReportingPeriodInNVRAM(ULONG pReportingVal)
+{
+    ANSC_STATUS     returnStatus = ANSC_STATUS_SUCCESS;
+
+    //Acquire mutex
+    pthread_mutex_lock(&g_ndtNvramMutex);
+
+    g_pReports->uNDTReportingPeriod = pReportingVal;
+    returnStatus = SetNVRamULONGConfiguration(NetworkDevicesTrafficReportingPeriod, pReportingVal);
+    g_pReports->bNDTReportingPeriodChanged = false;
+
+    //Release mutex
+    pthread_mutex_unlock(&g_ndtNvramMutex);
+
+    return returnStatus;
+}
 
 ANSC_STATUS
 CosaDmlNetworkDevicesTrafficInit
@@ -406,6 +448,7 @@ NetworkDevicesTraffic_Commit
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
     ULONG psmValue = 0;
+    ULONG uVal = 0;
     /* Network Device Parameters*/
 
     if(g_pReports->bNDTEnabledChanged)
@@ -418,20 +461,18 @@ NetworkDevicesTraffic_Commit
 
     if(g_pReports->bNDTPollingPeriodChanged)
     {
-    SetNDTPollingPeriod(g_pReports->uNDTPollingPeriod);
-    psmValue = g_pReports->uNDTPollingPeriod;
-    SetNVRamULONGConfiguration(NetworkDevicesTrafficPollingPeriod, psmValue);
+    uVal = g_pReports->uNDTPollingPeriod;
+    SetNDTPollingPeriod(uVal);
+    SetNDTPollingPeriodInNVRAM(uVal);
     SetNDTOverrideTTL(GetNDTOverrideTTLDefault());
-    g_pReports->bNDTPollingPeriodChanged = false;
     }
 
     if(g_pReports->bNDTReportingPeriodChanged)
     {
-    SetNDTReportingPeriod(g_pReports->uNDTReportingPeriod);
-    psmValue = g_pReports->uNDTReportingPeriod;
-    SetNVRamULONGConfiguration(NetworkDevicesTrafficReportingPeriod, psmValue);
+    uVal = g_pReports->uNDTReportingPeriod;
+    SetNDTReportingPeriod(uVal);
+    SetNDTReportingPeriodInNVRAM(uVal);
     SetNDTOverrideTTL(GetNDTOverrideTTLDefault());  
-    g_pReports->bNDTReportingPeriodChanged = false;
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));

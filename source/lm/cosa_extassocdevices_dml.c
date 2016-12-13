@@ -40,16 +40,54 @@ static char *InterfaceDevicesWifiExtenderPollingPeriod        = "eRT.com.cisco.s
 static char *InterfaceDevicesWifiExtenderDefReportingPeriod   = "eRT.com.cisco.spvtg.ccsp.lmlite.InterfaceDevicesWifiExtenderDefReportingPeriod";
 static char *InterfaceDevicesWifiExtenderDefPollingPeriod     = "eRT.com.cisco.spvtg.ccsp.lmlite.InterfaceDevicesWifiExtenderDefPollingPeriod";
 
-
+//RDKB-9258 : save periods after TTL expiry to NVRAM
+static pthread_mutex_t g_idwNvramMutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern char* GetIDWSchemaBuffer();
 extern int GetIDWSchemaBufferSize();
 extern char* GetIDWSchemaIDBuffer();
 extern int GetIDWSchemaIDBufferSize();
 
-
 extern ANSC_STATUS GetNVRamULONGConfiguration(char* setting, ULONG* value);
 extern ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value);
+
+// Persisting Polling period
+ANSC_STATUS
+SetIDWPollingPeriodInNVRAM(ULONG pPollingVal)
+{
+    ANSC_STATUS     returnStatus = ANSC_STATUS_SUCCESS;
+
+    //Acquire mutex
+    pthread_mutex_lock(&g_idwNvramMutex);
+
+    g_pReports->uIDWPollingPeriod = pPollingVal;
+    returnStatus = SetNVRamULONGConfiguration(InterfaceDevicesWifiExtenderPollingPeriod,  pPollingVal);
+    g_pReports->bIDWPollingPeriodChanged = false;
+
+    //Release mutex
+    pthread_mutex_unlock(&g_idwNvramMutex);
+
+    return returnStatus;
+}
+
+// Persisting Reporting period
+ANSC_STATUS
+SetIDWReportingPeriodInNVRAM(ULONG pReportingVal)
+{
+    ANSC_STATUS     returnStatus = ANSC_STATUS_SUCCESS;
+
+    //Acquire mutex
+    pthread_mutex_lock(&g_idwNvramMutex);
+
+    g_pReports->uIDWReportingPeriod = pReportingVal;
+    returnStatus = SetNVRamULONGConfiguration(InterfaceDevicesWifiExtenderReportingPeriod, pReportingVal);
+    g_pReports->bIDWReportingPeriodChanged = false;
+
+    //Release mutex
+    pthread_mutex_unlock(&g_idwNvramMutex);
+
+    return returnStatus;
+}
 
 ANSC_STATUS
 CosaDmlInterfaceDevicesWifiExtenderInit
@@ -422,16 +460,18 @@ InterfaceDevicesWifiExtender_Commit
 
     if(g_pReports->bIDWPollingPeriodChanged)
     {
-    SetIDWPollingPeriod(g_pReports->uIDWPollingPeriod);
+    psmValue = g_pReports->uIDWPollingPeriod;
+    SetIDWPollingPeriod( psmValue );
+    SetIDWPollingPeriodInNVRAM( psmValue );
     SetIDWOverrideTTL(GetIDWOverrideTTLDefault());
-    g_pReports->bIDWPollingPeriodChanged = false;
     }
 
     if(g_pReports->bIDWReportingPeriodChanged)
     {
-    SetIDWReportingPeriod(g_pReports->uIDWReportingPeriod);
+    psmValue = g_pReports->uIDWReportingPeriod;
+    SetIDWReportingPeriod( psmValue );
+    SetIDWReportingPeriodInNVRAM( psmValue );
     SetIDWOverrideTTL(GetIDWOverrideTTLDefault());  
-    g_pReports->bIDWReportingPeriodChanged = false;
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));

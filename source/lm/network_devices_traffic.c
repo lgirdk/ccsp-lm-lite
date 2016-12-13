@@ -85,6 +85,11 @@ extern int getTimeOffsetFromUtc();
 static struct networkdevicetrafficdata *headnode = NULL;
 static struct networkdevicetrafficdata *currnode = NULL;
 
+// RDKB-9258 : set polling and reporting periods to NVRAM after TTL expiry
+extern ANSC_STATUS SetNDTPollingPeriodInNVRAM(ULONG pPollingVal);
+extern ANSC_STATUS SetNDTReportingPeriodInNVRAM(ULONG pReportingVal);
+
+
 static void WaitForPthreadConditionTimeoutNDT()
 {
     struct timespec _ts;
@@ -582,6 +587,8 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
+    ULONG uDefaultVal = 0;
+	
     currentNDTReportingPeriod = GetNDTReportingPeriod();
 #ifndef UTC_ENABLE
     getTimeOffsetFromUtc();
@@ -623,8 +630,21 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
         
         if(!GetNDTOverrideTTL())
         {
-            SetNDTPollingPeriod(GetNDTPollingPeriodDefault());
-            SetNDTReportingPeriod(GetNDTReportingPeriodDefault());
+            //Polling
+            uDefaultVal = GetNDTPollingPeriodDefault();
+            SetNDTPollingPeriod( uDefaultVal );
+            //RDKB-9258  
+            //Saving polling period to NVRAM.
+            SetNDTPollingPeriodInNVRAM( uDefaultVal );
+
+            //Reporting
+            uDefaultVal = GetNDTReportingPeriodDefault();
+            SetNDTReportingPeriod( uDefaultVal );
+            //RDKB-9258  
+            //Saving reporting period to NVRAM.
+            SetNDTReportingPeriodInNVRAM( uDefaultVal );
+
+            //TTL
             SetNDTOverrideTTL(GetNDTOverrideTTLDefault());
         }
 
