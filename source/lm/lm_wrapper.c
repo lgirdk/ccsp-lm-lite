@@ -1476,6 +1476,7 @@ void lm_wrapper_get_dhcpv4_client()
 				}
 				
 			pthread_mutex_lock(&LmHostObjectMutex);
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "DHCP");
             pIP = Host_AddIPv4Address
             (
                 pHost,

@@ -303,12 +303,13 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
       			  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , IPAddress);
 		}
-
+/*
 		getAddressSource(pHost->pStringParaValue[LM_HOST_PhysAddressId], addressSource);
 		if ( (pHost->pStringParaValue[LM_HOST_AddressSource]) && (strlen(addressSource)))	
 		{
    		       LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , addressSource);
 		}
+*/
 	if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
 	{
 		if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) 
