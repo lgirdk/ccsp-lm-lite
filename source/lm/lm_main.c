@@ -1891,28 +1891,41 @@ void Hosts_StatSyncThreadFunc()
                  * When we cannot find a host in WiFi or MoCA assocaite table for 3 times,
                  * we think the host is offline.
                  */
-                if ( pHost->l1unReachableCnt != 0 )
-                {
+					if ( pHost->l1unReachableCnt != 0 )
+					{
+						if(pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT)
+						{
+							/*
+								#ifdef USE_NOTIFY_COMPONENT						
+									#ifndef IW_EVENT_SUPPORT
+															pHost->bNotify = TRUE;
+									#endif
+								#endif
+							*/
+							if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+								 (NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))
+								)
+							{
+								pthread_mutex_lock(&LmHostObjectMutex);
+							    LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+								pthread_mutex_unlock(&LmHostObjectMutex);
+							}								
+						}
+						else
+						{
+							pHost->l1unReachableCnt++;
+						}
 
-					if(pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT)
-					{
-/*
-						#ifdef USE_NOTIFY_COMPONENT						
-							#ifndef IW_EVENT_SUPPORT
-								pHost->bNotify = TRUE;
-							#endif
-						#endif
-*/
-						pthread_mutex_lock(&LmHostObjectMutex);
-                                           LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-						pthread_mutex_unlock(&LmHostObjectMutex);
+						if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+							 ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) && \
+							 ( TRUE == pHost->bBoolParaValue[LM_HOST_ActiveId])
+							)
+						{
+							pHost->l1unReachableCnt = 1;
+						}								
+						
+						continue;
 					}
-					else
-					{
-						pHost->l1unReachableCnt++;
-					}
-					continue;
-                }
 
                 /* The left hosts are from ethernet.
                  * We will send arping to this host.
@@ -1948,16 +1961,21 @@ void Hosts_StatSyncThreadFunc()
                     }
                 }
                 if(offline)
-                	{
-				pthread_mutex_lock(&LmHostObjectMutex);
-				LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-				pthread_mutex_unlock(&LmHostObjectMutex);
-                	}
+            	{
+					if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+						 (NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))
+						)
+					{
+						pthread_mutex_lock(&LmHostObjectMutex);
+						LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+						pthread_mutex_unlock(&LmHostObjectMutex);
+					}
+            	}
 
             }
 
             Hosts_SyncMoCA();
-            Hosts_SyncWifi();
+            //Hosts_SyncWifi();
 
             //pthread_mutex_unlock(&LmHostObjectMutex);
 
