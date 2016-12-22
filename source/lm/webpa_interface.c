@@ -266,8 +266,9 @@ char * getDeviceMac()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    if(strlen(deviceMAC) == 0)
+    while(!strlen(deviceMAC))
     {
+        pthread_mutex_lock(&device_mac_mutex);
         int ret = -1, val_size =0,cnt =0;
         char *pComponentName = NULL, *pComponentPath = NULL;
 	parameterValStruct_t **parameterval = NULL;
@@ -278,6 +279,7 @@ char * getDeviceMac()
         {
             if(-1 == WebpaInterface_DiscoverComponent(&pComponentName, &pComponentPath)){
                 CcspTraceError(("%s ComponentPath or pComponentName is NULL\n", __FUNCTION__));
+        		pthread_mutex_unlock(&device_mac_mutex);
                 return NULL;
             }
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, WebpaInterface_DiscoverComponent ret: %d  ComponentPath %s ComponentName %s \n",ret, pComponentPath, pComponentName));
@@ -315,11 +317,15 @@ char * getDeviceMac()
         else
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, Failed to get values for %s ret: %d\n",getList[0],ret));
+            CcspTraceError(("RDK_LOG_ERROR, Failed to get values for %s ret: %d\n",getList[0],ret));
+            sleep(10);
         }
      
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before free_parameterValStruct_t...\n"));
         free_parameterValStruct_t(bus_handle, val_size, parameterval);
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After free_parameterValStruct_t...\n"));    
+        pthread_mutex_unlock(&device_mac_mutex);
+    
     }
         
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
