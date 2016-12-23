@@ -2426,12 +2426,11 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		
 		if ( NULL != pHost )
 		{
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
-
 			if(pHost->bBoolParaValue[LM_HOST_ActiveId] != Status)
 			{
 				if( Status )
 				{
+					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
 					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
 					pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
 					pHost->l1unReachableCnt = 1;
