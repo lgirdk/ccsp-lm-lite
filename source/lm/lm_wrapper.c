@@ -2429,30 +2429,37 @@ int my_trace(CURL *handle, curl_infotype type,
   const char *text;
   (void)handle; /* prevent compiler warning */
  
-  switch (type) {
-  case CURLINFO_TEXT:
+  if(CURLINFO_TEXT == type)
+  {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, == Info: %s", data));
-  default: /* in case a new one is introduced to shock us */
-    return 0;
- 
-  case CURLINFO_HEADER_OUT:
+  }
+  else if(CURLINFO_HEADER_OUT == type)
+  {
     text = "=> Send header";
-    break;
-  case CURLINFO_DATA_OUT:
+  }
+  else if(CURLINFO_DATA_OUT == type)
+  {
     text = "=> Send data";
-    break;
-  case CURLINFO_SSL_DATA_OUT:
+  }
+  else if(CURLINFO_SSL_DATA_OUT == type)
+  {
     text = "=> Send SSL data";
-    break;
-  case CURLINFO_HEADER_IN:
-    text = "<= Recv header";
-    break;
-  case CURLINFO_DATA_IN:
-    text = "<= Recv data";
-    break;
-  case CURLINFO_SSL_DATA_IN:
-    text = "<= Recv SSL data";
-    break;
+  }
+  else if(CURLINFO_HEADER_IN == type)
+  {
+    text = "=> Recv header";
+  }
+  else if(CURLINFO_DATA_IN == type)
+  {
+    text = "=> Recv data";
+  }
+  else if(CURLINFO_SSL_DATA_IN == type)
+  {
+    text = "=> Recv SSL data";
+  }
+  else
+  {
+    return 0;
   }
  
   dump(text, stderr, (unsigned char *)data, size);
