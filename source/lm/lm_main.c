@@ -2024,9 +2024,14 @@ void Hosts_StatSyncThreadFunc()
                             if(pIP != NULL)
                                 pIP->l3unReachableCnt = 0;
 
-     						pthread_mutex_lock(&LmHostObjectMutex);
-                            LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
-                            pthread_mutex_unlock(&LmHostObjectMutex);
+							if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+								 ( NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))
+								)
+							{
+								pthread_mutex_lock(&LmHostObjectMutex);
+								LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+								pthread_mutex_unlock(&LmHostObjectMutex);
+							}
                         }
 						if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                         {
