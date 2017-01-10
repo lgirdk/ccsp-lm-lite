@@ -54,7 +54,7 @@ static void macToLower(char macValue[]);
 //static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
 
 
-int WebpaInterface_DiscoverComponent(char** pComponentName, char** pComponentPath )
+int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
 {
     char CrName[256] = {0};
     int ret = 0;
@@ -78,9 +78,9 @@ int WebpaInterface_DiscoverComponent(char** pComponentName, char** pComponentPat
         ret = -1;
     }
     else{
-        *pComponentName = LanManager_CloneString(components[0]->componentName);
-        *pComponentPath = LanManager_CloneString(components[0]->dbusPath);
-        CcspTraceInfo(("WebpaInterface_DiscoverComponent find eRT PAM component %s--%s\n", *pComponentName, *pComponentPath));
+        *pcomponentName = LanManager_CloneString(components[0]->componentName);
+        *pcomponentPath = LanManager_CloneString(components[0]->dbusPath);
+        CcspTraceInfo(("WebpaInterface_DiscoverComponent find eRT PAM component %s--%s\n", *pcomponentName, *pcomponentPath));
     }
     free_componentStruct_t(bus_handle, compNum, components);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
@@ -270,24 +270,24 @@ char * getDeviceMac()
     {
         pthread_mutex_lock(&device_mac_mutex);
         int ret = -1, val_size =0,cnt =0;
-        char *pComponentName = NULL, *pComponentPath = NULL;
+        char *pcomponentName = NULL, *pcomponentPath = NULL;
 	parameterValStruct_t **parameterval = NULL;
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before WebpaInterface_DiscoverComponent ret: %d\n",ret));
 
-        if(pComponentPath == NULL || pComponentName == NULL)
+        if(pcomponentPath == NULL || pcomponentName == NULL)
         {
-            if(-1 == WebpaInterface_DiscoverComponent(&pComponentName, &pComponentPath)){
-                CcspTraceError(("%s ComponentPath or pComponentName is NULL\n", __FUNCTION__));
+            if(-1 == WebpaInterface_DiscoverComponent(&pcomponentName, &pcomponentPath)){
+                CcspTraceError(("%s ComponentPath or pcomponentName is NULL\n", __FUNCTION__));
         		pthread_mutex_unlock(&device_mac_mutex);
                 return NULL;
             }
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, WebpaInterface_DiscoverComponent ret: %d  ComponentPath %s ComponentName %s \n",ret, pComponentPath, pComponentName));
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, WebpaInterface_DiscoverComponent ret: %d  ComponentPath %s ComponentName %s \n",ret, pcomponentPath, pcomponentName));
         }
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before GPV ret: %d\n",ret));
         ret = CcspBaseIf_getParameterValues(bus_handle,
-                    pComponentName, pComponentPath,
+                    pcomponentName, pcomponentPath,
                     getList,
                     1, &val_size, &parameterval);
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After GPV ret: %d\n",ret));
@@ -304,13 +304,13 @@ char * getDeviceMac()
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Calling macToLower to get deviceMacId\n"));
             strcpy(fullDeviceMAC, parameterval[0]->parameterValue);
             macToLower(parameterval[0]->parameterValue);
-            if(pComponentName)
+            if(pcomponentName)
             {
-                AnscFreeMemory(pComponentName);
+                AnscFreeMemory(pcomponentName);
             }
-            if(pComponentPath)
+            if(pcomponentPath)
             {
-                AnscFreeMemory(pComponentPath);
+                AnscFreeMemory(pcomponentPath);
             }
 
         }

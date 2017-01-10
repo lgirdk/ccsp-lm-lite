@@ -528,7 +528,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
-
+  CcspTraceWarning(("NetworkDevicesTraffic report sent to Webpa, Destination=%s, Transaction-Id=%s  \n",dest,trans_id));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After ND WebPA SEND message call\n"));
 
 
