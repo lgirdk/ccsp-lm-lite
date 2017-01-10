@@ -1710,6 +1710,8 @@ int IsExtenderSynced(char* ip)
         {
             numExtenders = atoi(valStructsNumExtenders[0]->parameterValue);
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s NumberofExtenders %d \n", __FUNCTION__, numExtenders));
+            free_parameterValStruct_t(bus_handle, valNum, valStructsNumExtenders);
+            valStructsNumExtenders = NULL;
         }   
 
     if(!ret && numExtenders)
@@ -1722,7 +1724,6 @@ int IsExtenderSynced(char* ip)
             if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsIPAddress))
             {
                 ret = -1;
-                free_parameterValStruct_t(bus_handle, valNum, valStructsIPAddress);
                 valStructsIPAddress = NULL;
             }
 
@@ -1734,7 +1735,6 @@ int IsExtenderSynced(char* ip)
                 ret = -1;
                 free_parameterValStruct_t(bus_handle, valNum, valStructsIPAddress);
                 valStructsIPAddress = NULL;
-                free_parameterValStruct_t(bus_handle, valNum, valStructsStatus);
                 valStructsStatus = NULL; 
             }
 
@@ -1775,8 +1775,6 @@ int IsExtenderSynced(char* ip)
         }
     }
 
-    free_parameterValStruct_t(bus_handle, valNum, valStructsNumExtenders);
-    valStructsNumExtenders = NULL;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT %d \n", __FUNCTION__, ret));
 
     return ret;   
@@ -2088,7 +2086,6 @@ Ssid* get_ssid(int pExtIndex, int pSsidIndex )
     paramNameList[0] = tmpPath;
     if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
     {
-        free_parameterValStruct_t(bus_handle, valNum, valStructsString);
 	valStructsString = NULL;
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query SSID name\n", __FUNCTION__));
 	goto error;
@@ -2109,7 +2106,6 @@ Ssid* get_ssid(int pExtIndex, int pSsidIndex )
     paramNameList[0] = tmpPath;
     if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
     {
-  	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
   	valStructsString = NULL;
   	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query BSSID\n", __FUNCTION__));
   	goto error;
@@ -2129,7 +2125,6 @@ Ssid* get_ssid(int pExtIndex, int pSsidIndex )
     paramNameList[0] = tmpPath;
     if(!Cosa_GetParamValues(dstComponent, dstPath, paramNameList, 1, &valNum, &valStructsString))
     {
-	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
   	valStructsString = NULL;
   	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : error @ query Band\n", __FUNCTION__));
 	goto error;
@@ -2194,8 +2189,8 @@ int query_ccsp_data_model(ExtenderInfo* extender)
       	//Number of connected extenders
         numExtenders = atoi(valStructsString[0]->parameterValue);
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s NumberofExtenders %d \n", __FUNCTION__, numExtenders));
+    	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
     }   
-    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
     valStructsString = NULL;
 	
     for(ei = 1; ei <= numExtenders; ei++)
@@ -2209,7 +2204,6 @@ int query_ccsp_data_model(ExtenderInfo* extender)
             ret = -1;
 	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s found  IP =false %d \n", __FUNCTION__, ret));
             found = FALSE;
-	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
             valStructsString = NULL;
 	    continue;
         }
@@ -2240,9 +2234,9 @@ int query_ccsp_data_model(ExtenderInfo* extender)
 		//Number of available SSIDs
 	  	ssidCount = atoi(valStructsString[0]->parameterValue);				
 		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s SSID COUNT %d \n", __FUNCTION__, ssidCount));
+	    	free_parameterValStruct_t(bus_handle, valNum, valStructsString);
 	    }
 
-	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
 	    valStructsString = NULL;
 		
 	    //Free previous data
@@ -2275,6 +2269,11 @@ int query_ccsp_data_model(ExtenderInfo* extender)
 		
              break;
         }//if extender_ip
+	else
+	{
+	    free_parameterValStruct_t(bus_handle, valNum, valStructsString);
+	    valStructsString = NULL;
+	}
     }//for extender
 
     if(!ret)
