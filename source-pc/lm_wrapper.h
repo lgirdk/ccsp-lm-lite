@@ -128,14 +128,10 @@ ANSC_HANDLE bus_handle;
 			
 #define  CcspWifiTrace(msg)                         \
 {\
-	                char*   pTempChar1 = (char*)malloc(4096);                                     \
-                if ( pTempChar1 )                                                             \
-                {                                                                            \
-					char	sfn[32];														 \
-                    CcspTraceBaseStr msg;                                                       \
-				    WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.WifiLogMsg"); \
-                    free(pTempChar1);                                                         \
-                }\
+	                char   pTempChar1[4096];                                     \
+			char	sfn[32];														 \
+                    	CcspTraceBaseStr msg;                                                       \
+			WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.WifiLogMsg"); \
 }
 
 /******************

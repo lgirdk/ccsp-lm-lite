@@ -23,9 +23,7 @@ extern FILE* debugLogFile;
 
 #define  CcspLMLiteConsoleTrace(msg)                                                             \
 {\
-                char* pTempChar1 = (char*)malloc(4096);                                             \
-                if ( pTempChar1 )                                                                   \
-                {                                                                                   \
+		    char pTempChar1[4096]; 							\
                     CcspTraceBaseStr msg;                                                           \
                     if(consoleDebugEnable)                                                          \
                     {\
@@ -33,15 +31,11 @@ extern FILE* debugLogFile;
                         fprintf(debugLogFile, "%s", pTempChar1);                                    \
                         fflush(debugLogFile);                                                       \
                     }\
-                    free(pTempChar1);                                                               \
-                }\
 }
 
 #define  CcspLMLiteTrace(msg)                                                                    \
 {\
-                char* pTempChar1 = (char*)malloc(4096);                                             \
-                if ( pTempChar1 )                                                                   \
-                {                                                                                   \
+		    char pTempChar1[4096]; 							\
                     CcspTraceBaseStr msg;                                                           \
                     if(consoleDebugEnable)                                                          \
                     {\
@@ -50,15 +44,11 @@ extern FILE* debugLogFile;
                         fflush(debugLogFile);                                                       \
                     }\
                     WriteLog(pTempChar1,bus_handle,g_Subsystem,"Device.LogAgent.HarvesterLogMsg");  \
-                    free(pTempChar1);                                                               \
-                }\
 }
 
 #define  CcspLMLiteEventTrace(msg)                                                               \
 {\
-                char* pTempChar1 = (char*)malloc(4096);                                             \
-                if ( pTempChar1 )                                                                   \
-                {                                                                                   \
+		    char pTempChar1[4096];							\
                     CcspTraceBaseStr msg;                                                           \
                     if(consoleDebugEnable)                                                          \
                     {\
@@ -67,8 +57,6 @@ extern FILE* debugLogFile;
                         fflush(debugLogFile);                                                       \
                     }\
                     WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.HarvesterEventLogMsg");  \
-                    free(pTempChar1);                                                               \
-                }                                                                                   \
 }
 
 
