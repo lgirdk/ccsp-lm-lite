@@ -81,4 +81,5 @@ struct associateddevicedata *next;
 
 extern void extender_report_associateddevices(struct associateddevicedata *head, char* ServiceType, char* extender_mac);
 
+void idw_avro_cleanup(); // Avro Cleanup
 #endif /* !_HARVESTER_AVRO_H */

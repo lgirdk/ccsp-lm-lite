@@ -60,6 +60,7 @@ char *ndtschemaidbuffer = "5fc8321e-d8bf-45a7-8b3c-3dcdfd091092/1a73afad2380ee47
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 static char AvroSerializedBuf[ WRITER_BUF_SIZE ];
+static avro_value_iface_t  *iface = NULL;
 
 // local data, load it with real data if necessary
 char ReportSourceNDT[] = "LMLite";
@@ -153,6 +154,19 @@ avro_writer_t prepare_writer()
 
     fclose(fp);
 
+    //schemas
+    avro_schema_error_t  error = NULL;
+ 
+    //Master report/datum
+    avro_schema_t network_device_report_schema = NULL;
+    avro_schema_from_json(ndtschemabuffer, strlen(ndtschemabuffer),
+                        &network_device_report_schema, &error);
+
+    //generate an avro class from our schema and get a pointer to the value interface
+    iface = avro_generic_class_from_schema(network_device_report_schema);
+
+
+    avro_schema_decref(network_device_report_schema);
     ndt_schema_file_parsed = TRUE; // parse schema file once only
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Read Avro schema file ONCE, lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)ndtschemabuffer ));
   }
@@ -203,16 +217,7 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   /* goes thru total number of elements in link list */
   writer = prepare_writer();
-  //schemas
-  avro_schema_error_t  error = NULL;
 
-  //Master report/datum
-  avro_schema_t network_device_report_schema = NULL;
-  avro_schema_from_json(ndtschemabuffer, strlen(ndtschemabuffer),
-                        &network_device_report_schema, &error);
-
-  //generate an avro class from our schema and get a pointer to the value interface
-  avro_value_iface_t  *iface = avro_generic_class_from_schema(network_device_report_schema);
 
   //Reset out writer
   avro_writer_reset(writer);
@@ -491,8 +496,6 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   //Free up memory
   avro_value_decref(&adr);
-  avro_value_iface_decref(iface);
-  avro_schema_decref(network_device_report_schema);
   avro_writer_free(writer);
   //free(buffer);
 
@@ -537,5 +540,19 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 #if SIMULATION
   exit(0);
 #endif
+}
+
+
+void ndt_avro_cleanup()
+{
+  if(ndtschemabuffer != NULL) {
+        free(ndtschemabuffer); 
+        ndtschemabuffer=NULL;
+  } 
+  if(iface != NULL){
+        avro_value_iface_decref(iface);
+        iface = NULL;
+  }
+  ndt_schema_file_parsed = FALSE;
 }
 

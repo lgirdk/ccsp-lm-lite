@@ -605,6 +605,7 @@ void ResetNDSReportingConfiguration()
     SetNDSReportingPeriod(GetNDSReportingPeriodDefault());
     SetNDSOverrideTTL(GetNDSOverrideTTLDefault());
     currentReportingPeriod = 0;
+    nds_avro_cleanup(); // AVRO Clean up 
 }
 
 void* StartNetworkDeviceStatusHarvesting( void *arg )
