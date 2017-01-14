@@ -885,7 +885,7 @@ Host_AddIPAddress
         pIpAddrList = pHost->ipv4AddrArray;
         ppHeader = &(pHost->ipv4AddrArray);
 		pHost->ipv4Active = TRUE;
-
+        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , ipAddress);
 									
     }else{
         num = &(pHost->numIPv6Addr);
