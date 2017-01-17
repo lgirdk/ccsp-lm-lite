@@ -682,7 +682,7 @@ void* StartAssociatedDeviceHarvesting( void *arg )
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,GetIDWPollingPeriod[%ld]\n", GetIDWPollingPeriod()));
     }
-    
+    idw_avro_cleanup(); 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
     CcspLMLiteEventTrace(("RDK_LOG_DEBUG, LMLite %s : Thread Stopped DeviceData Harvesting  \n", __FUNCTION__ ));
 

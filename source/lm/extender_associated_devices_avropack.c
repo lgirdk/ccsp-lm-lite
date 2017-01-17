@@ -71,7 +71,7 @@ BOOL schema_file_parsed_idw = FALSE;
 size_t AvroSerializedSizeIDW;
 size_t OneAvroSerializedSizeIDW;
 char AvroSerializedBufIDW[ WRITER_BUF_SIZE ];
-
+static avro_value_iface_t  *iface = NULL;
 char* GetIDWSchemaBuffer()
 {
   return idw_buffer;
@@ -158,6 +158,17 @@ avro_writer_t prepare_writer_idw()
 
     fclose(fp);
 
+    //schemas
+    avro_schema_error_t  error = NULL;
+
+    //Master report/datum
+    avro_schema_t associated_device_report_schema = NULL;
+    avro_schema_from_json(idw_buffer, strlen(idw_buffer),
+                        &associated_device_report_schema, &error);
+
+    //generate an avro class from our schema and get a pointer to the value interface
+    iface = avro_generic_class_from_schema(associated_device_report_schema);
+    avro_schema_decref(associated_device_report_schema);
     schema_file_parsed_idw = TRUE; // parse schema file once only
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Read Avro schema file ONCE, lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)idw_buffer ));
   }
@@ -214,16 +225,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
 
   /* goes thru total number of elements in link list */
   writer = prepare_writer_idw();
-  //schemas
-  avro_schema_error_t  error = NULL;
-
-  //Master report/datum
-  avro_schema_t associated_device_report_schema = NULL;
-  avro_schema_from_json(idw_buffer, strlen(idw_buffer),
-                        &associated_device_report_schema, &error);
-
-  //generate an avro class from our schema and get a pointer to the value interface
-  avro_value_iface_t  *iface = avro_generic_class_from_schema(associated_device_report_schema);
+ 
 
   //Reset out writer
   avro_writer_reset(writer);
@@ -776,8 +778,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
 
   //Free up memory
   avro_value_decref(&adr);
-  avro_value_iface_decref(iface);
-  avro_schema_decref(associated_device_report_schema);
+
   avro_writer_free(writer);
   //free(buffer);
 
@@ -824,3 +825,15 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
 #endif
 }
 
+void idw_avro_cleanup()
+{
+  if(idw_buffer != NULL) {
+        free(idw_buffer); 
+        idw_buffer=NULL;
+  } 
+  if(iface != NULL){
+        avro_value_iface_decref(iface);
+        iface = NULL;
+  }
+  schema_file_parsed_idw = FALSE;
+}

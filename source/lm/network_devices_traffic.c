@@ -660,7 +660,7 @@ void* StartNetworkDevicesTrafficHarvesting( void *arg )
     } while (GetNDTHarvestingStatus());
     
     delete_list_ndt();
-
+     ndt_avro_cleanup();
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 
     return NULL; // shouldn't return;

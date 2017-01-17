@@ -45,5 +45,5 @@ struct networkdevicetrafficdata *next;
  * @brief To send the network devices traffic report to webpa
 */
 void network_devices_traffic_report(struct networkdevicetrafficdata *ptr, struct timeval *reset_timestamp);
-
+void ndt_avro_cleanup(); // Avro Cleanup
 #endif /* !NETWORK_DEVICES_TRAFFIC_AVROPACK_H */

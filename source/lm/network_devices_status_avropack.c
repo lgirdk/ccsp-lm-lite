@@ -63,6 +63,8 @@ char *nds_schemaidbuffer = "3053b4ab-d3f9-4cc9-8c3e-f0bde4a2e6ca/da29287d0199d62
 static size_t AvroSerializedSize;
 static size_t OneAvroSerializedSize;
 static char AvroSerializedBuf[ WRITER_BUF_SIZE ];
+// schema interface 
+static avro_value_iface_t  *iface =  NULL;
 extern LmObjectHosts lmHosts;
 extern pthread_mutex_t LmHostObjectMutex;
 
@@ -158,6 +160,17 @@ avro_writer_t prepare_writer_status()
 
     fclose(fp);
 
+    avro_schema_error_t  error = NULL;
+
+    //Master report/datum
+    avro_schema_t network_device_report_schema = NULL;
+    avro_schema_from_json(ndsschemabuffer, strlen(ndsschemabuffer),
+                        &network_device_report_schema, &error);
+
+    //generate an avro class from our schema and get a pointer to the value interface
+    iface = avro_generic_class_from_schema(network_device_report_schema);  
+    avro_schema_decref(network_device_report_schema);
+
     schema_file_parsed = TRUE; // parse schema file once only
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Read Avro schema file ONCE, lSize = %ld, pbuffer = 0x%lx.\n", lSize + 1, (ulong)ndsschemabuffer ));
   }
@@ -210,16 +223,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 
   /* goes thru total number of elements in link list */
   writer = prepare_writer_status();
-  //schemas
-  avro_schema_error_t  error = NULL;
 
-  //Master report/datum
-  avro_schema_t network_device_report_schema = NULL;
-  avro_schema_from_json(ndsschemabuffer, strlen(ndsschemabuffer),
-                        &network_device_report_schema, &error);
-
-  //generate an avro class from our schema and get a pointer to the value interface
-  avro_value_iface_t  *iface = avro_generic_class_from_schema(network_device_report_schema);
 
   //Reset out writer
   avro_writer_reset(writer);
@@ -582,8 +586,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 
   //Free up memory
   avro_value_decref(&adr);
-  avro_value_iface_decref(iface);
-  avro_schema_decref(network_device_report_schema);
+
   avro_writer_free(writer);
   //free(buffer);
 
@@ -630,5 +633,18 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 #if SIMULATION
   exit(0);
 #endif
+}
+
+void nds_avro_cleanup()
+{
+  if(ndsschemabuffer != NULL) {
+  	free(ndsschemabuffer);
+  	ndsschemabuffer=NULL;
+  }
+  if(iface != NULL){ 	
+  	avro_value_iface_decref(iface);
+	iface = NULL;
+  }
+  schema_file_parsed = FALSE;
 }
 

@@ -47,4 +47,7 @@ struct networkdevicestatusdata *next;
 */
 void network_devices_status_report(struct networkdevicestatusdata *ptr, BOOL extender, char* parent_mac);
 
+/*Cleanup Avro variables and interfaces
+*/
+void nds_avro_cleanup(); 
 #endif /* !NETWORK_DEVICES_STATUS_AVROPACK_H */
