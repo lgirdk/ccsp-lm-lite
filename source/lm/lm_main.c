@@ -2266,8 +2266,16 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 
             }
         }
-        Cdm_FreeNames(dmnames); 
     }
+
+	/* 
+	 * To avoid the memory leak of dmnames pointer value
+	 */
+	if( dmnames )
+	{
+	  Cdm_FreeNames(dmnames); 
+	  dmnames = NULL;
+	}
 	
     *num = nname;
 }
