@@ -161,6 +161,7 @@ int SetIDWHarvestingStatus(BOOL status)
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Failed to Start Thread to start DeviceData Harvesting  \n", __FUNCTION__ ));
             return ANSC_STATUS_FAILURE;
         }
+	CcspTraceWarning(("LMLite: Extender Associated Report STARTED %s\n",__FUNCTION__));
     }
     
     else
@@ -177,6 +178,7 @@ int SetIDWHarvestingStatus(BOOL status)
         {
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_signal fail\n", __FUNCTION__ ));
         }
+	CcspTraceWarning(("LMLite: Extender Associated Report STOPPED %s\n",__FUNCTION__));
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));

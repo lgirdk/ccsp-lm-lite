@@ -181,6 +181,7 @@ int SetNDTHarvestingStatus(BOOL status)
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Failed to Start Thread to start DeviceData Harvesting  \n", __FUNCTION__ ));
             return ANSC_STATUS_FAILURE;
         }
+	CcspTraceWarning(("LMLite: Network Traffic Report STARTED %s\n",__FUNCTION__));
     }
     else
     {
@@ -196,6 +197,7 @@ int SetNDTHarvestingStatus(BOOL status)
         {
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : pthread_cond_signal fail\n", __FUNCTION__ ));
         }
+	CcspTraceWarning(("LMLite: Network Traffic Report STOPPED %s\n",__FUNCTION__));
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
