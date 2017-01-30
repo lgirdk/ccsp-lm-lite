@@ -96,6 +96,10 @@
 
 #define DNS_LEASE "/nvram/dnsmasq.leases"
 #define DEBUG_INI_NAME  "/etc/debug.ini"
+
+#define EXIST 1
+#define IS_LOCAL 2
+
 typedef struct _Name_DM 
 {
     char name[NAME_DM_LEN];
@@ -866,6 +870,169 @@ void Host_FreeIPAddress(PLmObjectHost pHost, int version)
     }
 }
 
+PLmObjectHostIPAddress
+Add_Update_IPv4Address
+    (
+        PLmObjectHost pHost,
+        char * ipAddress
+    )
+{
+	int *num;
+	PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader;
+
+	num = &(pHost->numIPv4Addr);
+	pIpAddrList = pHost->ipv4AddrArray;
+	ppHeader = &(pHost->ipv4AddrArray);
+	pHost->ipv4Active = TRUE;
+
+   for(pCur = pIpAddrList; pCur != NULL; pPre = pCur, pCur = pCur->pNext){
+        if(AnscEqualString(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)){
+			break;
+        }
+    }
+	if (pCur == NULL){
+		pCur = LanManager_Allocate(sizeof(LmObjectHostIPAddress));
+		if(pCur == NULL){
+			return NULL;
+	}
+	pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(ipAddress);
+        pCur->pNext = *ppHeader;
+        *ppHeader = pCur;
+        (*num)++;
+	pCur->instanceNum = *num;
+   }
+   else{
+     	if(pCur != pIpAddrList)
+	{
+          pPre->pNext=pCur->pNext;
+          pCur->pNext = pIpAddrList;
+          *ppHeader = pCur;
+        }
+    }
+    return pCur;
+}
+
+int search(char * ipAddress, PLmObjectHostIPAddress pIpAddrList)
+{
+	int result = 0;
+	PLmObjectHostIPAddress ptr;
+	if(ipAddress && (!strncmp(ipAddress,"fe80:",5)))
+	{
+		result |= IS_LOCAL;
+	}
+	ptr=pIpAddrList;
+    while(ptr!=NULL)
+    {
+        if (AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
+        {
+			result |= EXIST;
+			break;
+        }
+        else
+        {
+			ptr=ptr->pNext;
+        }
+    }
+    return result;
+}
+
+PLmObjectHostIPAddress
+Add_Update_IPv6Address
+    (
+        PLmObjectHost pHost,
+        char * ipAddress
+    )
+{
+	int *num,result;
+	PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader,ptr,prev,temp;
+
+        num = &(pHost->numIPv6Addr);
+        pIpAddrList = pHost->ipv6AddrArray;
+        ppHeader = &(pHost->ipv6AddrArray);
+	pHost->ipv6Active = TRUE;
+
+	result=search(ipAddress,pIpAddrList);
+	if(!(result & EXIST))
+	{
+		temp=LanManager_Allocate(sizeof(LmObjectHostIPAddress));
+		if(temp == NULL)
+		{
+			return NULL;
+		}
+		temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(ipAddress);
+		temp->pNext =NULL;
+		(*num)++;
+		temp->instanceNum = *num;
+		if(*ppHeader==NULL)
+		{
+			*ppHeader=temp;
+		}
+		else
+		{
+			if(result & IS_LOCAL)
+			{
+				if(!strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5))
+				{
+					ptr=*ppHeader;
+					temp->pNext=ptr;
+					*ppHeader=temp;
+				}
+				else
+				{
+					ptr=*ppHeader;
+					temp->pNext=ptr->pNext;
+					ptr->pNext=temp;
+				}
+
+			}
+			else
+			{
+				ptr=*ppHeader;
+				temp->pNext=ptr;
+				*ppHeader=temp;
+			}
+		}
+		pCur = temp;
+	}
+	else
+	{
+		if(result & IS_LOCAL)
+		{
+			ptr=pIpAddrList->pNext;
+			if (ptr && (!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)))
+			{
+					prev=pIpAddrList;
+					ptr=pIpAddrList;
+					while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
+					{
+							prev=ptr;
+							ptr=ptr->pNext;
+					}
+					prev->pNext=ptr->pNext;
+					ptr->pNext=pIpAddrList->pNext;
+					pIpAddrList->pNext=ptr;
+			}
+		}
+		else
+		{
+			if(!AnscEqualString(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
+			{
+					prev=pIpAddrList;
+					ptr=pIpAddrList;
+					while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
+					{
+						prev=ptr;
+						ptr=ptr->pNext;
+					}
+				prev->pNext=ptr->pNext;
+				ptr->pNext=*ppHeader;
+				*ppHeader=ptr;
+			}
+		}
+		pCur = ptr;
+	}
+	return pCur;
+}
 
 PLmObjectHostIPAddress
 Host_AddIPAddress
@@ -875,48 +1042,20 @@ Host_AddIPAddress
         int version
     )
 {
-    int *num;
-    PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader;
+    PLmObjectHostIPAddress pCur;
 
 	if(!ipAddress)
 		return NULL;
 
-    if(version == 4){
-        num = &(pHost->numIPv4Addr);
-        pIpAddrList = pHost->ipv4AddrArray;
-        ppHeader = &(pHost->ipv4AddrArray);
-		pHost->ipv4Active = TRUE;
-        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , ipAddress);
-									
-    }else{
-        num = &(pHost->numIPv6Addr);
-        pIpAddrList = pHost->ipv6AddrArray;
-        ppHeader = &(pHost->ipv6AddrArray);
-		pHost->ipv6Active = TRUE;
-
-								
+    if(version == 4)
+	{
+		pCur = Add_Update_IPv4Address(pHost,ipAddress);
     }
-
-    for(pCur = pIpAddrList; pCur != NULL; pPre = pCur, pCur = pCur->pNext){
-        if(AnscEqualString(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)){
-            if(pCur != pIpAddrList){
-                pPre->pNext = pCur->pNext;
-                pCur->pNext = pIpAddrList;
-                *ppHeader = pCur;
-            }
-            return pCur;
-        }
+	else
+	{
+		pCur = Add_Update_IPv6Address(pHost,ipAddress);
     }
-    pCur = LanManager_Allocate(sizeof(LmObjectHostIPAddress));
-    if(pCur == NULL)
-        return NULL;
-
-    pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(ipAddress);
-    pCur->pNext = pIpAddrList;
-    *ppHeader = pCur;
-    (*num)++;
-	pCur->instanceNum = *num;
-    return pCur;
+	return pCur;
 }
 
 void _set_comment_(LM_cmd_comment_t *cmd)
