@@ -198,6 +198,7 @@ pthread_mutex_t LmHostObjectMutex;
 #ifdef USE_NOTIFY_COMPONENT
 
 extern ANSC_HANDLE bus_handle;
+void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
 
 void Send_Notification(char* interface, char*mac , BOOL status)
 {
@@ -2452,6 +2453,7 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 				}
 				else
 				{
+					DelAndShuffleAssoDevIndx(pHost);
 					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 				}
 			}
@@ -2475,3 +2477,78 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		pthread_mutex_unlock(&LmHostObjectMutex);
 	}
 }
+int Hosts_FindHostIndexByPhysAddress(char * physAddress)
+{
+    int i = 0;
+    for(; i<lmHosts.numHost; i++){
+        if(AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
+            return i;
+        }
+    }
+    return 0;
+}
+
+void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
+{
+	int x = 0,y = 0,tmp =0, tAP = 0;
+	int token = 0,AP = 0;
+	char str[100];
+	
+	x = Hosts_FindHostIndexByPhysAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+	sscanf(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&AP,&token);
+	printf("AP = %d token = %d\n",AP,token);
+// modify uper indexes from token index
+    for(y = x-1;y >= 0; y--)
+	{
+		tmp = 0; tAP = 0;
+		if(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId] != NULL)
+		{
+		    sscanf(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&tAP,&tmp);
+		}
+		else
+		continue;
+	
+		if(AP == tAP)
+		{
+			if((token < tmp))
+			{
+				if(strcmp(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId],"empty"))
+				{
+					tmp = --tmp;
+					memset(str, 0, sizeof(str));
+					sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
+					LanManager_CheckCloneCopy(&(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
+				}
+			}
+		}
+	}
+	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), "empty");
+	x++;
+// modify lower indexes from token index
+	for(x;x<lmHosts.numHost;x++)
+	{
+		tmp = 0; tAP = 0;
+
+		if(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId] != NULL)
+		{
+	    		sscanf(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&tAP,&tmp);
+		}
+		else
+		   continue;
+		
+		if(AP == tAP)
+		{
+			if(strcmp(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId],"empty"))
+			{
+				if(token < tmp)
+				{
+					tmp = --tmp;
+					memset(str, 0, sizeof(str));
+					sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
+					LanManager_CheckCloneCopy(&(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
+				}
+			}
+		}
+	}
+}
+
