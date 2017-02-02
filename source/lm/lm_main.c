@@ -1642,7 +1642,7 @@ void Hosts_SyncDHCP()
     lm_wrapper_get_dhcpv4_reserved();
     //pthread_mutex_unlock(&LmHostObjectMutex);
 }
-
+#ifndef _CBR_PRODUCT_REQ_ 
 void Hosts_SyncMoCA()
 {
     int count = 0;
@@ -1739,7 +1739,7 @@ void Hosts_SyncMoCA()
 
     return;
 }
-
+#endif
 void Hosts_SyncEthernetPort()
 {
     int i;
@@ -1975,8 +1975,9 @@ void Hosts_StatSyncThreadFunc()
             	}
 
             }
-
+#ifndef _CBR_PRODUCT_REQ_ 
             Hosts_SyncMoCA();
+#endif
             //Hosts_SyncWifi();
 
             //pthread_mutex_unlock(&LmHostObjectMutex);
@@ -2315,7 +2316,9 @@ LM_get_host_info()
 	}
 */
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
+#ifndef _CBR_PRODUCT_REQ_ 
 	_init_DM_List(&g_MoCAADListNum, &g_pMoCAADList, "Device.MoCA.Interface.1.AssociatedDevice.", "MACAddress");
+#endif
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.1.Client.", "Chaddr");
 
 	pthread_mutex_lock(&LmHostObjectMutex); 
