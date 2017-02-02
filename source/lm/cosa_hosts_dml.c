@@ -1492,7 +1492,7 @@ Host_IPv4Address_GetEntry
     //printf("IPv4Address_GetEntry %p, %ld\n", pHost, nIndex);
 	IPArr = LM_GetIPArr_FromIndex(pHost, nIndex, IP_V4);
 	if(IPArr)
-   		*pInsNumber  = IPArr->instanceNum; 
+		*pInsNumber  = nIndex + 1;
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     return  (ANSC_HANDLE)IPArr;
 }
@@ -1805,7 +1805,7 @@ Host_IPv6Address_GetEntry
     //printf("IPv6Address_GetEntry %p, %ld\n", pHost, nIndex);
 	IPArr = LM_GetIPArr_FromIndex(pHost, nIndex, IP_V6);
 	if(IPArr)
-   		*pInsNumber  = IPArr->instanceNum; 
+		*pInsNumber  = nIndex + 1;
 	pthread_mutex_unlock(&LmHostObjectMutex);
     return  (ANSC_HANDLE)IPArr;
 }
