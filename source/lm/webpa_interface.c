@@ -273,6 +273,13 @@ char * getDeviceMac()
         char *pcomponentName = NULL, *pcomponentPath = NULL;
 	parameterValStruct_t **parameterval = NULL;
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
+
+        if (strlen(deviceMAC))
+        {
+            pthread_mutex_unlock(&device_mac_mutex);
+            break;
+        }
+
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before WebpaInterface_DiscoverComponent ret: %d\n",ret));
 
         if(pcomponentPath == NULL || pcomponentName == NULL)
@@ -345,7 +352,7 @@ void macToLower(char macValue[])
     token[i] = strtok(tmp, ":");
     if(token[i]!=NULL)
     {
-        strncat(deviceMAC, token[i],sizeof(deviceMAC)-1);
+        strncpy(deviceMAC, token[i],sizeof(deviceMAC)-1);
         deviceMAC[31]='\0';
         i++;
     }
