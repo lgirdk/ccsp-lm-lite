@@ -21,8 +21,6 @@
 #include "stdlib.h"
 #include "ccsp_dm_api.h"
 #include "webpa_interface.h"
-#include "msgpack.h"
-#include "base64.h"
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_util.h"
 
@@ -31,10 +29,18 @@
 #include "mlt_malloc.h"
 #endif
 
+#ifdef PARODUS_ENABLE
+#include <libparodus.h>
+#define DEVICE_PROPS_FILE   "/etc/device.properties"
+#define URL_SIZE 	    64
+#define CLIENT_PORT_NUM     6662
+#else
+#include "msgpack.h"
+#include "base64.h"
+
 #define WEBPA_COMPONENT_NAME    "eRT.com.cisco.spvtg.ccsp.webpaagent"
 #define WEBPA_DBUS_PATH         "/com/cisco/spvtg/ccsp/webpaagent"
 #define WEBPA_PARAMETER_NAME    "Device.Webpa.PostData" 
-#define MAX_PARAMETERNAME_LEN   512
 #define CONTENT_TYPE            "content_type"
 #define WEBPA_MSG_TYPE          "msg_type"
 #define WEBPA_SOURCE            "source"
@@ -42,16 +48,26 @@
 #define WEBPA_TRANSACTION_ID    "transaction_uuid"
 #define WEBPA_PAYLOAD           "payload"
 #define WEBPA_MAP_SIZE          6
+#endif
 
+#define MAX_PARAMETERNAME_LEN   512
 extern ANSC_HANDLE bus_handle;
 pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char deviceMAC[32]={'\0'}; 
-char fullDeviceMAC[32]={'\0'}; 
+char fullDeviceMAC[32]={'\0'};
+#ifdef PARODUS_ENABLE
+libpd_instance_t client_instance;
+char parodus_url[URL_SIZE] = {'\0'};
+static void *handle_parodus();
+static void __report_log(int level,const char *logMsg);
+static void get_parodus_url(char *parodus_url);
+#else
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
+#endif
+
 static void macToLower(char macValue[]);
-//static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
 
 
 int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
@@ -91,14 +107,78 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
 void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentType, char *payload, unsigned int payload_len)
 {
     pthread_mutex_lock(&webpa_mutex);
-
+#ifdef PARODUS_ENABLE
+    wrp_msg_t *wrp_msg ;
+    int retry_count = 0, backoffRetryTime = 0, c = 2;
+    int sendStatus = -1;
+    char source[MAX_PARAMETERNAME_LEN/2] = {'\0'};
+#else
     char* faultParam = NULL;
     int ret = -1;
     parameterValStruct_t val = {0};
     char * packedMsg = NULL;
+#endif
+
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, <======== Start of sendWebpaMsg =======>\n"));
+#ifdef PARODUS_ENABLE
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, deviceMAC *********:%s\n",deviceMAC));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest :%s\n",dest));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, transaction_id :%s\n",trans_id));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType :%s\n",contentType));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, payload_len :%d\n",payload_len));
+
+    snprintf(source, sizeof(source), "mac:%s/%s", deviceMAC, serviceName);
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",deviceMAC));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Source derived is %s\n", source));
+    
+    wrp_msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
+    memset(wrp_msg, 0, sizeof(wrp_msg_t));
+
+    wrp_msg->msg_type = WRP_MSG_TYPE__EVENT;
+    wrp_msg->u.event.payload = (void *)payload;
+    wrp_msg->u.event.payload_size = payload_len;
+    wrp_msg->u.event.source = source;
+    wrp_msg->u.event.dest = dest;
+    wrp_msg->u.event.content_type = contentType;
+    
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->msg_type :%d\n",wrp_msg->msg_type));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload :%s\n",(char *)(wrp_msg->u.event.payload)));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload_size :%d\n",wrp_msg->u.event.payload_size));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.source :%s\n",wrp_msg->u.event.source));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.dest :%s\n",wrp_msg->u.event.dest));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.content_type :%s\n",wrp_msg->u.event.content_type));
+    
+    while(retry_count<=5)
+    {
+        backoffRetryTime = (int) pow(2, c) -1;	
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, retry_count : %d\n",retry_count));
+        sendStatus = libparodus_send(client_instance, wrp_msg);  
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, sendStatus is %d\n",sendStatus));
+        if(sendStatus == 0)
+        {
+            retry_count = 0;
+            CcspTraceInfo(("Sent message successfully to parodus\n"));
+            break;
+        }
+        else
+        {
+            CcspTraceError(("Failed to send message retrying ....\n"));
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, backoffRetryTime %d seconds\n", backoffRetryTime));
+            sleep(backoffRetryTime);
+            c++;
+            retry_count++;
+        }
+    }
+    
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before freeing wrp_msg\n"));    
+    free(wrp_msg);
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After freeing wrp_msg\n"));
+#else
     // Pack the message using msgpck WRP notification format and then using base64        
     packedMsg = packStructure(serviceName, dest, trans_id, payload, contentType,payload_len);              
     
@@ -129,7 +209,7 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
         free(packedMsg);
         packedMsg = NULL;
     }
-
+#endif
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,  <======== End of sendWebpaMsg =======>\n"));
 
@@ -138,7 +218,127 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     pthread_mutex_unlock(&webpa_mutex);
 }
 
+#ifdef PARODUS_ENABLE
+void initparodusTask()
+{
+    wrp_log_set_handler(__report_log);
+        
+	int err = 0;
+	pthread_t parodusThreadId;
+	
+	err = pthread_create(&parodusThreadId, NULL, handle_parodus, NULL);
+	if (err != 0) 
+	{
+		CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Error creating messages thread :[%s]\n", strerror(err)));
+	}
+	else
+	{
+		CcspLMLiteConsoleTrace(("RDK_LOG_INFO, handle_parodus thread created Successfully\n"));
+	}
+}
 
+static void *handle_parodus()
+{
+    int backoffRetryTime = 0;
+    int backoff_max_time = 9;
+    int max_retry_sleep;
+    //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
+    int c =2;
+    
+    CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ******** Start of handle_parodus ********\n"));
+
+    pthread_detach(pthread_self());
+
+    max_retry_sleep = (int) pow(2, backoff_max_time) -1;
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, max_retry_sleep is %d\n", max_retry_sleep ));
+
+	get_parodus_url(parodus_url);
+	
+	libpd_cfg_t cfg1 = {.service_name = "lmlite",
+					.receive = false, .keepalive_timeout_secs = 0,
+					.parodus_url = parodus_url,
+					.client_url = NULL,
+					.log_handler = __report_log
+				   };
+                
+    CcspLMLiteConsoleTrace(("RDK_LOG_INFO, Configurations => service_name : %s parodus_url : %s client_url : %s\n", cfg1.service_name, cfg1.parodus_url, cfg1.client_url ));
+
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Call parodus library init api \n"));
+
+    while(1)
+    {
+        if(backoffRetryTime < max_retry_sleep)
+        {
+            backoffRetryTime = (int) pow(2, c) -1;
+        }
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, New backoffRetryTime value calculated as %d seconds\n", backoffRetryTime));
+        int ret =libparodus_init (&client_instance, &cfg1);
+        CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ret is %d\n",ret));
+        if(ret ==0)
+        {
+            CcspTraceWarning(("LMLite: Init for parodus Success..!!\n"));
+            break;
+        }
+        else
+        {
+            CcspTraceError(("LMLite: Init for parodus failed\n"));
+            sleep(backoffRetryTime);
+            c++;
+        }
+    }
+
+    return 0;
+}
+
+static void __report_log(int level,const char *logMsg)
+{
+    if(level == LEVEL_ERROR)
+    {
+        //CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, %s\n",logMsg));
+        CcspTraceError(("%s\n",logMsg));
+    }
+    
+    if(level == LEVEL_INFO)
+    {
+        //CcspLMLiteConsoleTrace(("RDK_LOG_INFO, %s\n",logMsg));
+        CcspTraceWarning(("%s\n",logMsg));
+    }
+    
+    if(level == LEVEL_DEBUG)
+    {
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n",logMsg));
+    }
+}
+
+static void get_parodus_url(char *parodus_url)
+{
+    FILE *fp = fopen(DEVICE_PROPS_FILE, "r");
+    if (NULL != fp)
+    {
+        char str[255] = {'\0'};
+        while(fscanf(fp,"%s", str) != EOF)
+        {
+            char *value = NULL;
+            if(value = strstr(str, "PARODUS_URL="))
+            {
+                value = value + strlen("PARODUS_URL=");
+                strncpy(parodus_url, value, (strlen(str) - strlen("PARODUS_URL="))+1);
+            }
+        }
+    }
+    else
+    {
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to open device.properties file:%s\n", DEVICE_PROPS_FILE));
+    }
+    fclose(fp);
+    if (0 == parodus_url[0])
+    {
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus_url is not present in device. properties:%s\n", parodus_url));
+    }
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus_url formed is %s\n", parodus_url));
+}
+#else
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len)
 {           
     msgpack_sbuffer sbuf;
@@ -250,7 +450,7 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
 
     return b64buffer;
 }
-
+#endif
 
 char * getFullDeviceMac()
 {
@@ -372,4 +572,3 @@ void macToLower(char macValue[])
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
 
 }
-

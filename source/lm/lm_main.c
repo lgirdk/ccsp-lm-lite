@@ -80,6 +80,9 @@
 #include "ccsp_base_api.h"
 #include "lm_main.h"
 #include "lm_util.h"
+#ifdef PARODUS_ENABLE
+#include "webpa_interface.h"
+#endif
 #include "lm_wrapper.h"
 #include "lm_api.h"
 #include "lm_wrapper_priv.h"
@@ -1309,7 +1312,7 @@ int LM_get_online_device()
             /* Do NOT count TrueStaticIP client */
             for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
-                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) 
+                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3)
                    )
                 num++;
                 break;
@@ -2390,7 +2393,9 @@ void LM_main()
 		rdk_logger_init(DEBUG_INI_NAME);
 	#endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
-
+#ifdef PARODUS_ENABLE    
+    initparodusTask();
+#endif
     curl_global_init(CURL_GLOBAL_ALL);
 
     Hosts_PollHost();
