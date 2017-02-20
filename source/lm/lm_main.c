@@ -2097,7 +2097,10 @@ void Hosts_StatSyncThreadFunc()
         PRINTD("\n%s start\n", __FUNCTION__);
         if(Hosts_stop_scan() ){
             PRINTD("\n%s bridge mode, remove all host information\n", __FUNCTION__);
+			pthread_mutex_lock(&LmHostObjectMutex);
             Hosts_RmHosts();
+			pthread_mutex_unlock(&LmHostObjectMutex);			
+			
         }else{
             //pthread_mutex_lock(&LmHostObjectMutex);
             for ( i = 0; i < lmHosts.numHost; i++ )
