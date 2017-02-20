@@ -944,9 +944,8 @@ Add_Update_IPv6Address
     )
 {
 	int *num,result;
-	PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader,ptr,prev,temp;
-
-        num = &(pHost->numIPv6Addr);
+	PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader, ptr, ptr2, prev, temp;
+	num = &(pHost->numIPv6Addr);
         pIpAddrList = pHost->ipv6AddrArray;
         ppHeader = &(pHost->ipv6AddrArray);
 	pHost->ipv6Active = TRUE;
@@ -954,6 +953,7 @@ Add_Update_IPv6Address
 	result=search(ipAddress,pIpAddrList);
 	if(!(result & EXIST))
 	{
+		/*New Address is assigned*/
 		temp=LanManager_Allocate(sizeof(LmObjectHostIPAddress));
 		if(temp == NULL)
 		{
@@ -965,71 +965,150 @@ Add_Update_IPv6Address
 		temp->instanceNum = *num;
 		if(*ppHeader==NULL)
 		{
+			/*List is Empty, so push to head*/
 			*ppHeader=temp;
 		}
 		else
 		{
 			if(result & IS_LOCAL)
 			{
-				if(!strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5))
+				/*List is not Empty, New Address assigned is Local*/
+				if(strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
 				{
+					/*All addresses in the list are local
+					Hence pushing new address to head*/
+					temp->pNext=pIpAddrList;
+					*ppHeader=temp;
+				}
+				else
+				{
+					/*Global IP at head
+					Hence adding the new local IP to second position*/
+					temp->pNext=(*ppHeader)->pNext;
+					(*ppHeader)->pNext=temp;
+				}
+			}
+			else
+			{
+				/*List is not Empty, New Address assigned is Global*/
+				if(strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
+				{
+					/*All addresses in the list are local
+					Hence pushing new global address to head*/
 					ptr=*ppHeader;
 					temp->pNext=ptr;
 					*ppHeader=temp;
 				}
 				else
 				{
-					ptr=*ppHeader;
-					temp->pNext=ptr->pNext;
-					ptr->pNext=temp;
+					/*Atleast One Global Address in the list*/
+					ptr=pIpAddrList->pNext;
+					if((ptr==NULL) ||((ptr!=NULL)&&(strncmp(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)!=0)))
+					{
+						/*Only one address in the list and that is global
+						OR Multiple Addresses in the list and all are global*/
+						temp->pNext=pIpAddrList;
+						*ppHeader=temp;
+					}
+					else if(strncmp(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
+					{
+						/*Multiple Addresses in the list with atleast one local and global*/
+						pIpAddrList->pNext=ptr->pNext;
+						ptr->pNext=pIpAddrList;
+						temp->pNext=ptr;
+						*ppHeader=temp;
+					}
 				}
-
-			}
-			else
-			{
-				ptr=*ppHeader;
-				temp->pNext=ptr;
-				*ppHeader=temp;
 			}
 		}
 		pCur = temp;
 	}
 	else
 	{
+		/*Existing Address is re-assigned*/
 		if(result & IS_LOCAL)
 		{
-			ptr=pIpAddrList->pNext;
-			if (ptr && (!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)))
+			/* Address re-assigned is local*/
+			if(AnscEqualString((*(ppHeader))->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
 			{
-					prev=pIpAddrList;
-					ptr=pIpAddrList;
-					while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-					{
-							prev=ptr;
-							ptr=ptr->pNext;
-					}
+				/*Re-Assigned address is present at head
+				  Hence doing no operation*/
+				pCur=*ppHeader;
+			}
+			else
+			{
+				/*Traversing the list to find the re-assigned address*/
+				ptr=pIpAddrList;
+				prev=pIpAddrList;
+				while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
+				{
+						prev=ptr;
+						ptr=ptr->pNext;
+				}
+				if(strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
+				{
+					/*List contains only Local Addresses
+					  Hence moving the re-assigned address to head*/
+					prev->pNext=ptr->pNext;
+					ptr->pNext=pIpAddrList;
+					pIpAddrList=ptr;
+					*ppHeader=ptr;
+				}
+				else
+				{
+					/*List Contains at least one global address
+					  Hence moving the re-assigned address to the second position*/
 					prev->pNext=ptr->pNext;
 					ptr->pNext=pIpAddrList->pNext;
 					pIpAddrList->pNext=ptr;
+				}
+				pCur = ptr;
 			}
 		}
 		else
 		{
+			/* Address re-assigned is global*/
+
 			if(!AnscEqualString(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
 			{
-					prev=pIpAddrList;
-					ptr=pIpAddrList;
-					while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-					{
-						prev=ptr;
-						ptr=ptr->pNext;
-					}
-				prev->pNext=ptr->pNext;
-				ptr->pNext=*ppHeader;
-				*ppHeader=ptr;
+				/*Performing the following steps if the re-assigned global address is not at the head*/
+				prev=pIpAddrList;
+				ptr=pIpAddrList;
+				while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
+				{
+					/*Traversing the list to find the re-assigned address*/
+					prev=ptr;
+					ptr=ptr->pNext;
+				}
+				temp=(*ppHeader)->pNext;
+				if(strncmp(temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
+				{
+						/*List contains atleast one local
+						 Hence moving the global address at the head to the third postion
+						 and pushing the re-assigned global address to the head*/
+						prev->pNext=ptr->pNext;
+						ptr2=temp->pNext;
+						temp->pNext=*ppHeader;
+						(*ppHeader)->pNext=ptr2;
+						ptr->pNext=temp;
+						(*ppHeader)=ptr;
+				}
+				else
+				{
+					/*List contains no local addresses
+					  hence pushing the re-assigned address to the head*/
+					prev->pNext=ptr->pNext;
+					ptr->pNext=*ppHeader;
+					*ppHeader=ptr;
+				}
+				pCur = *ppHeader;
+			}
+			else
+			{
+				/*Re assigned global address is at the head of the list*/
+				pCur=pIpAddrList;
 			}
 		}
-		pCur = ptr;
 	}
 	return pCur;
 }
