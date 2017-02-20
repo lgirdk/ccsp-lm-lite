@@ -2583,10 +2583,11 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		
 		if ( NULL != pHost )
 		{
-			if(pHost->bBoolParaValue[LM_HOST_ActiveId] != Status)
+			if((pHost->bBoolParaValue[LM_HOST_ActiveId] != Status) || (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid)))
 			{
 				if( Status )
 				{
+
 					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
 					LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
 					pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
@@ -2594,9 +2595,13 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 					LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 				}
 				else
-				{
-					DelAndShuffleAssoDevIndx(pHost);
-					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+				{       
+                                        if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid))
+                                        {
+
+					   DelAndShuffleAssoDevIndx(pHost);
+					   LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                                        }
 				}
 			}
 
