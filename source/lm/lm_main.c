@@ -2583,7 +2583,7 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		
 		if ( NULL != pHost )
 		{
-			if((pHost->bBoolParaValue[LM_HOST_ActiveId] != Status) || (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid)))
+			if((pHost->bBoolParaValue[LM_HOST_ActiveId] != Status) || ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid))))
 			{
 				if( Status )
 				{
