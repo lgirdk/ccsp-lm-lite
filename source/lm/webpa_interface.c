@@ -221,8 +221,6 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
 #ifdef PARODUS_ENABLE
 void initparodusTask()
 {
-    wrp_log_set_handler(__report_log);
-        
 	int err = 0;
 	pthread_t parodusThreadId;
 	
@@ -337,6 +335,11 @@ static void get_parodus_url(char *parodus_url)
         CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus_url is not present in device. properties:%s\n", parodus_url));
     }
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus_url formed is %s\n", parodus_url));
+}
+
+const char *rdk_logger_module_fetch(void)
+{
+    return "LOG.RDK.LM";
 }
 #else
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len)
