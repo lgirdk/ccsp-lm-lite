@@ -44,7 +44,7 @@
 extern LmObjectHosts XlmHosts;
 extern ULONG XHostsUpdateTime;
 
-extern pthread_mutex_t LmHostObjectMutex;
+extern pthread_mutex_t XLmHostObjectMutex;
 
 #define COSA_DML_USERS_USER_ACCESS_INTERVAL     10
 
@@ -196,9 +196,9 @@ XHost_GetEntryCount
 {
 	ULONG host_count = 0;
 
-	pthread_mutex_lock(&LmHostObjectMutex);   
+	pthread_mutex_lock(&XLmHostObjectMutex);   
 	host_count = XlmHosts.numHost;
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    pthread_mutex_unlock(&XLmHostObjectMutex);
 
 	return host_count;
 }
@@ -242,11 +242,11 @@ XHost_GetEntry
     )
 {
 	ANSC_HANDLE host = NULL;
-	pthread_mutex_lock(&LmHostObjectMutex); 
+	pthread_mutex_lock(&XLmHostObjectMutex); 
 	*pInsNumber = XlmHosts.hostArray[nIndex]->instanceNum;
 
     host = (ANSC_HANDLE) (XlmHosts.hostArray[nIndex]);
-	pthread_mutex_unlock(&LmHostObjectMutex);
+	pthread_mutex_unlock(&XLmHostObjectMutex);
 	return host;
 }
 
@@ -374,7 +374,7 @@ XHost_GetParamBoolValue
 {
 
     //printf("Host_GetParamBoolValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex); 
+	pthread_mutex_lock(&XLmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     int i = 0;
     for(; i<LM_HOST_NumBoolPara; i++){
@@ -382,12 +382,12 @@ XHost_GetParamBoolValue
         {
             /* collect value */
             *pBool = pHost->bBoolParaValue[i];
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+			pthread_mutex_unlock(&XLmHostObjectMutex); 
             return TRUE;
         }
     }
 
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+	pthread_mutex_unlock(&XLmHostObjectMutex); 
     return FALSE;
 }
 
@@ -431,7 +431,7 @@ XHost_GetParamIntValue
 {
 
 
-	pthread_mutex_lock(&LmHostObjectMutex);  
+	pthread_mutex_lock(&XLmHostObjectMutex);  
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     /* check the parameter name and return the corresponding value */
     if( AnscEqualString(ParamName, "X_CISCO_COM_ActiveTime", TRUE))
@@ -444,7 +444,7 @@ XHost_GetParamIntValue
                 (int)(AnscCalendarToSecond(&currentTime) - pHost->activityChangeTime);
         }
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId];
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+		pthread_mutex_unlock(&XLmHostObjectMutex); 
         return TRUE;
     }
 
@@ -458,7 +458,7 @@ XHost_GetParamIntValue
                 (int)(AnscCalendarToSecond(&currentTime) - pHost->activityChangeTime);
         }
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId];
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+		pthread_mutex_unlock(&XLmHostObjectMutex); 
         return TRUE;
     }
 
@@ -466,7 +466,7 @@ XHost_GetParamIntValue
     {
         /* collect value */
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+		pthread_mutex_unlock(&XLmHostObjectMutex); 
         return TRUE;
     }
 
@@ -480,11 +480,11 @@ XHost_GetParamIntValue
         }else{
             *pInt = 0;
         }
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+		pthread_mutex_unlock(&XLmHostObjectMutex); 
         return TRUE;
     }
 
- 	pthread_mutex_unlock(&LmHostObjectMutex); 
+ 	pthread_mutex_unlock(&XLmHostObjectMutex); 
     return FALSE;
 }
 
@@ -529,7 +529,7 @@ XHost_GetParamUlongValue
 
 
     //printf("Host_GetParamUlongValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex); 
+	pthread_mutex_lock(&XLmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     int i = 0;
     for(; i<LM_HOST_NumUlongPara; i++){
@@ -541,19 +541,19 @@ XHost_GetParamUlongValue
             }else{
                 *puLong = 0;
             }
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+			pthread_mutex_unlock(&XLmHostObjectMutex); 
             return TRUE;
         }
         else if( AnscEqualString(ParamName, XlmHosts.pHostUlongParaName[i], TRUE))
         {
             /* collect value */
             *puLong = pHost->ulUlongParaValue[i];
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+			pthread_mutex_unlock(&XLmHostObjectMutex); 
             return TRUE;
         }
     }
 
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+	pthread_mutex_unlock(&XLmHostObjectMutex); 
     return FALSE;
 }
 
@@ -605,7 +605,7 @@ XHost_GetParamStringValue
     )
 {
     //printf("Host_GetParamStringValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex); 
+	pthread_mutex_lock(&XLmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     int i = 0;
     for(; i<LM_HOST_NumStringPara; i++){
@@ -613,7 +613,7 @@ XHost_GetParamStringValue
 	    {
 	        /* collect value */
 			AnscCopyString(pValue, pHost->Layer3Interface);
-			pthread_mutex_unlock(&LmHostObjectMutex);
+			pthread_mutex_unlock(&XLmHostObjectMutex);
 	        return 0;
 	    }
         else if( AnscEqualString(ParamName, XlmHosts.pHostStringParaName[i], TRUE))
@@ -623,16 +623,16 @@ XHost_GetParamStringValue
             if(pHost->pStringParaValue[i]) len = strlen(pHost->pStringParaValue[i]);
             if(*pUlSize <= len){
                 *pUlSize = len + 1;
-				pthread_mutex_unlock(&LmHostObjectMutex); 
+				pthread_mutex_unlock(&XLmHostObjectMutex); 
                 return 1;
             }
             AnscCopyString(pValue, pHost->pStringParaValue[i]);
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+			pthread_mutex_unlock(&XLmHostObjectMutex); 
             return 0;
         }
     }
 
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+	pthread_mutex_unlock(&XLmHostObjectMutex); 
 	return -1;
 }
 
@@ -676,17 +676,17 @@ XHost_SetParamStringValue
 {
 
     /* check the parameter name and set the corresponding value */
-	pthread_mutex_lock(&LmHostObjectMutex); 
+	pthread_mutex_lock(&XLmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
 
     if( AnscEqualString(ParamName, "Comments", TRUE))
     {
         /* save update to backup */
         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]) , pString);
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+		pthread_mutex_unlock(&XLmHostObjectMutex); 
         return TRUE;
     }
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+	pthread_mutex_unlock(&XLmHostObjectMutex); 
     return FALSE;
 
 }
@@ -760,9 +760,9 @@ XHost_Commit
     )
 {
 
-    pthread_mutex_lock(&LmHostObjectMutex);     
+    pthread_mutex_lock(&XLmHostObjectMutex);     
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-    pthread_mutex_unlock(&LmHostObjectMutex); 
+    pthread_mutex_unlock(&XLmHostObjectMutex); 
     
     LMDmlHostsSetHostComment(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_Comments]);
     return 0;
@@ -798,9 +798,9 @@ XHost_Rollback
     )
 {
 
-    pthread_mutex_lock(&LmHostObjectMutex);     
+    pthread_mutex_lock(&XLmHostObjectMutex);     
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-    pthread_mutex_unlock(&LmHostObjectMutex); 
+    pthread_mutex_unlock(&XLmHostObjectMutex); 
 
     return 0;
 }
@@ -848,10 +848,10 @@ XHost_IPv4Address_GetEntryCount
 {
     ULONG count = 0; 
 
-    pthread_mutex_lock(&LmHostObjectMutex);       
+    pthread_mutex_lock(&XLmHostObjectMutex);       
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     count = pHost->numIPv4Addr;
-    pthread_mutex_unlock(&LmHostObjectMutex);  
+    pthread_mutex_unlock(&XLmHostObjectMutex);  
     return count;
 }
 
@@ -895,12 +895,12 @@ XHost_IPv4Address_GetEntry
 {
 
     PLmObjectHostIPAddress IPArr = NULL;
-    pthread_mutex_lock(&LmHostObjectMutex);     
+    pthread_mutex_lock(&XLmHostObjectMutex);     
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     IPArr = LM_GetIPArr_FromIndex(pHost, nIndex, IP_V4);
     if(IPArr)
         *pInsNumber  = IPArr->instanceNum; 
-    pthread_mutex_unlock(&LmHostObjectMutex); 
+    pthread_mutex_unlock(&XLmHostObjectMutex); 
     return  (ANSC_HANDLE)IPArr;
 }
 
@@ -952,7 +952,7 @@ XHost_IPv4Address_GetParamStringValue
     )
 {
 
-    pthread_mutex_lock(&LmHostObjectMutex);
+    pthread_mutex_lock(&XLmHostObjectMutex);
     PLmObjectHostIPAddress pIPv4Address = (PLmObjectHostIPAddress) hInsContext;
     int i = 0;
     for(; i<LM_HOST_IPv4Address_NumStringPara; i++){
@@ -963,15 +963,15 @@ XHost_IPv4Address_GetParamStringValue
             if(pIPv4Address->pStringParaValue[i]) len = strlen(pIPv4Address->pStringParaValue[i]);
             if(*pUlSize <= len){
                 *pUlSize = len + 1;
-                pthread_mutex_unlock(&LmHostObjectMutex);
+                pthread_mutex_unlock(&XLmHostObjectMutex);
                 return 1;
             }
             AnscCopyString(pValue, pIPv4Address->pStringParaValue[i]);
-            pthread_mutex_unlock(&LmHostObjectMutex);
+            pthread_mutex_unlock(&XLmHostObjectMutex);
             return 0;
         }
     }
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    pthread_mutex_unlock(&XLmHostObjectMutex);
     return -1;
 }
 /***********************************************************************
@@ -1018,10 +1018,10 @@ XHost_IPv6Address_GetEntryCount
     )
 {
     ULONG count = 0; 
-	pthread_mutex_lock(&LmHostObjectMutex);    
+	pthread_mutex_lock(&XLmHostObjectMutex);    
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     count = pHost->numIPv6Addr;
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    pthread_mutex_unlock(&XLmHostObjectMutex);
 	return count;
 }
 
@@ -1065,12 +1065,12 @@ XHost_IPv6Address_GetEntry
 {
     PLmObjectHostIPAddress IPArr = NULL;
 	
-    pthread_mutex_lock(&LmHostObjectMutex);    
+    pthread_mutex_lock(&XLmHostObjectMutex);    
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     IPArr = LM_GetIPArr_FromIndex(pHost, nIndex, IP_V6);
     if(IPArr)
         *pInsNumber  = IPArr->instanceNum; 
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    pthread_mutex_unlock(&XLmHostObjectMutex);
 	return  (ANSC_HANDLE)IPArr;
 }
 
@@ -1122,7 +1122,7 @@ XHost_IPv6Address_GetParamStringValue
     )
 {
    
-    pthread_mutex_lock(&LmHostObjectMutex);
+    pthread_mutex_lock(&XLmHostObjectMutex);
     PLmObjectHostIPAddress pIPv6Address = (PLmObjectHostIPAddress) hInsContext;
     int i = 0;
     for(; i<LM_HOST_IPv6Address_NumStringPara; i++){
@@ -1133,16 +1133,16 @@ XHost_IPv6Address_GetParamStringValue
             if(pIPv6Address->pStringParaValue[i]) len = strlen(pIPv6Address->pStringParaValue[i]);
             if(*pUlSize <= len){
                 *pUlSize = len + 1;
-                pthread_mutex_unlock(&LmHostObjectMutex);
+                pthread_mutex_unlock(&XLmHostObjectMutex);
                 return 1;
             }
             AnscCopyString(pValue, pIPv6Address->pStringParaValue[i]);
-            pthread_mutex_unlock(&LmHostObjectMutex);
+            pthread_mutex_unlock(&XLmHostObjectMutex);
             return 0;
         }
     }
 
-    pthread_mutex_unlock(&LmHostObjectMutex);
+    pthread_mutex_unlock(&XLmHostObjectMutex);
     return -1;
 }
 

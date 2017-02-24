@@ -85,6 +85,8 @@ extern ANSC_HANDLE bus_handle;
 char *pERTPAMComponentName = NULL;
 char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
+extern pthread_mutex_t XLmHostObjectMutex;
+
 extern LmObjectHosts lmHosts;
 
 #define WIFI_DM_CHANNEL      "Device.WiFi.Radio.%d.Channel"
@@ -1360,7 +1362,7 @@ void Xlm_wrapper_get_leasetime()
 			pHost = XHosts_FindHostByPhysAddress(dhcpHost.phyAddr);
 			if ( pHost )
 			{	
-				pthread_mutex_lock(&LmHostObjectMutex);
+				pthread_mutex_lock(&XLmHostObjectMutex);
 				if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
             	  	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             	else
@@ -1368,7 +1370,7 @@ void Xlm_wrapper_get_leasetime()
 				
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), dhcpHost.ipAddr);
 				pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
-				pthread_mutex_unlock(&LmHostObjectMutex);
+				pthread_mutex_unlock(&XLmHostObjectMutex);
 			}
 		}            
     }

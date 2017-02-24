@@ -199,6 +199,8 @@ ULONG XHostsUpdateTime = 0;
 
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
+pthread_mutex_t XLmHostObjectMutex;
+
 #ifdef USE_NOTIFY_COMPONENT
 
 extern ANSC_HANDLE bus_handle;
@@ -2332,6 +2334,7 @@ void LM_main()
 	char buf1[8];
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
+	pthread_mutex_init(&XLmHostObjectMutex,0);
     lm_wrapper_init();
     lmHosts.hostArray = LanManager_Allocate(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
     lmHosts.sizeHost = LM_HOST_ARRAY_STEP;
@@ -2582,7 +2585,7 @@ XLM_get_host_info()
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.2.Client.", "Chaddr");
 
-	pthread_mutex_lock(&LmHostObjectMutex); 
+	pthread_mutex_lock(&XLmHostObjectMutex); 
 
 	for(i = 0; i<XlmHosts.numHost; i++){
 
@@ -2598,7 +2601,7 @@ XLM_get_host_info()
 		
 	}
 
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+	pthread_mutex_unlock(&XLmHostObjectMutex); 
 
 }
 
@@ -2640,7 +2643,7 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		
 		Xlm_wrapper_get_leasetime();
 
-		pthread_mutex_lock(&LmHostObjectMutex);   
+		pthread_mutex_lock(&XLmHostObjectMutex);   
 		Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
 		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
 		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
@@ -2650,7 +2653,7 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		pHost->activityChangeTime = time((time_t*)NULL);
 		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
 		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-		pthread_mutex_unlock(&LmHostObjectMutex);
+		pthread_mutex_unlock(&XLmHostObjectMutex);
 	}
 	else
 	{
