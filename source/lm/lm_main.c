@@ -835,7 +835,10 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         else
 #endif
 */
-		pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+		if( physAddress && strncasecmp(physAddress,"60:b4:f7:", 9)==0)
+			pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Mesh");
+		else
+			pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
         
 		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
 		pHost->bClientReady = FALSE;
