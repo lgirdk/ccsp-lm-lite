@@ -2478,7 +2478,7 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 {
     int i;
     char dm[200];
-    char (*dmnames)[CDM_PATH_SZ] = {NULL};
+    char (*dmnames)[CDM_PATH_SZ]=NULL;
     int nname = 0;
     int dmlen;
     
