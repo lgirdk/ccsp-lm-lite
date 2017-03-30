@@ -324,4 +324,5 @@ void LM_main();
 char* FindParentIPInExtenderList(char* mac_address);
 char* FindMACByIPAddress(char * ip_address);
 void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status );
+void CheckandProcessBasedonMoCAXi5Status( char * physAddress );
 #endif

@@ -809,6 +809,10 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
 		return NULL;
 	}
+
+	/* Check and Enable MoCA based on passing MAC addresss */
+	CheckandProcessBasedonMoCAXi5Status( physAddress );
+	
     pHost = Hosts_AddHost(lmHosts.availableInstanceNum);
     if(pHost){
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
@@ -2792,3 +2796,53 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
 	}
 }
 
+/* CheckandProcessBasedonMoCAXi5Status() */
+void CheckandProcessBasedonMoCAXi5Status( char * physAddress )
+{
+	char buf[ 8 ] 		   = { 0 };
+	BOOL bEnableMoCAforXi5 = FALSE;
+
+	/*  Get X_RDKCENTRAL-COM_EnableMoCAforXi5 value from syscfg database */
+	if( 0 == syscfg_get( NULL, "X_RDKCENTRAL-COM_EnableMoCAforXi5", buf, sizeof( buf ) ) )
+	{
+		if( 0 == strcmp( buf, "true" ) )
+		{
+			bEnableMoCAforXi5 = 1;
+		}
+	}
+
+	/* 
+	 * To proceed further whether this feature enable or not 
+	 * 
+	 *	 if (isControlMoCAforXi5())  // TR-181 control of this feature
+	 *	 {
+	 *		 log("isControlMoCAforXi5 override");
+	 *		 if (isXi5Present() AND isMocaEnabled() == FALSE)  // check for presence of xi5 on wifi/lan
+	 *		 {
+	 *		   setMocaEnabled(true);
+	 *		   log("xi5 detected enabling moca");
+	 *		 }
+	 *	 }
+	 */
+	if( TRUE == bEnableMoCAforXi5 )
+	{
+		CcspTraceWarning(("RDK_LOG_WARN, isControlMoCAforXi5 override\n"));
+
+		if( physAddress && \
+			( ( strncmp( physAddress, "44:AA:F5:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "44:aa:f5:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "00:36:76:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "44:6A:B7:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "44:6a:b7:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "2C:1D:B8:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "2c:1d:b8:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "7C:26:34:" , 9 ) == 0 ) || \
+			  ( strncmp( physAddress, "7c:26:34:" , 9 ) == 0 ) || \                         
+			  ( strncmp( physAddress, "64:12:69:" , 9 ) == 0 )
+			)
+		  )
+		{
+			CheckAndEnableMoCA( );
+		}
+	}
+}
