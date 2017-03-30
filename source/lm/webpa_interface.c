@@ -61,7 +61,7 @@ char fullDeviceMAC[32]={'\0'};
 libpd_instance_t client_instance;
 char parodus_url[URL_SIZE] = {'\0'};
 static void *handle_parodus();
-static void __report_log(int level,const char *logMsg);
+
 static void get_parodus_url(char *parodus_url);
 #else
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
@@ -242,6 +242,7 @@ static void *handle_parodus()
     int max_retry_sleep;
     //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
     int c =2;
+	int retval=-1;
     
     CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ******** Start of handle_parodus ********\n"));
 
@@ -255,8 +256,7 @@ static void *handle_parodus()
 	libpd_cfg_t cfg1 = {.service_name = "lmlite",
 					.receive = false, .keepalive_timeout_secs = 0,
 					.parodus_url = parodus_url,
-					.client_url = NULL,
-					.log_handler = __report_log
+					.client_url = NULL
 				   };
                 
     CcspLMLiteConsoleTrace(("RDK_LOG_INFO, Configurations => service_name : %s parodus_url : %s client_url : %s\n", cfg1.service_name, cfg1.parodus_url, cfg1.client_url ));
@@ -284,30 +284,13 @@ static void *handle_parodus()
             sleep(backoffRetryTime);
             c++;
         }
+	retval = libparodus_shutdown(client_instance);
+       
     }
 
     return 0;
 }
 
-static void __report_log(int level,const char *logMsg)
-{
-    if(level == LEVEL_ERROR)
-    {
-        //CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, %s\n",logMsg));
-        CcspTraceError(("%s\n",logMsg));
-    }
-    
-    if(level == LEVEL_INFO)
-    {
-        //CcspLMLiteConsoleTrace(("RDK_LOG_INFO, %s\n",logMsg));
-        CcspTraceWarning(("%s\n",logMsg));
-    }
-    
-    if(level == LEVEL_DEBUG)
-    {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n",logMsg));
-    }
-}
 
 static void get_parodus_url(char *parodus_url)
 {
