@@ -62,8 +62,8 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						cosa_xhosts_dml.c 
 
 if PARODUS_ENABLE
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpack -lbase64 -luuid -lnanomsg -lcimplog -lwrp-c -llibparodus
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lnanomsg -lcimplog -lwrp-c -llibparodus
 else
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpack -lbase64 -luuid
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid
 endif
 
