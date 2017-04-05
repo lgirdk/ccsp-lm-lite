@@ -1122,44 +1122,7 @@ void _get_shell_output(char * cmd, char * out, int len)
         pclose(fp);        
     }
 }
-void convert(char* line, char* result)
-{
-	int i,pivot,mac_start,flag=0;
-	char g_ip[64],mac[18];
-	for (i=0;i<(strlen(line));i++)
-	{
-		if(line[i]=='>')
-		{
-			pivot=i+1;
-			mac_start=pivot-19;
-			break;
-		}
-	}
-	for(i=0;((flag==0)||(i<17));i++)
-	{
-		if((line[pivot+i]!='<')&&(flag==0))
-		{
-			g_ip[i]=line[pivot+i];
-		}
-		if(line[pivot+i]=='<')
-		{
-			g_ip[i]='\0';
-			flag=1;
-		}
-		if(i<17)
-		{
-			mac[i]=line[mac_start+i];
-		}
-		if(i==17)
-		{
-			mac[i]='\0';
-		}
-	}
-	strcpy(result,g_ip);
-	strcat(result," dev brlan0 lladdr ");
-	strcat(result,mac);
-	strcat(result," REACHABLE\n");
-}
+
 
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray)
 {
@@ -1198,39 +1161,9 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     }	
 
 	system(buf);
-	snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep -i ^fe80: >> %s",netName,ARP_CACHE_FILE);
+	snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep REACHABLE >> %s",netName,ARP_CACHE_FILE);
 	system(buf);
 
-	if ((fp=fopen(ARP_CACHE_FILE, "a+")) == NULL )
-	{
-		*pCount = 0;
-		return -1;
-	}
-
-/*
-server-cache.xml
-<cache size="3">
-  <entry type="addr" duid="00:01:00:01:20:63:26:52:90:3c:92:d8:07:2c">2601:644:8402:4961::f86d</entry>
-  <entry type="addr" duid="00:03:00:01:10:4f:a8:dc:3a:3d">2601:644:8402:4961::140c</entry>
-  <entry type="addr" duid="00:01:00:01:20:4d:b4:6b:5c:ad:cf:91:85:cb">2601:644:8402:4961::af69</entry>
-</cache>
-*/
-	if ((fptr=fopen("/etc/dibbler/server-cache.xml","r+")) != NULL )
-	{
-		fgets(line,128,fptr);
-		do
-		{
-			if(strstr(line,"addr") != NULL)
-			{
-				convert(line,result);
-				fputs(result,fp);
-			}
-			fgets(line,128,fptr);
-		}while(!feof(fptr));
-
-		fclose(fptr);
-	}
-	fclose(fp);
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
     {
         *pCount = 0;

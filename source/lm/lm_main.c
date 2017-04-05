@@ -100,8 +100,8 @@
 #define DNS_LEASE "/nvram/dnsmasq.leases"
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 
-#define EXIST 1
-#define IS_LOCAL 2
+#define ARP_IPv6 0
+#define DIBBLER_IPv6 1
 
 typedef struct _Name_DM 
 {
@@ -208,6 +208,8 @@ pthread_mutex_t XLmHostObjectMutex;
 
 extern ANSC_HANDLE bus_handle;
 void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
+void extract(char* line, char* mac, char * ip);
+void Add_IPv6_from_Dibbler();
 
 void Send_Notification(char* interface, char*mac , BOOL status)
 {
@@ -924,207 +926,126 @@ Add_Update_IPv4Address
     return pCur;
 }
 
-int search(char * ipAddress, PLmObjectHostIPAddress pIpAddrList)
-{
-	int result = 0;
-	PLmObjectHostIPAddress ptr;
-	if(ipAddress && (!strncmp(ipAddress,"fe80:",5)))
-	{
-		result |= IS_LOCAL;
-	}
-	ptr=pIpAddrList;
-    while(ptr!=NULL)
-    {
-        if (AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-        {
-			result |= EXIST;
-			break;
-        }
-        else
-        {
-			ptr=ptr->pNext;
-        }
-    }
-    return result;
-}
-
 PLmObjectHostIPAddress
 Add_Update_IPv6Address
     (
         PLmObjectHost pHost,
-        char * ipAddress
+        char * ipAddress,
+	int dibbler_flag
     )
 {
-	int *num,result;
-	PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader, ptr, ptr2, prev, temp;
+	int i, *num;
+	PLmObjectHostIPAddress pIpAddrList, pCur, *ppHeader, prev, temp;
 	num = &(pHost->numIPv6Addr);
-        pIpAddrList = pHost->ipv6AddrArray;
-        ppHeader = &(pHost->ipv6AddrArray);
+	pIpAddrList = pHost->ipv6AddrArray;
+	ppHeader = &(pHost->ipv6AddrArray);
 	pHost->ipv6Active = TRUE;
 
-	result=search(ipAddress,pIpAddrList);
-	if(!(result & EXIST))
+	if(*ppHeader==NULL)
 	{
-		/*New Address is assigned*/
-		temp=LanManager_Allocate(sizeof(LmObjectHostIPAddress));
-		if(temp == NULL)
+		prev=NULL;
+		/*List is Empty, Allocate Memory*/
+
+		for(i=0;i<3;i++)
 		{
-			return NULL;
-		}
-		temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(ipAddress);
-		temp->pNext =NULL;
-		(*num)++;
-		temp->instanceNum = *num;
-		if(*ppHeader==NULL)
-		{
-			/*List is Empty, so push to head*/
-			*ppHeader=temp;
-		}
-		else
-		{
-			if(result & IS_LOCAL)
+			temp=LanManager_Allocate(sizeof(LmObjectHostIPAddress));
+			if(temp == NULL)
 			{
-				/*List is not Empty, New Address assigned is Local*/
-				if(strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
-				{
-					/*All addresses in the list are local
-					Hence pushing new address to head*/
-					temp->pNext=pIpAddrList;
-					*ppHeader=temp;
-				}
-				else
-				{
-					/*Global IP at head
-					Hence adding the new local IP to second position*/
-					temp->pNext=(*ppHeader)->pNext;
-					(*ppHeader)->pNext=temp;
-				}
+				return NULL;
 			}
 			else
 			{
-				/*List is not Empty, New Address assigned is Global*/
-				if(strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
-				{
-					/*All addresses in the list are local
-					Hence pushing new global address to head*/
-					ptr=*ppHeader;
-					temp->pNext=ptr;
-					*ppHeader=temp;
-				}
-				else
-				{
-					/*Atleast One Global Address in the list*/
-					ptr=pIpAddrList->pNext;
-					if((ptr==NULL) ||((ptr!=NULL)&&(strncmp(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)!=0)))
-					{
-						/*Only one address in the list and that is global
-						OR Multiple Addresses in the list and all are global*/
-						temp->pNext=pIpAddrList;
-						*ppHeader=temp;
-					}
-					else if(strncmp(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
-					{
-						/*Multiple Addresses in the list with atleast one local and global*/
-						pIpAddrList->pNext=ptr->pNext;
-						ptr->pNext=pIpAddrList;
-						temp->pNext=ptr;
-						*ppHeader=temp;
-					}
-				}
+				temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString("EMPTY");
+				(*num)++;
+				temp->instanceNum = *num;
+				temp->pNext=prev;
+				pIpAddrList=temp;
+				*ppHeader=temp;
+				prev=temp;
 			}
 		}
-		pCur = temp;
+	}
+	if(dibbler_flag==0)
+	{
+		if(strncmp(ipAddress,"fe80:",5)==0)
+		{
+			pCur=pIpAddrList->pNext;
+		}
+		else
+		{
+			pCur=pIpAddrList->pNext->pNext;
+		}
 	}
 	else
 	{
-		/*Existing Address is re-assigned*/
-		if(result & IS_LOCAL)
-		{
-			/* Address re-assigned is local*/
-			if(AnscEqualString((*(ppHeader))->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-			{
-				/*Re-Assigned address is present at head
-				  Hence doing no operation*/
-				pCur=*ppHeader;
-			}
-			else
-			{
-				/*Traversing the list to find the re-assigned address*/
-				ptr=pIpAddrList;
-				prev=pIpAddrList;
-				while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-				{
-						prev=ptr;
-						ptr=ptr->pNext;
-				}
-				if(strncmp(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
-				{
-					/*List contains only Local Addresses
-					  Hence moving the re-assigned address to head*/
-					prev->pNext=ptr->pNext;
-					ptr->pNext=pIpAddrList;
-					pIpAddrList=ptr;
-					*ppHeader=ptr;
-				}
-				else
-				{
-					/*List Contains at least one global address
-					  Hence moving the re-assigned address to the second position*/
-					prev->pNext=ptr->pNext;
-					ptr->pNext=pIpAddrList->pNext;
-					pIpAddrList->pNext=ptr;
-				}
-				pCur = ptr;
-			}
-		}
-		else
-		{
-			/* Address re-assigned is global*/
-
-			if(!AnscEqualString(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-			{
-				/*Performing the following steps if the re-assigned global address is not at the head*/
-				prev=pIpAddrList;
-				ptr=pIpAddrList;
-				while(!AnscEqualString(ptr->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE))
-				{
-					/*Traversing the list to find the re-assigned address*/
-					prev=ptr;
-					ptr=ptr->pNext;
-				}
-				temp=(*ppHeader)->pNext;
-				if(strncmp(temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] ,"fe80:",5)==0)
-				{
-						/*List contains atleast one local
-						 Hence moving the global address at the head to the third postion
-						 and pushing the re-assigned global address to the head*/
-						prev->pNext=ptr->pNext;
-						ptr2=temp->pNext;
-						temp->pNext=*ppHeader;
-						(*ppHeader)->pNext=ptr2;
-						ptr->pNext=temp;
-						(*ppHeader)=ptr;
-				}
-				else
-				{
-					/*List contains no local addresses
-					  hence pushing the re-assigned address to the head*/
-					prev->pNext=ptr->pNext;
-					ptr->pNext=*ppHeader;
-					*ppHeader=ptr;
-				}
-				pCur = *ppHeader;
-			}
-			else
-			{
-				/*Re assigned global address is at the head of the list*/
-				pCur=pIpAddrList;
-			}
-		}
+		pCur=pIpAddrList;
 	}
+	LanManager_CheckCloneCopy(&(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId]), ipAddress);
 	return pCur;
 }
 
+void extract(char* line, char* mac, char * ip)
+{
+	PLmObjectHost pHost;
+	int i,pivot,mac_start,flag=0;
+	for (i=0;i<(strlen(line));i++)
+	{
+		if(line[i]=='>')
+		{
+			pivot=i+1;
+			mac_start=pivot-19;
+			break;
+		}
+	}
+	for(i=0;((flag==0)||(i<=17));i++)
+	{
+		if((line[pivot+i]!='<')&&(flag==0))
+		{
+			ip[i]=line[pivot+i];
+		}
+		if(line[pivot+i]=='<')
+		{
+			ip[i]='\0';
+			flag=1;
+		}
+		if(i<17)
+		{
+			mac[i]=line[mac_start+i];
+		}
+		if(i==17)
+		{
+			mac[i]='\0';
+		}
+	}
+}
+
+void Add_IPv6_from_Dibbler()
+{
+	FILE *fptr = NULL;
+	char line[128]={0},ip[64]={0},mac[18]={0};
+	PLmObjectHost	pHost	= NULL;
+
+	if ((fptr=fopen("/etc/dibbler/server-cache.xml","r")) != NULL )
+	{
+		while ( fgets(line, sizeof(line), fptr) != NULL )
+		{
+			if(strstr(line,"addr") != NULL)
+			{
+				extract(line,mac,ip);
+				pHost = Hosts_AddHostByPhysAddress(mac);
+				if(pHost)
+				{
+					Add_Update_IPv6Address(pHost,ip,DIBBLER_IPv6);
+				}
+			}
+		}
+		fclose(fptr);
+	}
+	else
+	{
+		CcspTraceError(("Unable to open /etc/dibbler/server-cache.xml in read mode\n"));
+	}
+}
 PLmObjectHostIPAddress
 Host_AddIPAddress
     (
@@ -1144,7 +1065,7 @@ Host_AddIPAddress
     }
 	else
 	{
-		pCur = Add_Update_IPv6Address(pHost,ipAddress);
+		pCur = Add_Update_IPv6Address(pHost,ipAddress,ARP_IPv6);
     }
 	return pCur;
 }
@@ -2245,9 +2166,8 @@ void Hosts_StatSyncThreadFunc()
                             pHost->l1unReachableCnt = 0;
                         }
                     }
-                    else if ( pHost && pHost->l1unReachableCnt == 0 )
+                    else if ( pHost /*&& pHost->l1unReachableCnt == 0 */ )
                     {
-
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
@@ -2261,7 +2181,7 @@ void Hosts_StatSyncThreadFunc()
                                 pIP->l3unReachableCnt = 0;
 
 							if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
-								 ( NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))
+								 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
 								)
 							{
 								pthread_mutex_lock(&LmHostObjectMutex);
@@ -2302,6 +2222,7 @@ void Hosts_StatSyncThreadFunc()
                 hosts = NULL;
             }
             count = 0;
+	    Add_IPv6_from_Dibbler();
 
             PRINTD("%s end\n\n", __FUNCTION__);
         }
