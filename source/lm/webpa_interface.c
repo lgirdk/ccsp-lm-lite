@@ -167,7 +167,7 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
         }
         else
         {
-            CcspTraceError(("Failed to send message retrying ....\n"));
+            CcspTraceError(("Failed to send message: '%s', retrying ....\n",libparodus_strerror(sendStatus)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, backoffRetryTime %d seconds\n", backoffRetryTime));
             sleep(backoffRetryTime);
             c++;
@@ -280,7 +280,7 @@ static void *handle_parodus()
         }
         else
         {
-            CcspTraceError(("LMLite: Init for parodus failed\n"));
+            CcspTraceError(("LMLite: Init for parodus failed: '%s'\n",libparodus_strerror(ret)));
             sleep(backoffRetryTime);
             c++;
         }
