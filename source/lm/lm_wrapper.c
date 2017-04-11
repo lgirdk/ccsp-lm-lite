@@ -1314,7 +1314,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
     char output[50] = {0};
 
 //    system("ip nei show | grep brlan0");
-    snprintf(buf, sizeof(buf), "ip nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1", physAddress);
+    snprintf(buf, sizeof(buf), "ip -4 nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1", physAddress);
     system(buf);
 
         if(!(fp = popen(buf, "r")))

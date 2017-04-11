@@ -1062,6 +1062,7 @@ Host_AddIPAddress
     if(version == 4)
 	{
 		pCur = Add_Update_IPv4Address(pHost,ipAddress);
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , ipAddress);
     }
 	else
 	{
@@ -1738,7 +1739,7 @@ void Hosts_SyncArp()
                 if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
                 {
 
-		        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr );
+		        //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr );
                     LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
 
                     pIP = Host_AddIPv4Address
@@ -2161,14 +2162,14 @@ void Hosts_StatSyncThreadFunc()
                            if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] || strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") )
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet" );
 
-                            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+                            //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                             pthread_mutex_unlock(&LmHostObjectMutex);
                             pHost->l1unReachableCnt = 0;
                         }
                     }
                     else if ( pHost /*&& pHost->l1unReachableCnt == 0 */ )
                     {
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+                        //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
                         if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE )
@@ -2209,7 +2210,7 @@ void Hosts_StatSyncThreadFunc()
                                 pIP = Host_AddIPv4Address ( pHost, hosts[i].ipAddr);
 				  pthread_mutex_lock(&LmHostObjectMutex);
 			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName);
-			      LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
+			      //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), hosts[i].ipAddr);
 			      pthread_mutex_unlock(&LmHostObjectMutex);
                         }
                     }
