@@ -230,6 +230,4 @@ int getIPAddress(char *physAddress,char *IPAddress);
 int QueryMocaExtender(char* ip_address);
 int IsExtenderSynced(char* extender_ip);
 
-void CheckAndEnableMoCA( void );
-
 #endif
