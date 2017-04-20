@@ -2764,9 +2764,6 @@ void CheckandProcessBasedonMoCAXi5Status( char * physAddress )
 			)
 		  )
 		{
-			/* Touch a file during xi5 device connection case */
-			system("touch /tmp/MoCAforXi5DeviceConnected");
-
 			CheckAndEnableMoCA( );
 		}
 	}
