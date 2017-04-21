@@ -785,6 +785,7 @@ PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
 		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
 		XlmHosts.availableInstanceNum++;
     }
+    CcspTraceWarning(("New XHS host added sucessfully\n"));
     return pHost;
 }
 
@@ -1609,7 +1610,7 @@ void XHosts_SyncWifi()
                 	CcspTraceWarning(("%s, %d New XHS host added sucessfully\n",__FUNCTION__, __LINE__));
 			    }
 			}
-			Xlm_wrapper_get_leasetime();
+			Xlm_wrapper_get_info(pHost);
 			Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
@@ -2514,10 +2515,9 @@ XLM_get_host_info()
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.2.Client.", "Chaddr");
 
-	pthread_mutex_lock(&XLmHostObjectMutex); 
-
 	for(i = 0; i<XlmHosts.numHost; i++){
-
+		Xlm_wrapper_get_info(XlmHosts.hostArray[i]);
+	pthread_mutex_lock(&XLmHostObjectMutex);
 		_get_dmbyname(g_IPIfNameDMListNum, g_pIPIfNameDMList, &(XlmHosts.hostArray[i]->Layer3Interface), XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer3InterfaceId]);
 
 		if(XlmHosts.hostArray[i]->numIPv4Addr)
@@ -2527,10 +2527,10 @@ XLM_get_host_info()
             }
 		}
 		
-		
+	pthread_mutex_unlock(&XLmHostObjectMutex);
 	}
 
-	pthread_mutex_unlock(&XLmHostObjectMutex); 
+
 
 }
 
@@ -2559,30 +2559,23 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 	{
 		PLmObjectHost pHost;
 
-		pHost = XHosts_FindHostByPhysAddress(phyAddr);
-		
-		if ( !pHost )
-		{
-			pHost = XHosts_AddHostByPhysAddress(phyAddr);
-			if ( pHost )
-			{	   
-				CcspTraceWarning(("%s, %d New XHS host added sucessfully\n",__FUNCTION__, __LINE__));
-			}
-		}
-		
-		Xlm_wrapper_get_leasetime();
+		pHost = XHosts_AddHostByPhysAddress(phyAddr);
 
-		pthread_mutex_lock(&XLmHostObjectMutex);   
-		Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
-		pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
-		pHost->l1unReachableCnt = 1;
-		pHost->bBoolParaValue[LM_HOST_ActiveId] = Status;
-		pHost->activityChangeTime = time((time_t*)NULL);
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
-		pthread_mutex_unlock(&XLmHostObjectMutex);
+		if ( pHost )
+		{
+			Xlm_wrapper_get_info(pHost);
+
+			pthread_mutex_lock(&XLmHostObjectMutex);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
+			pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
+			pHost->l1unReachableCnt = 1;
+			pHost->bBoolParaValue[LM_HOST_ActiveId] = Status;
+			pHost->activityChangeTime = time((time_t*)NULL);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+			pthread_mutex_unlock(&XLmHostObjectMutex);
+		}
 	}
 	else
 	{

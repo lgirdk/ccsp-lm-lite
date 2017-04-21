@@ -72,7 +72,7 @@
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_wrapper.h"
-#include "lm_main.h"
+
 #include "lm_util.h"
 #include "ccsp_lmliteLog_wrapper.h"
 
@@ -1332,14 +1332,13 @@ int getIPAddress(char *physAddress,char *IPAddress)
 
 }
 
-void Xlm_wrapper_get_leasetime()
+void Xlm_wrapper_get_info(PLmObjectHost pHost)
 {
     FILE *fp = NULL;
     char buf[200] = {0};
     char stub[64];
     int ret;
     LM_host_entry_t dhcpHost;
-    PLmObjectHost pHost;
 
     if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
     {
@@ -1362,21 +1361,19 @@ void Xlm_wrapper_get_leasetime()
         if(ret != 4)
             continue;
 
-		if(strstr(buf,"172.16.12."))
+		if(strstr(dhcpHost.ipAddr,"172.16.12.") && AnscEqualString(dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
 		{
-			pHost = XHosts_FindHostByPhysAddress(dhcpHost.phyAddr);
-			if ( pHost )
-			{	
-				pthread_mutex_lock(&XLmHostObjectMutex);
-				if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
-            	  	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            	else
-                	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
-				
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]), dhcpHost.ipAddr);
-				pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
-				pthread_mutex_unlock(&XLmHostObjectMutex);
-			}
+			pthread_mutex_lock(&XLmHostObjectMutex);
+
+			if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+			else
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+			Host_AddIPv4Address ( pHost, dhcpHost.ipAddr);
+			pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime);
+
+			pthread_mutex_unlock(&XLmHostObjectMutex);
+			break;
 		}            
     }
 

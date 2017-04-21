@@ -39,9 +39,9 @@
 #include <sys/socket.h>
 #include <lm_api.h>
 #include "moca_hal.h"
+#include "lm_main.h"
 #include "ccsp_custom_logs.h"
 /*****************
- *
  */
 //#define LM_NETWORK_NAME_SIZE 32
 #define LM_MAX_INTERFACE_NUMBER 10
@@ -214,7 +214,7 @@ int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray);
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray);
 void lm_wrapper_get_dhcpv4_client();
-void Xlm_wrapper_get_leasetime();
+void Xlm_wrapper_get_info(PLmObjectHost pHost);
 
 void lm_wrapper_get_dhcpv4_reserved();
 BOOL SearchWiFiClients(char *phyAddr, char *ssid);
