@@ -1037,10 +1037,6 @@ void Add_IPv6_from_Dibbler()
 		}
 		fclose(fptr);
 	}
-	else
-	{
-		CcspTraceError(("Unable to open /etc/dibbler/server-cache.xml in read mode\n"));
-	}
 }
 PLmObjectHostIPAddress
 Host_AddIPAddress
