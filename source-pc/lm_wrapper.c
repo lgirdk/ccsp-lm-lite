@@ -342,8 +342,8 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     }
 
     /* if netName is "brlan0",  need to update only private network.*/
-       // interface_number = 2 ;
-          interface_number = 1;
+            interface_number = 2 ;
+       //   interface_number = 1;
 
     char *(*pReferenceParaNameArray)[] = malloc(sizeof(char*) * interface_number);
     if(pReferenceParaNameArray == NULL)
