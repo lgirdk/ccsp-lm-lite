@@ -117,6 +117,7 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     int ret = -1;
     parameterValStruct_t val = {0};
     char * packedMsg = NULL;
+    CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 #endif
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
@@ -199,9 +200,14 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
                 &faultParam);
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, CcspBaseIf_setParameterValues ret %d\n",ret));
-    if (ret != CCSP_SUCCESS && faultParam) 
+    if (ret != CCSP_SUCCESS)
     {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, ~~~~ Error:Failed to SetValue for param  '%s' ~~~~ ret : %d \n", faultParam, ret));
+        CcspLMLiteTrace(("RDK_LOG_ERROR, ~~~~ Error:Failed to SetValue - ret : %d\n", ret));
+        if(faultParam)
+        {
+            CcspLMLiteTrace(("RDK_LOG_ERROR, ~~~~ Error:Failed to SetValue for param : '%s'\n", faultParam));
+            bus_info->freefunc(faultParam);
+        }
     }
     
     if(packedMsg != NULL)
