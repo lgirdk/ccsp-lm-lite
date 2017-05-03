@@ -345,8 +345,14 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
 		  );
 
 	if(ret != CCSP_SUCCESS)
+        {
 		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
-	}
+                if(faultParam)
+                {
+                        bus_info->freefunc(faultParam);
+                }
+        } 	
+        }
 	else
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));

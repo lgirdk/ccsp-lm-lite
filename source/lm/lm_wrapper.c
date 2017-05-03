@@ -438,6 +438,7 @@ void SyncWiFi()
 	char bus[256] = "/com/cisco/spvtg/ccsp/wifi";
 	char* faultParam = NULL;
 	int ret = 0;	
+	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 
     CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Get WiFi Clients \n",__FUNCTION__));
 
@@ -456,6 +457,10 @@ void SyncWiFi()
 	if(ret != CCSP_SUCCESS)
 	{
 		CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Failed ret %d\n",__FUNCTION__,ret));
+		if(faultParam)
+		{
+			bus_info->freefunc(faultParam);
+		}
 	}	
 }
 
