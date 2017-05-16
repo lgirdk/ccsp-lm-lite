@@ -1156,13 +1156,15 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
  
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
     	snprintf(buf, sizeof(buf), "ip -4 nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > %s", netName,pAtomBRMac,ARP_CACHE_FILE);
+        system(buf);
+        snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep REACHABLE | grep -i -v %s >> %s",netName,pAtomBRMac,ARP_CACHE_FILE);
+        system(buf);
     } else {
     	snprintf(buf, sizeof(buf), "ip -4 nei show | grep %s | grep -v 192.168.10 > %s", netName,ARP_CACHE_FILE);
-    }	
-
 	system(buf);
 	snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep REACHABLE >> %s",netName,ARP_CACHE_FILE);
 	system(buf);
+    }
 
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
     {
