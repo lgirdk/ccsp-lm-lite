@@ -162,7 +162,7 @@ extern ExtenderList *extenderlist;
 
 ***********************************************************************/
 #define LM_HOST_OBJECT_NAME_HEADER  "Device.Hosts.Host."
-#define LM_HOST_RETRY_LIMIT         3
+#define LM_HOST_RETRY_LIMIT         30
 
 //#define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
 
@@ -2047,6 +2047,14 @@ void Hosts_StatSyncThreadFunc()
                  * When we cannot find a host in WiFi or MoCA assocaite table for 3 times,
                  * we think the host is offline.
                  */
+						if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+							 ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))))
+						{
+							pHost->l1unReachableCnt = 1;
+							continue;
+						}	
+#if 0
+
 					if ( pHost->l1unReachableCnt != 0 )
 					{
 						if(pHost->l1unReachableCnt >= LM_HOST_RETRY_LIMIT)
@@ -2082,7 +2090,8 @@ void Hosts_StatSyncThreadFunc()
 						
 						continue;
 					}
-
+#endif
+#if 0
                 /* The left hosts are from ethernet.
                  * We will send arping to this host.
                  * When we see the host as STALE in arp table for 3 times,
@@ -2128,6 +2137,7 @@ void Hosts_StatSyncThreadFunc()
 					}
             	}
 
+#endif
             }
 #ifndef _CBR_PRODUCT_REQ_ 
             Hosts_SyncMoCA();
@@ -2165,6 +2175,17 @@ void Hosts_StatSyncThreadFunc()
                             pthread_mutex_unlock(&LmHostObjectMutex);
                             pHost->l1unReachableCnt = 0;
                         }
+						else			
+						{	
+						   if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+							 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
+							)
+							{
+								pthread_mutex_lock(&LmHostObjectMutex);
+								LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+								pthread_mutex_unlock(&LmHostObjectMutex);
+							}
+						}
                     }
                     else if ( pHost /*&& pHost->l1unReachableCnt == 0 */ )
                     {
@@ -2179,7 +2200,8 @@ void Hosts_StatSyncThreadFunc()
                                 pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
                             if(pIP != NULL)
                                 pIP->l3unReachableCnt = 0;
-
+							    
+								pHost->l1unReachableCnt = 0;
 							if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
 								 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
 								)
@@ -2189,7 +2211,20 @@ void Hosts_StatSyncThreadFunc()
 								pthread_mutex_unlock(&LmHostObjectMutex);
 							}
                         }
-						if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+						else
+						{
+							if ( hosts[i].status == LM_NEIGHBOR_STATE_STALE )
+							{
+								if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
+								 ( NULL != strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet"))
+								)
+								{
+									pHost->l1unReachableCnt++;
+								}
+
+							}
+						}
+			if ( ! pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                         {
 							pthread_mutex_lock(&LmHostObjectMutex);
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
