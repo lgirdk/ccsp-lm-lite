@@ -248,7 +248,13 @@ void Send_Notification(char* interface, char*mac , BOOL status)
 		  );
 
 	if(ret != CCSP_SUCCESS)
+	{
 		printf("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret);
+		if(faultParam)
+		{
+			bus_info->freefunc(faultParam);
+		}
+	}
 
 }
 int FindHostInLeases(char *Temp, char *FileName)
