@@ -2091,7 +2091,7 @@ void Hosts_StatSyncThreadFunc()
 						continue;
 					}
 #endif
-#if 0
+//#if 0
                 /* The left hosts are from ethernet.
                  * We will send arping to this host.
                  * When we see the host as STALE in arp table for 3 times,
@@ -2100,14 +2100,14 @@ void Hosts_StatSyncThreadFunc()
                 int offline = 1;
                 for(pIP = pHost->ipv4AddrArray; pIP != NULL; pIP = pIP->pNext)
                 {
-                    if(pIP->l3unReachableCnt + 1 >= LM_HOST_RETRY_LIMIT)
+  /*                  if(pIP->l3unReachableCnt + 1 >= LM_HOST_RETRY_LIMIT)
                         offline &= 1;
                     else
                     {
                         pIP->l3unReachableCnt++;
                         offline &=0;
                     }
-
+*/
                     /* Send arping to hosts which are from ethernet */
                     if (pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] &&
                         pHost->pStringParaValue[LM_HOST_PhysAddressId]     &&
@@ -2117,14 +2117,15 @@ void Hosts_StatSyncThreadFunc()
                         ret = lm_arping_v4_send(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
                                       pHost->pStringParaValue[LM_HOST_PhysAddressId],
                                       pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
-                        PRINTD("%s: arping %s, %s, %s, ret %d\n",
+  /*                      PRINTD("%s: arping %s, %s, %s, ret %d\n",
                             __FUNCTION__,
                             pHost->pStringParaValue[LM_HOST_Layer3InterfaceId],
                             pHost->pStringParaValue[LM_HOST_PhysAddressId],
                             pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressId],
-                            ret);
+                            ret);*/
                     }
                 }
+#if 0
                 if(offline)
             	{
 					if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && \
