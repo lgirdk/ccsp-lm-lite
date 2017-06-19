@@ -304,6 +304,7 @@ int logOnlineDevicesCount()
 		}
 	}
 	CcspTraceWarning(("CONNECTED_CLIENTS_COUNT : %d \n",NumOfOnlineDevices));
+    return 0;
 }
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
@@ -1272,7 +1273,7 @@ int XLM_get_online_device()
 	return num;
 }
 
-LMDmlHostsSetHostComment
+void LMDmlHostsSetHostComment
     (
         char*                       pMac,
         char*                       pComment
@@ -2491,7 +2492,7 @@ void _get_dmbyname(int num, Name_DM_t *list, char** dm, char* name)
 	
 }
 
-LM_get_host_info()
+void LM_get_host_info()
 {
 
 	int i = 0;
@@ -2543,7 +2544,7 @@ LM_get_host_info()
 
 }
 
-XLM_get_host_info()
+void XLM_get_host_info()
 {
 
 	int i = 0;

@@ -333,7 +333,7 @@ BOOL LanManager_CheckNoneEmpty
     if(strlen(p) <= 0) return FALSE;
     return TRUE;
 }
-LanManager_CheckCloneCopy(char ** dest , const char * src)
+void LanManager_CheckCloneCopy(char ** dest , const char * src)
 {
 	size_t len_src = 0 , len_dest = 0;
 
