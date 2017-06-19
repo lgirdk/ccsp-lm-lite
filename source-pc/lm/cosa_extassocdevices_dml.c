@@ -128,7 +128,7 @@ CosaDmlInterfaceDevicesWifiExtenderInit
         g_pReports->uIDWPollingPeriodDefault = psmValue;
         SetIDWPollingPeriodDefault(g_pReports->uIDWPollingPeriodDefault);
     }
-
+    return returnStatus;
 }
 
 BOOL
