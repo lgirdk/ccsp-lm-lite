@@ -1707,7 +1707,7 @@ void Hosts_SyncArp()
     PLmObjectHost pHost = NULL;
     LM_host_entry_t *hosts = NULL;
     PLmObjectHostIPAddress pIP;
-    lm_wrapper_get_arp_entries("brlan[02]", &count, &hosts);
+    lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
 
     if (count > 0)
     {
