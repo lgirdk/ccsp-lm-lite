@@ -426,38 +426,31 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 		if(state == FALSE)
 		{
 			
-			#if 0
-			if(FindHostInLeases(pHost->pStringParaValue[LM_HOST_PhysAddressId], DNS_LEASE))
-			{
-			
-			if(pHost->ipv4Active == TRUE)
-			{
-				if(pHost->bNotify == TRUE)
-				{
-					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-					lmHosts.lastActivity++;
-					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
-					char buf[8];
-					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
-					pHost->ipv4Active = FALSE;
-					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
-					{
-						AnscTraceWarning(("syscfg_set failed\n"));
-					}
-					else 
-					{
-						if (syscfg_commit() != 0) 
-						{
-							AnscTraceWarning(("syscfg_commit failed\n"));
-						}
-		
-					}
-					pHost->bNotify = FALSE;
-					
-				}
-			}
-				
-			}
+			#if defined(FEATURE_SUPPORT_MESH)
+		    // We are going to send a disconnect notification when connected clients go offline.
+            if(pHost->bNotify == TRUE)
+            {
+                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+                lmHosts.lastActivity++;
+                Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+                char buf[8];
+                snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+                pHost->ipv4Active = FALSE;
+                if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0)
+                {
+                    AnscTraceWarning(("syscfg_set failed\n"));
+                }
+                else
+                {
+                    if (syscfg_commit() != 0)
+                    {
+                        AnscTraceWarning(("syscfg_commit failed\n"));
+                    }
+
+                }
+                pHost->bNotify = FALSE;
+
+            }
 			#endif
 		}
 		else
