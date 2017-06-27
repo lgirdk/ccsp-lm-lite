@@ -346,11 +346,11 @@ static void get_parodus_url()
             CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, seshatlib registration error (url %s)!", discovered_url));
         }
     } else {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to open device.properties file:%s\n", DEVICE_PROPS_FILE));
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to initialize seshatlib (url %s)\n", seshat_url));
     }
 
     if( 0 == parodus_url[0] ) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus_url is not present in device. properties:%s\n", parodus_url));
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus_url (url %s) is not present in seshatlib (url %s)\n", parodus_url, seshat_url));
     }
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus_url formed is %s\n", parodus_url));
 
