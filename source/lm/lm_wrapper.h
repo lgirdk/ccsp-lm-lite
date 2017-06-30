@@ -225,7 +225,7 @@ void getAddressSource(char *physAddress, char *pAddressSource);
 void Wifi_Server_Thread_func();
 #endif
 int getIPAddress(char *physAddress,char *IPAddress);
-
+int get_HostName(char *physAddress,char *HostName);
 
 int QueryMocaExtender(char* ip_address);
 int IsExtenderSynced(char* extender_ip);

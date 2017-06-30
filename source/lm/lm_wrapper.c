@@ -86,6 +86,7 @@ char *pERTPAMComponentName = NULL;
 char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
 extern pthread_mutex_t XLmHostObjectMutex;
+extern pthread_mutex_t HostNameMutex;
 
 extern LmObjectHosts lmHosts;
 
@@ -1311,6 +1312,64 @@ memset(buf,0,sizeof(buf));
     fclose(fp);
 
    return;
+}
+
+int get_HostName(char *physAddress,char *HostName)
+{
+pthread_mutex_lock(&HostNameMutex);
+    FILE *fp = NULL;
+    char buf[200] = {0};
+    char output[50] = {0};
+    int ret = 1;
+    int count = 0;
+
+    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname \n"));
+    while(1)
+    {
+    sleep(3);
+    memset(buf,0,sizeof(buf));
+    snprintf(buf, sizeof(buf), "cat %s |grep -i %s | awk '{print $4}'",DNSMASQ_LEASES_FILE,physAddress);
+    system(buf);
+        if(!(fp = popen(buf, "r")))
+        {
+            return -1;
+        }
+    while(fgets(output, sizeof(output), fp)!=NULL)
+    {
+        output[strlen(output) - 1] = '\0';
+    }
+    strcpy(HostName,output);
+    if((HostName[0] == '*') && (HostName[1] == '\0'))
+    {
+        ret = 0;
+    }
+   else if(strlen(HostName)==0)
+    {
+        ret = 0;
+
+	if(count < 4)
+	{
+	   count++;
+           CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d for HostName\n",count));
+	}
+	else
+	{
+            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d Hostname not available\n",count));
+            break;
+    	}
+    }
+    else
+	{
+	   ret =1;
+	   break;
+           CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: after Wait hostname %s\n",HostName));
+	}
+
+    pclose(fp);
+    }
+
+pthread_mutex_unlock(&HostNameMutex);
+    return ret;
 }
 
 int getIPAddress(char *physAddress,char *IPAddress)

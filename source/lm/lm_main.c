@@ -199,7 +199,7 @@ LmObjectHosts XlmHosts = {
 ULONG HostsUpdateTime = 0;
 ULONG XHostsUpdateTime = 0;
 
-
+pthread_mutex_t HostNameMutex;
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
 pthread_mutex_t XLmHostObjectMutex;
@@ -211,7 +211,7 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
 void extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
 
-void Send_Notification(char* interface, char*mac , BOOL status)
+void Send_Notification(char* interface, char*mac , BOOL status, char *hostname)
 {
 
 	char  str[500] = {0};
@@ -230,7 +230,7 @@ void Send_Notification(char* interface, char*mac , BOOL status)
 	else
 		strcpy(status_str,"Disconnected");
 		
-	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s",interface,mac,status_str);
+	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s,%s",interface,mac,status_str,hostname);
 	notif_val[0].parameterName =  param_name ;
 	notif_val[0].parameterValue = str;
 	notif_val[0].type = ccsp_string;
@@ -432,7 +432,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
             {
                 CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
                 lmHosts.lastActivity++;
-                Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+				Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state, pHost->pStringParaValue[LM_HOST_HostNameId]);
                 char buf[8];
                 snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
                 pHost->ipv4Active = FALSE;
@@ -463,8 +463,20 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 					lmHosts.lastActivity++;
 					pHost->bClientReady = TRUE;
+                    if(pHost->pStringParaValue[LM_HOST_HostNameId])
+					{
+
+						if(0 == strcmp(pHost->pStringParaValue[LM_HOST_HostNameId],pHost->pStringParaValue[LM_HOST_PhysAddressId]))
+						{
+						char HostName[50];
+						if(get_HostName(pHost->pStringParaValue[LM_HOST_PhysAddressId],HostName))
+						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), HostName);
+
+						CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+						}
+					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
-					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state);
+					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state,pHost->pStringParaValue[LM_HOST_HostNameId]);
 					char buf[8];
 					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
 					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
@@ -2299,6 +2311,7 @@ void LM_main()
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
 	pthread_mutex_init(&XLmHostObjectMutex,0);
+    pthread_mutex_init(&HostNameMutex,0);
     lm_wrapper_init();
     lmHosts.hostArray = LanManager_Allocate(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
     lmHosts.sizeHost = LM_HOST_ARRAY_STEP;
