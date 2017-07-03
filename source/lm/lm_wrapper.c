@@ -2353,7 +2353,7 @@ ParseExtenderXML(char* ip_address, char* sourceXML, size_t newLen)
     doc = xmlReadMemory(sourceXML, newLen, "noname.xml", NULL, 0);
     if (doc == NULL) {
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Failed to parse document\n", __FUNCTION__ ));
-    return;
+    return -1;
     }
 
     /*Get the root element node */
