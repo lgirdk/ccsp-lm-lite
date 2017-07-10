@@ -1326,7 +1326,7 @@ pthread_mutex_lock(&HostNameMutex);
     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname \n"));
     while(1)
     {
-    sleep(3);
+    sleep(HOST_NAME_RETRY_INTERVAL);
     memset(buf,0,sizeof(buf));
     snprintf(buf, sizeof(buf), "cat %s |grep -i %s | awk '{print $4}'",DNSMASQ_LEASES_FILE,physAddress);
     system(buf);
@@ -1342,12 +1342,13 @@ pthread_mutex_lock(&HostNameMutex);
     if((HostName[0] == '*') && (HostName[1] == '\0'))
     {
         ret = 0;
+	count++;
     }
    else if(strlen(HostName)==0)
     {
         ret = 0;
 
-	if(count < 4)
+	if(count < HOST_NAME_RETRY)
 	{
 	   count++;
            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d for HostName\n",count));
@@ -1355,17 +1356,21 @@ pthread_mutex_lock(&HostNameMutex);
 	else
 	{
             CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d Hostname not available\n",count));
+            pclose(fp);
             break;
     	}
     }
     else
 	{
 	   ret =1;
+           pclose(fp);
 	   break;
-           CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: after Wait hostname %s\n",HostName));
 	}
 
     pclose(fp);
+    if(count > HOST_NAME_RETRY)
+	break;
+
     }
 
 pthread_mutex_unlock(&HostNameMutex);

@@ -51,6 +51,8 @@
 #define DNSMASQ_LEASES_FILE "/nvram/dnsmasq.leases"
 #define DNSMASQ_RESERVED_FILE "/etc/dhcp_static_hosts"
 
+#define HOST_NAME_RETRY 3
+#define HOST_NAME_RETRY_INTERVAL 3
 //#define DEBUG
 #ifdef DEBUG
 #define PRINTD(fmt, args...) fprintf(stderr, fmt, ## args)
