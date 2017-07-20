@@ -68,8 +68,8 @@ static char pAtomBRMac[32] = {0};
 #define WIFI_DM_BSSID         "Device.WiFi.SSID.1.BSSID"
 
 
-
-
+ExtenderList *extenderlist = NULL;
+extern pthread_mutex_t XLmHostObjectMutex;
 static int fd;
 pthread_mutex_t GetARPEntryMutex;
 
@@ -967,7 +967,7 @@ void lm_wrapper_get_dhcpv4_reserved()
         {
             PRINTD("%s: %s %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.ipAddr, dhcpHost.hostName);
 //RDKB-EMULATOR
-        /*    if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
+      /*      if ( pHost->pStringParaValue[LM_HOST_HostNameId] )
             {
                 LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
             }
@@ -997,3 +997,54 @@ void lm_wrapper_get_dhcpv4_reserved()
 
     return;
 }
+
+void Xlm_wrapper_get_info(PLmObjectHost pHost)
+{
+    FILE *fp = NULL;
+    char buf[200] = {0};
+    char stub[64];
+    int ret;
+    LM_host_entry_t dhcpHost;
+
+    if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
+    {
+        return;
+    }
+
+    while ( fgets(buf, sizeof(buf), fp)!= NULL )
+    {
+        /*
+        Sample:sss
+        6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
+        6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
+        */
+        ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
+                 &(dhcpHost.LeaseTime),
+                 dhcpHost.phyAddr,
+                 dhcpHost.ipAddr,
+                 dhcpHost.hostName
+              );
+        if(ret != 4)
+            continue;
+
+                if(strstr(dhcpHost.ipAddr,"172.16.12.") && AnscEqualString(dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
+                {
+                        pthread_mutex_lock(&XLmHostObjectMutex);
+
+                        if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+                        else
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+                        Host_AddIPv4Address ( pHost, dhcpHost.ipAddr);
+                        pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime);
+
+                        pthread_mutex_unlock(&XLmHostObjectMutex);
+                        break;
+                }
+    }
+
+    fclose(fp);
+
+    return;
+}
+

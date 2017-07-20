@@ -122,6 +122,8 @@ AC_CONFIG_FILES(
 	source/lm/Makefile
 	source/Ssp/Makefile
 	source-pc/Makefile
+	source-pc/lm/Makefile
+	source-pc/Ssp/Makefile
 	Makefile
 )
 
