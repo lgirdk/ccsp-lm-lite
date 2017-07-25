@@ -852,7 +852,7 @@ PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
     char ssid[LM_GEN_STR_SIZE]={0};
-	if(!validate_mac(physAddress))
+	if(!physAddress || !validate_mac(physAddress))
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
 		return NULL;
@@ -890,7 +890,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
     char ssid[LM_GEN_STR_SIZE]={0};
-	if(!validate_mac(physAddress))
+	if(!physAddress || !validate_mac(physAddress))
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
 		return NULL;
@@ -1080,7 +1080,7 @@ Add_Update_IPv6Address
 void extract(char* line, char* mac, char * ip)
 {
 	PLmObjectHost pHost;
-	int i,pivot,mac_start,flag=0;
+	int i,pivot=0,mac_start=0,flag=0;
 	for (i=0;i<(strlen(line));i++)
 	{
 		if(line[i]=='>')

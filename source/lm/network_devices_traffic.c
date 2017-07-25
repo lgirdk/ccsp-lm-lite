@@ -421,7 +421,14 @@ void add_to_list_ndt(char* ip_table_line)
 #endif
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
 
-    ptr->device_mac = strdup(device_mac);
+    if (NULL != device_mac)
+    {
+       ptr->device_mac = strdup(device_mac);
+    }
+    else
+    {
+       ptr->device_mac = NULL;
+    }
 
     ptr->external_bytes_down = external_bytes_down;
 
