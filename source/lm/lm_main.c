@@ -1719,11 +1719,15 @@ void *Event_HandlerThread(void *threadid)
                     {
                          LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
                          pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
-                        }
-                }   
+                    }
+                }
+                else
+                {
+                    pthread_mutex_unlock(&LmHostObjectMutex);
+                    continue;
+                }      
                 pthread_mutex_unlock(&LmHostObjectMutex);
             }
-
 
             if(EthHost.Active)
             {
@@ -1755,16 +1759,21 @@ void *Event_HandlerThread(void *threadid)
                 pthread_mutex_lock(&LmHostObjectMutex);
                 pHost = Hosts_AddHostByPhysAddress(hosts.phyAddr);
 
-                 if ( pHost )
-                        {
-                            if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                            {
-                                 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-                                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
-                            }
-                        }   
-                 pthread_mutex_unlock(&LmHostObjectMutex);
-
+                if ( pHost )
+                {
+                    if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                    {
+                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                    }
+                }
+                else
+                {
+                    pthread_mutex_unlock(&LmHostObjectMutex);
+                    continue;
+                }   
+                
+                pthread_mutex_unlock(&LmHostObjectMutex);
             }
 
             if(hosts.Status)
@@ -1806,16 +1815,20 @@ void *Event_HandlerThread(void *threadid)
                 pthread_mutex_lock(&LmHostObjectMutex);
                 pHost = Hosts_AddHostByPhysAddress(mhosts.phyAddr);
 
-                 if ( pHost )
-                        {
-                            if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
-                            {
-                                 LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
-                                 pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
-                            }
-                        }   
-                 pthread_mutex_unlock(&LmHostObjectMutex);
-
+                if ( pHost )
+                {
+                    if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                    {
+                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                    }
+                }
+                else
+                {
+                    pthread_mutex_unlock(&LmHostObjectMutex);
+                    continue;
+                }   
+                pthread_mutex_unlock(&LmHostObjectMutex);
             }
 
             if(mhosts.Status)
