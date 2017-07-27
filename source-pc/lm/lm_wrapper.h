@@ -110,6 +110,63 @@ typedef struct {
     unsigned char ncId[LM_GEN_STR_SIZE];
 }LM_moca_cpe_t;
 
+
+typedef struct _ClientInfo
+{
+
+char* MAC_Address;
+char* SSID_Type;
+char* Device_Name;
+char* SSID_Name;
+char* RSSI;
+char* RxRate;
+char* TxRate;
+
+struct _ClientInfo* next;
+
+} ClientInfo;
+
+typedef struct _ClientInfoLists
+{
+int numClient;
+ClientInfo* connectedDeviceList;
+
+} ClientInfoLists;
+
+//RDKB-7592
+typedef struct _Ssid
+{
+int     index;
+char*   name;
+char*   bssid;
+char*   band;
+
+/* for future use
+int                             channel;
+char*                   mode;
+security_mode*  security_mode;
+encrption_type* encryption;
+*/
+struct _Ssid* next;
+} Ssid;
+
+typedef struct _ExtenderInfo
+{
+
+char* extender_ip;
+char* client_info_result;
+ClientInfoLists* list;
+Ssid*   ssid_list;
+int     ssid_count;
+} ExtenderInfo;
+
+typedef struct _ExtenderList
+{
+ExtenderInfo* info;
+struct _ExtenderList* next;
+} ExtenderList;
+
+
 typedef struct{
 	unsigned char phyAddr[18];
 	unsigned char ipAddr[64];
@@ -118,6 +175,8 @@ typedef struct{
     unsigned char ifName[LM_GEN_STR_SIZE];
     int LeaseTime;
 }LM_host_entry_t;
+
+
 
 ANSC_HANDLE bus_handle;
 

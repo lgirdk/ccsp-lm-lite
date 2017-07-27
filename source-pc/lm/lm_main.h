@@ -156,7 +156,9 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_CISCO_COM_UserDefinedSoftwareVendorId 16
 #define LM_HOST_AddressSource                           17
 #define LM_HOST_Comments                                18
-#define LM_HOST_NumStringPara                           20 
+#define LM_HOST_X_RDKCENTRAL_COM_Parent                 19
+#define LM_HOST_X_RDKCENTRAL_COM_DeviceType             20
+#define LM_HOST_NumStringPara                           22
 
 #define LM_HOST_IPAddress_IPAddressId     0
 #define LM_HOST_IPAddress_IPAddressSourceId     1
@@ -169,11 +171,22 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_SubOPT_Serial_Number             2
 #define LM_SubOPT_Product_Class             3
 
+#define  COSA_HOSTS_Extension1_Name                 "X_COMCAST-COM_LastChange"
+#define IP_V6 6
+#define IP_V4 4
+
+#define LM_HOST_IPv4Address_IPAddressId     0
+#define LM_HOST_IPv4Address_NumStringPara   1
+
+#define LM_HOST_IPv6Address_IPAddressId     0
+#define LM_HOST_IPv6Address_NumStringPara   1
+
 #define LM_ADDRESS_SOURCE_DHCP_STR          "DHCP"
 #define LM_ADDRESS_SOURCE_STATIC_STR        "Static"
 #define LM_ADDRESS_SOURCE_RESERVED_STR      "ReservedIP"
 #define LM_ADDRESS_SOURCE_AUTOIP_STR        "AUTOIP"
 
+#define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
 typedef  struct
 _LmHostInfo
 {
@@ -191,6 +204,7 @@ _LmObjectHostIPAddress
     int     l3unReachableCnt; 
     char    *pStringParaValue[LM_HOST_IPAddress_NumStringPara];
     int     LeaseTime;
+    int     instanceNum;  /* instance number */
     struct _LmObjectHostIPAddress *pNext;
 }
 LmObjectHostIPAddress,  *PLmObjectHostIPAddress;
@@ -218,11 +232,18 @@ _LmObjectHost
      * It is shown current time in seconds. */
     time_t   activityChangeTime;
 
+    ULONG   LeaseTime;
     PLmObjectHostIPAddress ipv4AddrArray;
     int numIPv4Addr;
 
     PLmObjectHostIPAddress ipv6AddrArray;
     int numIPv6Addr;
+
+    BOOL    bTrueStaticIPClient;
+    char        *Layer3Interface;
+    char backupHostname[64];
+    BOOL bClientReady;
+
 
 }
 LmObjectHost,  *PLmObjectHost;
@@ -250,8 +271,45 @@ _LmObjectHosts
     PLmObjectHost *hostArray;
     int sizeHost;
     int numHost;
+    ULONG lastActivity;
 }
 LmObjectHosts,  *PLmObjectHosts;
+
+typedef  enum
+_COSA_DML_HOST_ADDR_SOURCE
+{
+    COSA_DML_HOST_ADDR_SOURCE_DHCP     = 1,
+    COSA_DML_HOST_ADDR_SOURCE_Static,
+    COSA_DML_HOST_ADDR_SOURCE_AutoIP,
+    COSA_DML_HOST_ADDR_SOURCE_None
+}
+COSA_DML_HOST_ADDR_SOURCE, *PCOSA_DML_HOST_ADDR_SOURCE;
+
+typedef  struct
+_COSA_DML_HOST_ENTRY
+{
+    UCHAR                           PhysAddress[32];        /* Ususally the MAC address */
+    ANSC_IPV4_ADDRESS               IPAddress;
+    COSA_DML_HOST_ADDR_SOURCE       AddressSource;
+    int                             LeaseTimeRemaining;
+    char                            Layer1Interface[64];    /* Name of layer1 interface */
+    char                            Layer3Interface[64];    /* Name of IP interface     */
+    char                            HostName[64];
+    BOOLEAN                         Active;
+
+    USHORT                          VendorClassIDSize;
+    USHORT                          ClientIDOffset;
+    USHORT                          ClientIDSize;
+    USHORT                          UserClassIDOffset;
+    USHORT                          UserClassIDSize;
+    /*
+     *  VendorClassID is at offset 0; ClientID and UserClassID is
+     *  determined by ClientIDOffset, ClientIDSize, UserClassIDOffset,
+     *  UserClassIDSize
+     */
+    UCHAR                           Data[ANSC_ZERO_ARRAY_SIZE];
+}
+COSA_DML_HOST_ENTRY,  *PCOSA_DML_HOST_ENTRY;
 
 /***********************************************************************
 

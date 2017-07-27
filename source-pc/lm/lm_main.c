@@ -125,7 +125,31 @@ extern char*                                pComponentName;
 #define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
 
 #define STRNCPY_NULL_CHK(x, y, z) if((y) != NULL) strncpy((x),(y),(z)); else  *(unsigned char*)(x) = 0;
+#define NAME_DM_LEN  257
+#define CDM_PATH_SZ 257
 
+#define STRNCPY_NULL_CHK1(dest, src) { if((dest) != NULL ) AnscFreeMemory((dest));\
+                                           (dest) = _CloneString((src));}
+
+typedef struct _Name_DM
+{
+    char name[NAME_DM_LEN];
+    char dm[NAME_DM_LEN];
+}Name_DM_t;
+
+int g_IPIfNameDMListNum = 0;
+Name_DM_t *g_pIPIfNameDMList = NULL;
+
+int g_MoCAADListNum = 0;
+Name_DM_t *g_pMoCAADList = NULL;
+
+int g_DHCPv4ListNum = 0;
+Name_DM_t *g_pDHCPv4List = NULL;
+
+static int firstFlg = 0;
+static int xfirstFlg = 0;
+
+int g_Client_Poll_interval;
 LmObjectHosts lmHosts = {
     .pHostBoolParaName = {"Active"},
     .pHostIntParaName = {"X_CISCO_COM_ActiveTime", "X_CISCO_COM_InactiveTime", "X_CISCO_COM_RSSI"},
@@ -138,11 +162,28 @@ LmObjectHosts lmHosts = {
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
 
+LmObjectHosts XlmHosts = {
+    .pHostBoolParaName = {"Active"},
+    .pHostIntParaName = {"X_CISCO_COM_ActiveTime", "X_CISCO_COM_InactiveTime", "X_CISCO_COM_RSSI"},
+    .pHostUlongParaName = {"X_CISCO_COM_DeviceType", "X_CISCO_COM_NetworkInterface", "X_CISCO_COM_ConnectionStatus", "X_CISCO_COM_OSType"},
+    .pHostStringParaName = {"Alias", "PhysAddress", "IPAddress", "DHCPClient", "AssociatedDevice", "Layer1Interface", "Layer3Interface", "HostName",
+                                        "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
+                                        "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
+                                        "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
+                                        "X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType" },
+    .pIPv4AddressStringParaName = {"IPAddress"},
+    .pIPv6AddressStringParaName = {"IPAddress"}
+};
+
 /* It may be updated by different threads at the same time? */
 ULONG HostsUpdateTime = 0;
+ULONG XHostsUpdateTime = 0;
 
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
+
+pthread_mutex_t LmHostObjectMutex;
+pthread_mutex_t XLmHostObjectMutex;
 
 int logOnlineDevicesCount()
 {
@@ -323,6 +364,58 @@ void Hosts_RmHosts(){
     lmHosts.numHost = 0;
     lmHosts.sizeHost = 0;
     return;
+}
+PLmObjectHost XHosts_AddHost(int instanceNum)
+{
+    //printf("in Hosts_AddHost %d \n", instanceNum);
+    PLmObjectHost pHost = LanManager_Allocate(sizeof(LmObjectHost));
+    if(pHost == NULL)
+    {
+        return NULL;
+    }
+    pHost->instanceNum = instanceNum;
+    /* Compose Host object name. */
+    char objectName[100] = LM_HOST_OBJECT_NAME_HEADER;
+    char instanceNumStr[50] = {0};
+    _ansc_itoa(pHost->instanceNum, instanceNumStr, 10);
+    strcat(instanceNumStr, ".");
+    strcat(objectName, instanceNumStr);
+    pHost->objectName = LanManager_CloneString(objectName);
+
+    pHost->ipv4AddrArray = NULL;
+    pHost->numIPv4Addr = 0;
+    pHost->ipv6AddrArray = NULL;
+    pHost->numIPv6Addr = 0;
+        pHost->pStringParaValue[LM_HOST_IPAddressId] = NULL;
+    /* Default it is inactive. */
+    pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
+    pHost->ipv4Active = FALSE;
+    pHost->ipv6Active = FALSE;
+    pHost->activityChangeTime  = time(NULL);
+
+    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
+    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
+
+        pHost->Layer3Interface = NULL;
+
+        memset(pHost->backupHostname,0,64);
+    int i;
+    for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
+
+    if(XlmHosts.numHost >= XlmHosts.sizeHost){
+        XlmHosts.sizeHost += LM_HOST_ARRAY_STEP;
+        PLmObjectHost *newArray = LanManager_Allocate(XlmHosts.sizeHost * sizeof(PLmObjectHost));
+        for(i=0; i<XlmHosts.numHost; i++){
+            newArray[i] = XlmHosts.hostArray[i];
+        }
+        PLmObjectHost *backupArray = XlmHosts.hostArray;
+        XlmHosts.hostArray = newArray;
+        if(backupArray) LanManager_Free(backupArray);
+    }
+	 pHost->id = XlmHosts.numHost;
+    XlmHosts.hostArray[pHost->id] = pHost;
+    XlmHosts.numHost++;
+    return pHost;
 }
 
 PLmObjectHost Hosts_AddHost(int instanceNum)
@@ -577,6 +670,7 @@ static inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost
         pIp = &(pDestHost->ipv4AddrList[i]);
         inet_pton(AF_INET, pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressId],pIp->addr);
         pIp->addrSource = _get_addr_source(pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
+	//printf(" Address SRC is %s \n",pIp->addrSource);
         pIp->priFlg = pIpSrc->l3unReachableCnt;
         if(pIp->addrSource == LM_ADDRESS_SOURCE_DHCP)
             pIp->LeaseTime = pIpSrc->LeaseTime;
@@ -1091,7 +1185,8 @@ void Hosts_StatSyncThreadFunc()
 #ifdef WIFI_MOCA_SUPPORT
             Hosts_SyncMoCA();
 #endif
-
+		
+	    Hosts_SyncDHCP();
             lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
             if ( count > 0 )
             {
@@ -1208,8 +1303,608 @@ Hosts_PollHostThreadFunc()
     }
 }
 
+inline int _mac_string_to_array(char *pStr, unsigned char array[6])
+{
+    int tmp[6],n,i;
+        if(pStr == NULL)
+                return -1;
+
+    memset(array,0,6);
+    n = sscanf(pStr,"%02x:%02x:%02x:%02x:%02x:%02x",&tmp[0],&tmp[1],&tmp[2],&tmp[3],&tmp[4],&tmp[5]);
+    if(n==6){
+        for(i=0;i<n;i++)
+            array[i] = (unsigned char)tmp[i];
+        return 0;
+    }
+
+    return -1;
+}
+
+PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, int version)
+{
+
+        PLmObjectHostIPAddress pIpAddrList, pCur = NULL;
+        UINT i;
+
+        if(version == IP_V4){
+                pIpAddrList = pHost->ipv4AddrArray;
+        }else{
+                pIpAddrList = pHost->ipv6AddrArray;
+        }
+
+        for(pCur = pIpAddrList, i=0; (pCur != NULL) && (i < nIndex); pCur =     pCur->pNext,i++);
+
+        return pCur;
+}
+
+void _set_comment_(LM_cmd_comment_t *cmd)
+{
+    PLmObjectHost pHost;
+    char mac[18];
+
+    snprintf(mac,sizeof(mac)/sizeof(mac[0]), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
+
+    /* set comment value into syscfg */
+    /* we don't check whether this device is in our LmObject list */
+
+    if (lm_wrapper_priv_set_lan_host_comments(cmd))
+                return;
+
+    /* But if this device is in LmObject list, update the comments value */
+
+    pHost = Hosts_FindHostByPhysAddress(mac);
+    if(pHost){
+                pthread_mutex_lock(&LmHostObjectMutex);
+        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), cmd->comment);
+                pthread_mutex_unlock(&LmHostObjectMutex);
+    }
+
+
+}
+char* FindMACByIPAddress(char * ip_address)
+{
+        if(ip_address)
+        {
+            int i = 0;
+            for(; i<lmHosts.numHost; i++){
+                if(AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ip_address, TRUE)){
+                    return lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId];
+                }
+            }
+        }
+
+    return NULL;
+}
+
+LMDmlHostsSetHostComment
+    (
+        char*                       pMac,
+        char*                       pComment
+    )
+{
+    int ret;
+    unsigned char mac[6];
+        LM_cmd_comment_t cmd;
+
+    ret = _mac_string_to_array(pMac, mac);
+
+    if(ret == 0){
+                cmd.cmd = LM_API_CMD_SET_COMMENT;
+            memcpy(cmd.mac, mac, 6);
+            if(pComment == NULL){
+                cmd.comment[0] = '\0';
+            }else{
+                strncpy(cmd.comment, pComment, LM_COMMENTS_LEN -1);
+                cmd.comment[LM_COMMENTS_LEN -1] = '\0';
+            }
+        _set_comment_(&cmd);
+    }
+}
+
+int LM_get_online_device()
+{
+    int i;
+    int num = 0;
+    PLmObjectHostIPAddress pIP4;
+
+        if(0 != Hosts_stop_scan()){
+        PRINTD("bridge mode\n");
+                return num;
+    }
+
+   // pthread_mutex_lock(&LmHostObjectMutex);
+    for(i = 0; i < lmHosts.numHost; i++){
+        if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
+            /* Do NOT count TrueStaticIP client */
+            for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
+                if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
+                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3)
+                   )
+                num++;
+                break;
+            }
+        }
+    }
+    //pthread_mutex_unlock(&LmHostObjectMutex);
+        return num;
+}
+
+int XLM_get_online_device()
+{
+        int i;
+    int num = 0;
+    PLmObjectHostIPAddress pIP4;
+
+        CcspTraceWarning(("Inside %s XlmHosts.numHost = %d\n",__FUNCTION__,XlmHosts.numHost));
+
+
+        for(i = 0; i < XlmHosts.numHost; i++){
+        if(TRUE == XlmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
+            /* Do NOT count TrueStaticIP client */
+            for(pIP4 = XlmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
+                if (0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4))
+                        num++;
+                break;
+            }
+        }
+    }
+        return num;
+}
+
+int Hosts_FindHostIndexByPhysAddress(char * physAddress)
+{
+    int i = 0;
+    for(; i<lmHosts.numHost; i++){
+        if(AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
+            return i;
+        }
+    }
+    return 0;
+}
+PLmObjectHost XHosts_FindHostByPhysAddress(char * physAddress)
+{
+    int i = 0;
+    for(; i<XlmHosts.numHost; i++){
+        if(AnscEqualString(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
+            return XlmHosts.hostArray[i];
+        }
+    }
+    return NULL;
+}
+
+void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
+{
+        int x = 0,y = 0,tmp =0, tAP = 0;
+        int token = 0,AP = 0;
+        char str[100];
+
+        x = Hosts_FindHostIndexByPhysAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+        sscanf(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&AP,&token);
+        printf("AP = %d token = %d\n",AP,token);
+// modify uper indexes from token index
+    for(y = x-1;y >= 0; y--)
+        {
+                tmp = 0; tAP = 0;
+                if(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId] != NULL)
+                {
+                    sscanf(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&tAP,&tmp);
+                }
+                else
+                continue;
+
+                if(AP == tAP)
+                {
+                        if((token < tmp))
+                        {
+                                if(strcmp(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId],"empty"))
+                                {
+                                        tmp = --tmp;
+                                        memset(str, 0, sizeof(str));
+                                        sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
+                                        LanManager_CheckCloneCopy(&(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
+                                }
+                        }
+                }
+        }
+        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), "empty");
+        x++;
+// modify lower indexes from token index
+        for(x;x<lmHosts.numHost;x++)
+        {
+                tmp = 0; tAP = 0;
+
+                if(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId] != NULL)
+                {
+                        sscanf(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&tAP,&tmp);
+		 }
+                else
+                   continue;
+
+                if(AP == tAP)
+                {
+                        if(strcmp(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId],"empty"))
+                        {
+                                if(token < tmp)
+                                {
+                                        tmp = --tmp;
+                                        memset(str, 0, sizeof(str));
+                                        sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
+                                        LanManager_CheckCloneCopy(&(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
+                                }
+                        }
+                }
+        }
+}
+#define MACADDR_SZ          18
+#define ATOM_MAC "00:00:ca:01:02:03"
+#define ATOM_MAC_CSC "00:05:04:03:02:01"
+BOOL validate_mac(char * physAddress)
+{
+        if(physAddress[2] == ':')
+                if(physAddress[5] == ':')
+                        if(physAddress[8] == ':')
+                                if(physAddress[11] == ':')
+                                        if(physAddress[14] == ':')
+                                                return TRUE;
+
+
+        return FALSE;
+}
+
+
+PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
+{
+    char comments[256] = {0};
+    char ssid[LM_GEN_STR_SIZE]={0};
+        if(!validate_mac(physAddress))
+        {
+                CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
+                return NULL;
+        }
+
+    if(!physAddress || \
+       0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
+
+    if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
+    PLmObjectHost pHost = XHosts_FindHostByPhysAddress(physAddress);
+    if(pHost) return pHost;
+
+    pHost = XHosts_AddHost(XlmHosts.availableInstanceNum);
+    if(pHost){
+        pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
+        _getLanHostComments(physAddress, comments);
+        if ( comments[0] != 0 )
+        {
+            pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
+        }
+
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Device.WiFi.SSID.3");
+                pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
+                pHost->bClientReady = FALSE;
+                //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
+                XlmHosts.availableInstanceNum++;
+    }
+    CcspTraceWarning(("New XHS host added sucessfully\n"));
+    return pHost;
+}
+
+Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status )
+{
+        char    *pos2                   = NULL,
+                        *pos5                   = NULL,
+                        *Xpos2                  = NULL,
+                        *Xpos5                  = NULL;
+
+        CcspTraceWarning(("%s [%s %s %s %d %d]\n",
+                                                                        __FUNCTION__,
+                                                                        (NULL != phyAddr) ? phyAddr : "NULL",
+                                                                        (NULL != AssociatedDevice) ? AssociatedDevice : "NULL",
+                                                                        (NULL != ssid) ? ssid : "NULL",
+                                                                        RSSI,
+                                                                        Status));
+        Xpos2   = strstr( ssid,".3" );
+        Xpos5   = strstr( ssid,".4" );
+        pos2    = strstr( ssid,".1" );
+        pos5    = strstr( ssid,".2" );
+
+        if( ( NULL != Xpos2 ) || \
+                ( NULL != Xpos5 )
+           )
+        {
+                PLmObjectHost pHost;
+
+                pHost = XHosts_AddHostByPhysAddress(phyAddr);
+
+                if ( pHost )
+                {
+                        Xlm_wrapper_get_info(pHost);
+
+                        pthread_mutex_lock(&XLmHostObjectMutex);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
+                        pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
+                        pHost->l1unReachableCnt = 1;
+                        pHost->bBoolParaValue[LM_HOST_ActiveId] = Status;
+                        pHost->activityChangeTime = time((time_t*)NULL);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+                        pthread_mutex_unlock(&XLmHostObjectMutex);
+                }
+        }
+        else
+        {
+                PLmObjectHost pHost;
+
+                pthread_mutex_lock(&LmHostObjectMutex);
+		 pHost = Hosts_AddHostByPhysAddress( phyAddr );
+
+                if ( NULL != pHost )
+                {
+                        if((pHost->bBoolParaValue[LM_HOST_ActiveId] != Status) || ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) && (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid))))
+                        {
+                                if( Status )
+                                {
+
+                                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+                                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
+                                        pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
+                                        pHost->l1unReachableCnt = 1;
+                                        LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+                                }
+                                else
+                                {
+                                        if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],ssid))
+                                        {
+
+                                           DelAndShuffleAssoDevIndx(pHost);
+                                           LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                                        }
+                                }
+                        }
+
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+
+                    if( Status )
+                    {
+                            if( NULL != pos2 )
+                            {
+                                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress %s connected(2.4 GHz)\n",phyAddr));
+                                }
+                                else if( NULL != pos5 )
+                                {
+                                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s connected(5 GHz)\n",phyAddr));
+                        }
+                    }
+                }
+
+                pthread_mutex_unlock(&LmHostObjectMutex);
+        }
+}
+char * _CloneString
+    (
+    const char * src
+    )
+{
+        if(src == NULL) return NULL;
+
+    size_t len = strlen(src) + 1;
+    if(len <= 1) return NULL;
+
+    char * dest = AnscAllocateMemory(len);
+    if ( dest )
+    {
+        strncpy(dest, src, len);
+        dest[len - 1] = 0;
+    }
+
+    return dest;
+}
+
+void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
+{
+    int i;
+    char dm[200];
+    char (*dmnames)[CDM_PATH_SZ]=NULL;
+    int nname = 0;
+    int dmlen;
+
+    if(*pList != NULL){
+        AnscFreeMemory(*pList);
+        *pList = NULL;
+    }
+
+    if((CCSP_SUCCESS == Cdm_GetNames(path, 0, &dmnames, &nname)) && \
+            (nname > 0))
+    {
+        *pList = AnscAllocateMemory(sizeof(Name_DM_t) * nname);
+        if(NULL != *pList){
+            for(i = 0; i < nname; i++){
+                dmlen = strlen(dmnames[i]) -1;
+                snprintf((*pList)[i].dm ,NAME_DM_LEN -1, "%s%s", dmnames[i], name);
+                (*pList)[i].dm[NAME_DM_LEN-1] = '\0';
+                if(CCSP_SUCCESS == Cdm_GetParamString((*pList)[i].dm, (*pList)[i].name, NAME_DM_LEN)){
+                    (*pList)[i].dm[dmlen] = '\0';
+                }
+                else
+                    (*pList)[i].dm[0] = '\0';
+
+            }
+        }
+    }
+
+        /* 
+         * To avoid the memory leak of dmnames pointer value
+         */
+        if( dmnames )
+        {
+          Cdm_FreeNames(dmnames);
+          dmnames = NULL;
+        }
+
+    *num = nname;
+}
+
+void _get_dmbyname(int num, Name_DM_t *list, char** dm, char* name)
+{
+    int i;
+
+        if(name == NULL)
+                return;
+
+    for(i = 0; i < num; i++){
+        if(NULL != strcasestr(list[i].name, name)){
+            STRNCPY_NULL_CHK1((*dm), list[i].dm);
+            break;
+        }
+    }
+
+}
+
+LM_get_host_info(ANSC_HANDLE hContext,PULONG pulCount)
+{
+
+	int i = 0;
+
+#if 1 //RDKB-EMU
+	PCOSA_DML_HOST_ENTRY            pHostEntry    = NULL;
+	LM_hosts_t hosts;
+	LM_host_t *plmHost;
+	PLmObjectHost pHost;
+	char str[100];
+	//    int i;
+	int ret;
+	BOOL   bridgeMode;
+
+	Hosts_RmHosts();
+	char path[512] = {0};char LanMode[256] = {0};
+	int count = 0;
+	system("dmcli simu getv Device.X_CISCO_COM_DeviceControl.LanManagementEntry.1.LanMode | grep value | cut -f3 -d : | cut -f2 -d ' ' > /tmp/LanMode.txt");
+	FILE *fp = NULL;
+	fp = popen("cat /tmp/LanMode.txt","r");
+	if(fp == NULL)
+	{
+		printf("Failed to run command in Function %s\n",__FUNCTION__);
+		return 0;
+	}
+	if(fgets(path, sizeof(path)-1, fp) != NULL)
+	{
+		for(count=0;path[count]!='\n';count++)
+			LanMode[count]=path[count];
+		LanMode[count]='\0';
+	}
+
+	pclose(fp);
+	if(strcmp(LanMode,"bridge-static") == 0)
+	{
+		*pulCount = 0;
+	}
+	else
+	{
+		if(LM_RET_SUCCESS == lm_get_all_hosts(&hosts))
+		{
+			*pulCount = hosts.count;
+			for(i = 0; i < hosts.count; i++){
+				plmHost = &(hosts.hosts[i]);
+				/* filter unwelcome device */
+				sprintf(str,"%02x:%02x:%02x:%02x:%02x:%02x", plmHost->phyAddr[0], plmHost->phyAddr[1], plmHost->phyAddr[2], plmHost->phyAddr[3], plmHost->phyAddr[4], plmHost->phyAddr[5]);
+				pHost = Hosts_AddHostByPhysAddress(str);
+				if(pHost == NULL)
+					continue;
+				_get_host_info(plmHost, pHost);
+			}
+		}else{
+			*pulCount = 0;
+		}
+	}
+#endif
+#if 0
+	if(firstFlg == 0){
+		printf(" In FIrst Loop \n");
+		firstFlg = 1;
+		return;
+	}
+#endif
+
+	/*
+	   if(0 == Hosts_stop_scan()){
+	   printf("bridge mode return 0\n");
+	   Hosts_PollHost();
+	   }
+	 */
+#if 0
+	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
+#if 0 //RDKB-EMU
+#ifndef _CBR_PRODUCT_REQ_ 
+	_init_DM_List(&g_MoCAADListNum, &g_pMoCAADList, "Device.MoCA.Interface.1.AssociatedDevice.", "MACAddress");
+#endif
+#endif
+	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.1.Client.", "Chaddr");
+
+	pthread_mutex_lock(&LmHostObjectMutex);
+
+	for(i = 0; i<lmHosts.numHost; i++){
+
+		_get_dmbyname(g_IPIfNameDMListNum, g_pIPIfNameDMList, &(lmHosts.hostArray[i]->Layer3Interface), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer3InterfaceId]);
+
+		/*         if(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
+			   {
+			   if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") != NULL){
+			   _get_dmbyname(g_MoCAADListNum, g_pMoCAADList, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AssociatedDeviceId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+			   }
+			   }
+
+
+			   if(lmHosts.hostArray[i]->numIPv4Addr)
+			   {
+			   if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource],LM_ADDRESS_SOURCE_DHCP_STR)     != NULL){
+			   _get_dmbyname(g_DHCPv4ListNum, g_pDHCPv4List, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+			   lmHosts.hostArray[i]->LeaseTime = lmHosts.hostArray[i]->ipv4AddrArray->LeaseTime;
+			   }
+			   }*/
+
+
+	}
+
+	pthread_mutex_unlock(&LmHostObjectMutex);
+#endif
+}
+
+XLM_get_host_info()
+{
+
+        int i = 0;
+
+
+        if(xfirstFlg == 0){
+        xfirstFlg = 1;
+        return;
+    }
+	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
+        _init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.2.Client.", "Chaddr");
+
+        for(i = 0; i<XlmHosts.numHost; i++){
+                Xlm_wrapper_get_info(XlmHosts.hostArray[i]);
+        pthread_mutex_lock(&XLmHostObjectMutex);
+                _get_dmbyname(g_IPIfNameDMListNum, g_pIPIfNameDMList, &(XlmHosts.hostArray[i]->Layer3Interface), XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer3InterfaceId]);
+
+                if(XlmHosts.hostArray[i]->numIPv4Addr)
+                {
+                        if(strstr(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource],LM_ADDRESS_SOURCE_DHCP_STR)    != NULL){
+                _get_dmbyname(g_DHCPv4ListNum, g_pDHCPv4List, &(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+            }
+                }
+
+        pthread_mutex_unlock(&XLmHostObjectMutex);
+        }
+
+
+
+}
+
 const char compName[25]="LOG.RDK.LM";
-void main()
+void LM_main()
 {
     int res;
     void *status;
