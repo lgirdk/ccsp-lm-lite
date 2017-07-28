@@ -31,10 +31,7 @@
 
 #ifdef PARODUS_ENABLE
 #include <libparodus.h>
-#define DEVICE_PROPS_FILE   "/etc/device.properties"
-#define URL_SIZE 	    64
-#define CLIENT_PORT_NUM     6662
-#define PARODUS_SERVICE    "Parodus"
+#include "webpa_pd.h"
 #else
 #include "msgpack.h"
 #include "base64.h"
@@ -60,11 +57,8 @@ char deviceMAC[32]={'\0'};
 char fullDeviceMAC[32]={'\0'};
 #ifdef PARODUS_ENABLE
 libpd_instance_t client_instance;
-char seshat_url[URL_SIZE] = {'\0'};
 char parodus_url[URL_SIZE] = {'\0'};
 static void *handle_parodus();
-static void get_seshat_url();
-static void get_parodus_url();
 #else
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
 #endif
@@ -263,8 +257,7 @@ static void *handle_parodus()
     max_retry_sleep = (int) pow(2, backoff_max_time) -1;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, max_retry_sleep is %d\n", max_retry_sleep ));
 
-        get_seshat_url();
-        get_parodus_url();
+        get_parodus_url(parodus_url);
 	
 	libpd_cfg_t cfg1 = {.service_name = "lmlite",
 					.receive = false, .keepalive_timeout_secs = 0,
@@ -295,7 +288,7 @@ static void *handle_parodus()
         {
             CcspTraceError(("LMLite: Init for parodus (url %s) failed: '%s'\n", parodus_url, libparodus_strerror(ret)));
             if( '\0' == parodus_url[0] ) {
-                get_parodus_url();
+                get_parodus_url(parodus_url);
                 cfg1.parodus_url = parodus_url;
             }
             sleep(backoffRetryTime);
@@ -307,60 +300,6 @@ static void *handle_parodus()
 
     return 0;
 }
-
-static void get_seshat_url()
-{
-    FILE *fp = fopen(DEVICE_PROPS_FILE, "r");
-
-    if( NULL != fp ) {
-        char str[255] = {'\0'};
-        while( fscanf(fp,"%s", str) != EOF ) {
-            char *value = NULL;
-            if( value = strstr(str, "SESHAT_URL=") ) {
-                value = value + strlen("SESHAT_URL=");
-                strncpy(seshat_url, value, (strlen(str) - strlen("SESHAT_URL="))+1);
-                CcspLMLiteConsoleTrace(("RDK_LOG_INFO, seshat_url is %s\n", seshat_url));
-            }
-        }
-    } else {
-            CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to open device.properties file:%s\n", DEVICE_PROPS_FILE));
-    }
-    fclose(fp);
-
-    if( 0 == seshat_url[0] ) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, seshat_url is not present in device.properties file:%s\n", seshat_url));
-    }
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_INFO, seshat_url formed is %s\n", seshat_url));
-}
-
-static void get_parodus_url()
-{
-    char *discovered_url = NULL;
-
-    if( 0 == init_lib_seshat(seshat_url) ) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_INFO, seshatlib initialized! (url %s)\n", seshat_url));
-
-        discovered_url = seshat_discover(PARODUS_SERVICE);
-        if( NULL != discovered_url ) {
-            strncpy(parodus_url, discovered_url, sizeof(parodus_url) - 1);
-            CcspLMLiteConsoleTrace(("RDK_LOG_INFO, seshatlib discovered url = %s, parodus url = %s\n", discovered_url, parodus_url));
-            free(discovered_url);
-        } else {
-            CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, seshatlib registration error (url %s)!", discovered_url));
-        }
-    } else {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to initialize seshatlib (url %s)\n", seshat_url));
-    }
-
-    if( 0 == parodus_url[0] ) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus_url (url %s) is not present in seshatlib (url %s)\n", parodus_url, seshat_url));
-    }
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus_url formed is %s\n", parodus_url));
-
-    shutdown_seshat_lib();
-}
-
 
 const char *rdk_logger_module_fetch(void)
 {

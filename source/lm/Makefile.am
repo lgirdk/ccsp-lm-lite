@@ -50,6 +50,8 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						lm_util.c \
 						network_devices_status_avropack.c  \
 						webpa_interface.c \
+                                                webpa_pd_with_seshat.c \
+                                                webpa_pd_without_seshat.c \
 						cosa_ndstatus_dml.c \ 
 						network_devices_status.c \
 						cosa_reports_internal.c \
@@ -59,7 +61,10 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						cosa_xhosts_dml.c 
 
 if PARODUS_ENABLE
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lnanomsg -lcimplog -lwrp-c -llibparodus -llibseshat
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lnanomsg -lcimplog -lwrp-c -llibparodus 
+if ENABLE_SESHAT
+libCcspLM_la_LDFLAGS +=  -llibseshat
+endif
 else
 libCcspLM_la_LDFLAGS =  -lccsp_common -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid
 endif

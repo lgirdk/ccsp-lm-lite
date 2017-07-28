@@ -97,6 +97,15 @@ AC_ARG_ENABLE([parodus],
 esac],[PARODUS_ENABLE=false])
 AM_CONDITIONAL([PARODUS_ENABLE], [test x$PARODUS_ENABLE = xtrue])
 
+AC_ARG_ENABLE([seshat],
+[  --enable-seshat    Turn on seshat],
+[case "${enableval}" in
+  yes) ENABLE_SESHAT=true ;;
+  no)  ENABLE_SESHAT=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-seshat]) ;;
+esac],[ENABLE_SESHAT=false])
+AM_CONDITIONAL([ENABLE_SESHAT], [test x$ENABLE_SESHAT = xtrue])
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
