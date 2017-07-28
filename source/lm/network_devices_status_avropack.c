@@ -234,11 +234,11 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, GatewayNetworkDeviceStatusReport\tType: %d\n", avro_value_get_type(&adr)));
 
-  avro_value_t  adrField;
-  avro_value_t array;
+  avro_value_t  adrField = {0,0};
+  avro_value_t array = {0,0};
   size_t new_index = 0;
   //Optional value for unions, mac address is an union
-  avro_value_t optional;
+  avro_value_t optional = {0,0};
 
   // timestamp - long
   avro_value_get_by_name(&adr, "header", &adrField, NULL);
@@ -343,7 +343,7 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   else
   {
     //cpe_id block
-    avro_value_t parent_optional, parent_adrField;
+    avro_value_t parent_optional = {0,0}, parent_adrField = {0,0};
 
     memset(CpeMacHoldingBuf, 0, sizeof CpeMacHoldingBuf);
     memset(CpeMacid, 0, sizeof CpeMacid);
@@ -451,10 +451,10 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 
   //adrField now contains a reference to the AssociatedDeviceReportsArray
   //Device Report
-  avro_value_t dr;
+  avro_value_t dr = {0,0};
 
   //Current Device Report Field
-  avro_value_t drField;
+  avro_value_t drField = {0,0};
 
   while(ptr)
   {

@@ -228,10 +228,10 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, NetworkDeviceTrafficReport\tType: %d\n", avro_value_get_type(&adr)));
 
-  avro_value_t  adrField;
+  avro_value_t  adrField = {0,0};
 
   //Optional value for unions, mac address is an union
-  avro_value_t optional;
+  avro_value_t optional = {0,0};
 
   // timestamp - long
   avro_value_get_by_name(&adr, "header", &adrField, NULL);
@@ -389,10 +389,10 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
 
   //adrField now contains a reference to the AssociatedDeviceReportsArray
   //Device Report
-  avro_value_t dr;
+  avro_value_t dr = {0,0};
 
   //Current Device Report Field
-  avro_value_t drField;
+  avro_value_t drField = {0,0};
 
   while(ptr)
   {
