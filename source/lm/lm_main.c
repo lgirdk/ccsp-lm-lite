@@ -403,6 +403,7 @@ int logOnlineDevicesCount()
 		}
 	}
 	CcspTraceWarning(("CONNECTED_CLIENTS_COUNT : %d \n",NumOfOnlineDevices));
+	return NumOfOnlineDevices;
 }
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
@@ -918,14 +919,15 @@ PLmObjectHost XHosts_FindHostByPhysAddress(char * physAddress)
 #define ATOM_MAC_CSC "00:05:04:03:02:01"
 BOOL validate_mac(char * physAddress)
 {
-	if(physAddress[2] == ':')
+	if (physAddress && physAddress[0]) {
+	    if(physAddress[2] == ':')
 		if(physAddress[5] == ':')
 			if(physAddress[8] == ':')
 				if(physAddress[11] == ':')
 					if(physAddress[14] == ':')
-						return TRUE;
-					
-					
+					  return TRUE;
+	}
+
 	return FALSE;
 }
 
@@ -1167,8 +1169,8 @@ Add_Update_IPv6Address
 int extract(char* line, char* mac, char * ip)
 {
 	PLmObjectHost pHost;
-	int i,pivot=0,mac_start=0,flag=0;
-
+	int i,pivot=0,mac_start=0,flag=-1;
+	mac[0] = 0;
 	if((strstr(line,"<entry") == NULL) || (strstr(line,"</entry>") == NULL))
 	{
 		//CcspTraceWarning(("Invalid dibbler entry : %s\n",line));
@@ -1181,9 +1183,19 @@ int extract(char* line, char* mac, char * ip)
 		{
 			pivot=i+1;
 			mac_start=pivot-19;
-			break;
+			if (0 <= mac_start)
+			{
+				flag = 0;
+				break;
+			}
+			return 1;
 		}
 	}
+
+	if (-1 == flag) {
+		return 1;
+	}
+
 	for(i=0;((flag==0)||(i<=17));i++)
 	{
 		if((line[pivot+i]!='<')&&(flag==0))
@@ -1381,7 +1393,7 @@ int XLM_get_online_device()
 	return num;
 }
 
-LMDmlHostsSetHostComment
+int LMDmlHostsSetHostComment
     (
         char*                       pMac,
         char*                       pComment
@@ -1404,6 +1416,8 @@ LMDmlHostsSetHostComment
 	    }
         _set_comment_(&cmd);   
     }
+    
+    return 0;
 }
 
 #if 0
@@ -2696,7 +2710,7 @@ void _get_dmbyname(int num, Name_DM_t *list, char** dm, char* name)
 	
 }
 
-LM_get_host_info()
+int LM_get_host_info()
 {
 
 	int i = 0;
@@ -2704,7 +2718,7 @@ LM_get_host_info()
 
 	if(firstFlg == 0){
         firstFlg = 1;
-        return;
+        return 0;
     }
 	
 /*
@@ -2745,10 +2759,10 @@ LM_get_host_info()
 	}
 
 	pthread_mutex_unlock(&LmHostObjectMutex); 
-
+	return 0;
 }
 
-XLM_get_host_info()
+int XLM_get_host_info()
 {
 
 	int i = 0;
@@ -2756,7 +2770,7 @@ XLM_get_host_info()
 
 	if(xfirstFlg == 0){
         xfirstFlg = 1;
-        return;
+        return 0;
     }
 	//XHosts_SyncWifi();
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
@@ -2777,7 +2791,7 @@ XLM_get_host_info()
 	pthread_mutex_unlock(&XLmHostObjectMutex);
 	}
 
-
+	return 0;
 
 }
 

@@ -130,6 +130,8 @@ CosaDmlNetworkDevicesTrafficInit
         g_pReports->uNDTPollingPeriodDefault = psmValue;
         SetNDTPollingPeriodDefault(g_pReports->uNDTPollingPeriodDefault);
     }
+
+    return returnStatus;
 }
 
 BOOL

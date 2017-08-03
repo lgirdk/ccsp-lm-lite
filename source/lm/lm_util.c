@@ -329,7 +329,7 @@ BOOL LanManager_CheckNoneEmpty
     if(strlen(p) <= 0) return FALSE;
     return TRUE;
 }
-LanManager_CheckCloneCopy(char ** dest , const char * src)
+int LanManager_CheckCloneCopy(char ** dest , const char * src)
 {
 	size_t len_src = 0 , len_dest = 0;
 
@@ -337,16 +337,18 @@ LanManager_CheckCloneCopy(char ** dest , const char * src)
 	if(src) len_src = strlen(src) ;
 	if(*dest) len_dest = strlen(*dest) ;
 
-	if(!len_src) return;
+	if(!len_src) return 0;
 
-	if(len_dest && (len_src == len_dest) && (!strcmp(src,*dest))) return;
+	if(len_dest && (len_src == len_dest) && (!strcmp(src,*dest))) return 0;
 
 	if(len_src != len_dest)
 		*dest = (char *) realloc(*dest, len_src + 1);
 
-	if(*dest == NULL) return;
+	if(*dest == NULL) return 0;
 
 	memset(*dest,0,len_src + 1);
 	strncpy(*dest,src,len_src);
 	(*dest)[len_src] = '\0';
+
+	return len_src;
 }

@@ -157,6 +157,7 @@ CosaDmlNetworkDevicesStatusInit
         SetNDSPollingPeriodDefault(g_pReports->uNDSPollingPeriodDefault);
     }
 
+    return returnStatus;
 }
 
 
