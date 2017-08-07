@@ -128,7 +128,14 @@
 #define MSG_TYPE_ETH    1
 #define MSG_TYPE_WIFI   2
 #define MSG_TYPE_MOCA   3
-	
+
+typedef enum {
+    CLIENT_STATE_OFFLINE,
+    CLIENT_STATE_DISCONNECT,
+    CLIENT_STATE_ONLINE,
+    CLIENT_STATE_CONNECT
+} ClientConnectState;
+
 typedef struct _EventQData 
 {
     char Msg[MAX_SIZE_EVT];
@@ -249,7 +256,7 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
 void extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
 
-void Send_Notification(char* interface, char*mac , BOOL status, char *hostname)
+void Send_Notification(char* interface, char*mac , ClientConnectState status, char *hostname)
 {
 
 	char  str[500] = {0};
@@ -263,10 +270,22 @@ void Send_Notification(char* interface, char*mac , BOOL status, char *hostname)
 	
 
 	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
-	if(status)
-		strcpy(status_str,"Connected");
-	else
-		strcpy(status_str,"Disconnected");
+	switch (status) {
+	case CLIENT_STATE_OFFLINE:
+	    strcpy(status_str,"Offline");
+	    break;
+    case CLIENT_STATE_DISCONNECT:
+        strcpy(status_str,"Disconnected");
+        break;
+    case CLIENT_STATE_ONLINE:
+        strcpy(status_str,"Online");
+        break;
+    case CLIENT_STATE_CONNECT:
+        strcpy(status_str,"Connected");
+        break;
+    default:
+        break;
+	}
 		
 	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s,%s",interface,mac,status_str,hostname);
 	notif_val[0].parameterName =  param_name ;
@@ -464,30 +483,46 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 		if(state == FALSE)
 		{
 			
+            #if 0
+            if(FindHostInLeases(pHost->pStringParaValue[LM_HOST_PhysAddressId], DNS_LEASE))
+            {
+
+                if(pHost->ipv4Active == TRUE)
+                {
+                    if(pHost->bNotify == TRUE)
+                    {
+                        CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+                        lmHosts.lastActivity++;
+                        Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLINET_STATE_DISCONNECT, pHost->pStringParaValue[LM_HOST_HostNameId]);
+                        char buf[8];
+                        snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+                        pHost->ipv4Active = FALSE;
+                        if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0)
+                        {
+                            AnscTraceWarning(("syscfg_set failed\n"));
+                        }
+                        else
+                        {
+                            if (syscfg_commit() != 0)
+                            {
+                                AnscTraceWarning(("syscfg_commit failed\n"));
+                            }
+
+                        }
+                        pHost->bNotify = FALSE;
+
+                    }
+                }
+
+            }
+            #endif
+
 			#if defined(FEATURE_SUPPORT_MESH)
-		    // We are going to send a disconnect notification when connected clients go offline.
+            // We are going to send offline notifications to mesh when clients go offline.
             if(pHost->bNotify == TRUE)
             {
-                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-                lmHosts.lastActivity++;
-				Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state, pHost->pStringParaValue[LM_HOST_HostNameId]);
-                char buf[8];
-                snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
-                pHost->ipv4Active = FALSE;
-                if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0)
-                {
-                    AnscTraceWarning(("syscfg_set failed\n"));
-                }
-                else
-                {
-                    if (syscfg_commit() != 0)
-                    {
-                        AnscTraceWarning(("syscfg_commit failed\n"));
-                    }
-
-                }
-                pHost->bNotify = FALSE;
-
+                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Offline \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+                Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_OFFLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
             }
 			#endif
 		}
@@ -514,7 +549,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 						}
 					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
-					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId] ,state,pHost->pStringParaValue[LM_HOST_HostNameId]);
+					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_CONNECT, pHost->pStringParaValue[LM_HOST_HostNameId]);
 					char buf[8];
 					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
 					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
@@ -530,6 +565,14 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 		
 					}
 					pHost->bNotify = TRUE;
+				}
+				else
+				{
+				    // This case is for "Online" events after we have send a connection message. WebPA apparently only wants a
+				    // single connect request and no online/offline events.
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Online  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_ONLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
+
 				}
 			}
 			
