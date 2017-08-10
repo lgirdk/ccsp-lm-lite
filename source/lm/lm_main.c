@@ -74,6 +74,7 @@
 **************************************************************************/
 
 #include <time.h>
+#include <sys/sysinfo.h>
 
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
@@ -367,6 +368,7 @@ int logOnlineDevicesCount()
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	char interface[32] = {0};
+	int uptime = 0;
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
 
         char addressSource[20] = {0};
@@ -532,7 +534,8 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			{
 				if(pHost->bNotify == FALSE)
 				{
-					
+					get_uptime(&uptime);
+                  	CcspTraceWarning(("Client_Connect_complete:%d\n",uptime));	
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 					lmHosts.lastActivity++;
 					pHost->bClientReady = TRUE;
@@ -2701,4 +2704,11 @@ void EthClient_AddtoQueue(char *phyAddr,int Status )
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
 		printf("<<< %s close event queue >>>\n",__FUNCTION__);
+}
+
+void get_uptime(int *uptime)
+{
+    struct 	sysinfo info;
+    sysinfo( &info );
+    *uptime= info.uptime;
 }
