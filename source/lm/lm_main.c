@@ -496,8 +496,8 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
                         CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Disconnected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
                         lmHosts.lastActivity++;
                         Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLINET_STATE_DISCONNECT, pHost->pStringParaValue[LM_HOST_HostNameId]);
-                        char buf[8];
-                        snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+                        char buf[12] = {0};
+                        snprintf(buf,sizeof(buf)-1,"%lu",lmHosts.lastActivity);
                         pHost->ipv4Active = FALSE;
                         if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0)
                         {
@@ -553,8 +553,8 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
 					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_CONNECT, pHost->pStringParaValue[LM_HOST_HostNameId]);
-					char buf[8];
-					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					char buf[12] = {0};
+					snprintf(buf,sizeof(buf)-1,"%lu",lmHosts.lastActivity);
 					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
 					{
 						AnscTraceWarning(("syscfg_set failed\n"));
@@ -680,8 +680,8 @@ void Hosts_RmHosts(){
     lmHosts.numHost = 0;
     lmHosts.sizeHost = 0;
     lmHosts.lastActivity++;
-	char buf[8];
-	snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+	char buf[12] = {0};
+	snprintf(buf,sizeof(buf)-1,"%lu",lmHosts.lastActivity);
 	if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
 		{
 			AnscTraceWarning(("syscfg_set failed\n"));
@@ -2133,8 +2133,8 @@ void LM_main()
 {
     int res;
     void *status;
-    char buf[8];
-	char buf1[8];
+    char buf[12]; // this value is reading a ULONG
+	char buf1[8]; // this is reading an int
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
 	pthread_mutex_init(&XLmHostObjectMutex,0);
@@ -2157,7 +2157,7 @@ void LM_main()
 	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
     if( buf != NULL )
     	{
-   		    lmHosts.lastActivity = atoi(buf);
+   		    lmHosts.lastActivity = atol(buf);
 			
    		}
 
