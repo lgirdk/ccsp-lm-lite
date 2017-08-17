@@ -673,7 +673,10 @@ static inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost
 	//printf(" Address SRC is %s \n",pIp->addrSource);
         pIp->priFlg = pIpSrc->l3unReachableCnt;
         if(pIp->addrSource == LM_ADDRESS_SOURCE_DHCP)
+	{
             pIp->LeaseTime = pIpSrc->LeaseTime;
+            pHost->LeaseTime = pIpSrc->LeaseTime;
+	}
         else
             pIp->LeaseTime = 0;
    }
@@ -1401,32 +1404,57 @@ LMDmlHostsSetHostComment
     }
 }
 
+void _get_LanMode(char LanMode[256]) //RDKB-EMU
+{
+	FILE *fp = NULL;
+        char path[256] = {0};
+        int count = 0;
+        system("dmcli simu getv Device.X_CISCO_COM_DeviceControl.LanManagementEntry.1.LanMode | grep value | cut -f3 -d : | cut -f2 -d ' ' > /tmp/LanMode.txt");
+        fp = popen("cat /tmp/LanMode.txt","r");
+        if(fp == NULL)
+        {
+                printf("Failed to run command in Function %s\n",__FUNCTION__);
+                return 0;
+        }
+        if(fgets(path, sizeof(path)-1, fp) != NULL)
+        {
+                for(count=0;path[count]!='\n';count++)
+                        LanMode[count]=path[count];
+                LanMode[count]='\0';
+        }
+        pclose(fp);
+}
 int LM_get_online_device()
 {
-    int i;
-    int num = 0;
-    PLmObjectHostIPAddress pIP4;
+	int i;
+	int num = 0;
+	PLmObjectHostIPAddress pIP4;
+	char LanMode[256] = {0};
+	_get_LanMode(LanMode);
+	if(strcmp(LanMode,"bridge-static") == 0)
+	{
+		return num;
+	}
+		if(0 != Hosts_stop_scan()){
+			PRINTD("bridge mode\n");
+			return num;
+		}
 
-        if(0 != Hosts_stop_scan()){
-        PRINTD("bridge mode\n");
-                return num;
-    }
-
-   // pthread_mutex_lock(&LmHostObjectMutex);
-    for(i = 0; i < lmHosts.numHost; i++){
-        if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
-            /* Do NOT count TrueStaticIP client */
-            for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
-                if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
-                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3)
-                   )
-                num++;
-                break;
-            }
-        }
-    }
-    //pthread_mutex_unlock(&LmHostObjectMutex);
-        return num;
+		// pthread_mutex_lock(&LmHostObjectMutex);
+		for(i = 0; i < lmHosts.numHost; i++){
+			if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
+				/* Do NOT count TrueStaticIP client */
+				for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
+					if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
+							0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3)
+					   )
+						num++;
+					break;
+				}
+			}
+		}
+		//pthread_mutex_unlock(&LmHostObjectMutex);
+	return num;
 }
 
 int XLM_get_online_device()
@@ -1778,24 +1806,8 @@ LM_get_host_info(ANSC_HANDLE hContext,PULONG pulCount)
 	BOOL   bridgeMode;
 
 	Hosts_RmHosts();
-	char path[512] = {0};char LanMode[256] = {0};
-	int count = 0;
-	system("dmcli simu getv Device.X_CISCO_COM_DeviceControl.LanManagementEntry.1.LanMode | grep value | cut -f3 -d : | cut -f2 -d ' ' > /tmp/LanMode.txt");
-	FILE *fp = NULL;
-	fp = popen("cat /tmp/LanMode.txt","r");
-	if(fp == NULL)
-	{
-		printf("Failed to run command in Function %s\n",__FUNCTION__);
-		return 0;
-	}
-	if(fgets(path, sizeof(path)-1, fp) != NULL)
-	{
-		for(count=0;path[count]!='\n';count++)
-			LanMode[count]=path[count];
-		LanMode[count]='\0';
-	}
-
-	pclose(fp);
+	char LanMode[256] = {0};
+	_get_LanMode(LanMode);
 	if(strcmp(LanMode,"bridge-static") == 0)
 	{
 		*pulCount = 0;
