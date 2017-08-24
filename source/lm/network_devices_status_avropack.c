@@ -438,7 +438,13 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   //host_table_version block
   avro_value_get_by_name(&adr, "host_table_version", &adrField, NULL);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  //MMK: discriminant(branch_index) should be 0 for TCXB6
+  //If not it leads to lmlite crash TCXB6-2293/TCXB6-2359
+#if defined(_XB6_PRODUCT_REQ_) && defined(_COSA_BCM_ARM_)
+  avro_value_set_branch(&adrField, 0, &optional);
+#else
   avro_value_set_branch(&adrField, 1, &optional);
+#endif
   avro_value_set_long(&optional, lmHosts.lastActivity);
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, host_table_version\tType: %d\n", avro_value_get_type(&optional)));
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
