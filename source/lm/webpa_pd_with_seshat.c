@@ -23,6 +23,7 @@ void get_parodus_url(char *url)
 {
     char seshat_url[URL_SIZE] = {'\0'};
     char *discovered_url = NULL;
+    size_t discovered_url_size = 0;
 
     get_seshat_url(seshat_url);
     if( 0 == seshat_url[0] ) {
@@ -36,7 +37,9 @@ void get_parodus_url(char *url)
 
         discovered_url = seshat_discover(PARODUS_SERVICE);
         if( NULL != discovered_url ) {
-            strncpy(url, discovered_url, strlen(url));
+            discovered_url_size = strlen(discovered_url);
+            strncpy(url, discovered_url, discovered_url_size);
+            url[discovered_url_size] = '\0';
             CcspLMLiteConsoleTrace(("RDK_LOG_INFO, seshatlib discovered url = %s, parodus url = %s\n", discovered_url, url));
             free(discovered_url);
         } else {

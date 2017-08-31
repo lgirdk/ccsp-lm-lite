@@ -24,6 +24,8 @@ extern "C" {
 /**
  *  Returns parodus URL.
  *
+ *  @note The caller should ensure that size of url is URL_SIZE or more.
+ *
  *  @param url   [out] URL where parodus is listening.
  */
 void get_parodus_url(char *url);
