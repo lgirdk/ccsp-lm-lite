@@ -287,8 +287,16 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
     default:
         break;
 	}
+	
+	if(mac && strlen(mac))
+	{
 		
-	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s,%s",interface,mac,status_str,hostname);
+	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s,%s",
+										interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
+										mac!=NULL ? (strlen(mac)>0 ? mac:"NULL") : "NULL",
+										status_str!=NULL ? (strlen(status_str)>0 ? status_str:"NULL") : "NULL",
+										hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
+
 	notif_val[0].parameterName =  param_name ;
 	notif_val[0].parameterValue = str;
 	notif_val[0].type = ccsp_string;
@@ -312,6 +320,12 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
 		{
 			bus_info->freefunc(faultParam);
 		}
+	}
+	}
+	else
+	{
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));
+		printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
 	}
 
 }
