@@ -1479,8 +1479,10 @@ void lm_wrapper_get_dhcpv4_client()
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
+	if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "Static", TRUE))
+	{
             pthread_mutex_lock(&LmHostObjectMutex);
-            if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
+            if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
                 strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
             if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
             {
@@ -1510,7 +1512,7 @@ void lm_wrapper_get_dhcpv4_client()
         
                     }
                 }
-                
+	}
             pthread_mutex_lock(&LmHostObjectMutex);
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "DHCP");
             pIP = Host_AddIPv4Address
@@ -1588,7 +1590,7 @@ void lm_wrapper_get_dhcpv4_reserved()
         if ( pHost )
         {
             PRINTD("%s: %s %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.ipAddr, dhcpHost.hostName);
-			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], TRUE))
+			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
 				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				
             if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
