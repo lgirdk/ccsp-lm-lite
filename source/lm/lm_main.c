@@ -2310,16 +2310,19 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
             (nname > 0))
     {
         *pList = AnscAllocateMemory(sizeof(Name_DM_t) * nname);
+        memset(*pList, 0 , sizeof(Name_DM_t) * nname);
         if(NULL != *pList){
             for(i = 0; i < nname; i++){
-                dmlen = strlen(dmnames[i]) -1;
-                snprintf((*pList)[i].dm ,NAME_DM_LEN -1, "%s%s", dmnames[i], name);
-                (*pList)[i].dm[NAME_DM_LEN-1] = '\0';
-                if(CCSP_SUCCESS == Cdm_GetParamString((*pList)[i].dm, (*pList)[i].name, NAME_DM_LEN)){
-                    (*pList)[i].dm[dmlen] = '\0';
-                }
-                else
-                    (*pList)[i].dm[0] = '\0';
+			int        ulEntryNameLen = NAME_DM_LEN ;
+			parameterValStruct_t varStruct = {0};
+			UCHAR      ucEntryParamName[NAME_DM_LEN] = {0}; 
+			
+			sprintf((*pList)[i].dm ,"%s", dmnames[i]);
+			(*pList)[i].dm[strlen((*pList)[i].dm) - 1 ] = '\0';
+			sprintf(ucEntryParamName ,"%s%s", dmnames[i], name);
+			varStruct.parameterName = ucEntryParamName;
+   			varStruct.parameterValue = (*pList)[i].name;
+			COSAGetParamValueByPathName(bus_handle,&varStruct,&ulEntryNameLen);
 
             }
         }
