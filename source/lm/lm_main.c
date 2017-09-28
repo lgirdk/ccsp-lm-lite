@@ -2222,11 +2222,6 @@ void LM_main()
     Hosts_PollHost();
 
     sleep(5);
-
-    Send_Eth_Host_Sync_Req(); 
-#ifndef _CBR_PRODUCT_REQ_ 
-    Send_MoCA_Host_Sync_Req(); 
-#endif
     
     pthread_t Hosts_StatSyncThread;
     res = pthread_create(&Hosts_StatSyncThread, NULL, Hosts_StatSyncThreadFunc, "Hosts_StatSyncThreadFunc");
@@ -2261,11 +2256,16 @@ void LM_main()
 	}
 	///pthread_join(Wifi_Server_Thread, &status);
 #else
-	printf("\n WIFI-CLIENT : Started Syncing WiFi\n");
 
-	SyncWiFi( );
 #endif /* 0 */
 #endif
+	if(!Hosts_stop_scan()) {
+		 Send_Eth_Host_Sync_Req();
+ 	#ifndef _CBR_PRODUCT_REQ_ 
+		 Send_MoCA_Host_Sync_Req();
+ 	#endif
+		 SyncWiFi( );
+	 }
     //pthread_join(Hosts_StatSyncThread, &status);
     //pthread_join(Hosts_CmdThread, &status);
     return 0;
