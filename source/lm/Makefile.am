@@ -61,11 +61,11 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						cosa_xhosts_dml.c 
 
 if PARODUS_ENABLE
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
 if ENABLE_SESHAT
 libCcspLM_la_LDFLAGS +=  -llibseshat
 endif
 else
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lrt -pthread
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread
 endif
 
