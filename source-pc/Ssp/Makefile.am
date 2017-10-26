@@ -43,5 +43,4 @@ endif
 CcspLMLite_CFLAGS = $(SYSTEMD_CFLAGS)
 CcspLMLite_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c
 CcspLMLite_LDFLAGS = -lccsp_common -ldl -rdynamic $(SYSTEMD_LDFLAGS)
-CcspLMLite_LDADD =  ${top_builddir}/liblmapi.la \
-	${top_builddir}/source-pc/lm/libCcspLM.la
+CcspLMLite_LDADD = ${top_builddir}/source-pc/lm/libCcspLM.la ${top_builddir}/liblmapi.la
