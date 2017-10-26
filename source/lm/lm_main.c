@@ -1309,7 +1309,7 @@ char* FindMACByIPAddress(char * ip_address)
 }
 
 
-inline int _mac_string_to_array(char *pStr, unsigned char array[6])
+static inline int _mac_string_to_array(char *pStr, unsigned char array[6])
 {
     int tmp[6],n,i;
 	if(pStr == NULL)
