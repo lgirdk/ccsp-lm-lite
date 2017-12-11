@@ -948,7 +948,11 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         else
 #endif
 */
-		if( physAddress && strncasecmp(physAddress,"60:b4:f7:", 9)==0)
+		if( physAddress &&
+		        (strncasecmp(physAddress,"60:b4:f7:", 9)==0 ||
+                 strncasecmp(physAddress,"58:90:43:", 9)==0 ||
+	             strncasecmp(physAddress,"b8:ee:0e:", 9)==0 ||
+	             strncasecmp(physAddress,"b8:d9:4d:", 9)==0))
 			pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Mesh");
 		else
 			pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
