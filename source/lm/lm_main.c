@@ -1912,10 +1912,10 @@ void *Event_HandlerThread(void *threadid)
 
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
-                    printf("<<< %s client type is MoCA, IPAddr is not updated in ARP %d >>\n>",__FUNCTION__,__LINE__);
+                    CcspTraceWarning(("<<< %s client type is MoCA, IPAddr is not updated in ARP %d >>\n>",__FUNCTION__,__LINE__));
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
                     Hosts_SyncDHCP();
-                    printf("<<< %s client type is MoCA, IPAddr is not updated in ARP %d %s >>\n>",__FUNCTION__,__LINE__,pHost->pStringParaValue[LM_HOST_IPAddressId]);
+                    CcspTraceWarning(("<<< %s client type is MoCA, IPAddr is not updated in ARP %d %s >>\n>",__FUNCTION__,__LINE__,pHost->pStringParaValue[LM_HOST_IPAddressId]));
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
                 }
                 
@@ -2507,17 +2507,17 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 
 		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
         CHECK((mqd_t)-1 != mq);
-				printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+				CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_WIFI;
 
-				printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+				CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
-		printf("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType);
+		CcspTraceWarning(("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
-		printf("<<< %s close event queue >>>\n",__FUNCTION__);
+		CcspTraceWarning(("<<< %s close event queue >>>\n",__FUNCTION__));
 	}
 }
 
@@ -2624,17 +2624,17 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 
 		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
         CHECK((mqd_t)-1 != mq);
-		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_MOCA;
 
-		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
-		printf("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType);
+		CcspTraceWarning(("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
-		printf("<<< %s close event queue >>>\n",__FUNCTION__);
+		CcspTraceWarning(("<<< %s close event queue >>>\n",__FUNCTION__));
 }
 
 
@@ -2713,24 +2713,24 @@ void EthClient_AddtoQueue(char *phyAddr,int Status )
 		mqd_t mq;
         char buffer[MAX_SIZE];
 		
-		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
-		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
         CHECK((mqd_t)-1 != mq);
-		printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_ETH;
 
-				printf("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__);
+				CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		strcpy(EthHost.MacAddr,phyAddr);
 		EthHost.Active = Status;
 		memcpy(EventMsg.Msg,&EthHost,sizeof(EthHost));
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
-		printf("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType);
-		printf("<<< %s Send msg to event queue EthHost.MacAddr %s>>>\n",__FUNCTION__,EthHost.MacAddr);
+		CcspTraceWarning(("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType));
+		CcspTraceWarning(("<<< %s Send msg to event queue EthHost.MacAddr %s>>>\n",__FUNCTION__,EthHost.MacAddr));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
-		printf("<<< %s close event queue >>>\n",__FUNCTION__);
+		CcspTraceWarning(("<<< %s close event queue >>>\n",__FUNCTION__));
 }
 
 void get_uptime(int *uptime)
