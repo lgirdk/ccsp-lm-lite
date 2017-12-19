@@ -1931,10 +1931,9 @@ void LM_main()
 
     pComponentName = compName;
 
-
-	#ifdef FEATURE_SUPPORT_RDKLOG
-		rdk_logger_init(DEBUG_INI_NAME);
-	#endif
+#ifdef FEATURE_SUPPORT_RDKLOG
+    RDK_LOGGER_INIT();
+#endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
 
     Hosts_PollHost();
