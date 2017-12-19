@@ -2586,9 +2586,9 @@ void LM_main()
 			 }
 		}
 
-	#ifdef FEATURE_SUPPORT_RDKLOG
-		rdk_logger_init(DEBUG_INI_NAME);
-	#endif
+#ifdef FEATURE_SUPPORT_RDKLOG
+    RDK_LOGGER_INIT();
+#endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
     initparodusTask();
 
