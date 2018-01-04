@@ -99,7 +99,7 @@
 
 #define DNS_LEASE "/nvram/dnsmasq.leases"
 #define DEBUG_INI_NAME  "/etc/debug.ini"
-
+#define HOST_ENTRY_LIMIT 250
 #define ARP_IPv6 0
 #define DIBBLER_IPv6 1
 
@@ -677,6 +677,11 @@ void Hosts_FreeHost(PLmObjectHost pHost){
 	
     Host_FreeIPAddress(pHost, 4);
     Host_FreeIPAddress(pHost, 6);
+
+	LanManager_Free(pHost);
+	pHost = NULL;
+
+	lmHosts.numHost--;
 }
 
 void Hosts_RmHosts(){
@@ -764,6 +769,41 @@ PLmObjectHost XHosts_AddHost(int instanceNum)
     return pHost;
 }
 
+Clean_Host_Table()
+{
+
+	if(lmHosts.numHost < HOST_ENTRY_LIMIT)
+		return;
+
+	time_t currentTime = time(NULL);
+	int count,count1,total_count = lmHosts.numHost;
+	for(count=0 ; count < total_count; count++)
+	{
+		PLmObjectHost pHost = lmHosts.hostArray[count];
+
+		if((pHost->bBoolParaValue[LM_HOST_ActiveId] == FALSE) &&
+			(AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "DHCP", TRUE)) &&
+			((pHost->LeaseTime == 0xFFFFFFFF) || (currentTime >= pHost->LeaseTime)))
+		{
+			CcspTraceWarning((" Freeing Host %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+			Hosts_FreeHost(pHost);
+		}
+	}
+
+	for(count=0 ; count < total_count; count++)
+	{
+		if(lmHosts.hostArray[count]) continue;
+		for(count1=count+1; count1 < total_count; count1++)
+		{
+			if(lmHosts.hostArray[count1]) break;
+		}
+		if(count1 >= total_count) break;
+		lmHosts.hostArray[count] = lmHosts.hostArray[count1];
+		lmHosts.hostArray[count1] = NULL;
+	}
+
+}
+
 PLmObjectHost Hosts_AddHost(int instanceNum)
 {
     //printf("in Hosts_AddHost %d \n", instanceNum);
@@ -802,7 +842,7 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
 	memset(pHost->backupHostname,0,64);
     int i;
     for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
-
+	Clean_Host_Table();
     if(lmHosts.numHost >= lmHosts.sizeHost){
         lmHosts.sizeHost += LM_HOST_ARRAY_STEP;
         PLmObjectHost *newArray = LanManager_Allocate(lmHosts.sizeHost * sizeof(PLmObjectHost));
