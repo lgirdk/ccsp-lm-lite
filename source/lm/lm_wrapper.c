@@ -1456,7 +1456,6 @@ void lm_wrapper_get_dhcpv4_client()
 
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
 
-		
         if ( !pHost )
         {
             if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
@@ -1475,7 +1474,7 @@ void lm_wrapper_get_dhcpv4_client()
                 pthread_mutex_unlock(&LmHostObjectMutex);
             }
         }
-		
+
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
