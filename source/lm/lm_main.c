@@ -1779,7 +1779,7 @@ void *Event_HandlerThread(void *threadid)
     struct mq_attr attr;
     char buffer[MAX_SIZE + 1];
     int must_stop = 0;
-    char radio[32];
+
     /* initialize the queue attributes */
     attr.mq_flags = 0;
     attr.mq_maxmsg = 100;
@@ -1883,9 +1883,7 @@ void *Event_HandlerThread(void *threadid)
             if(hosts.Status)
             {
                 pthread_mutex_lock(&LmHostObjectMutex);
-				memset(radio,0,sizeof(radio));	
-                convert_ssid_to_radio(hosts.ssid, radio);
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
                 pHost->l1unReachableCnt = 1;
@@ -1902,9 +1900,7 @@ void *Event_HandlerThread(void *threadid)
             else
             {
                 pthread_mutex_lock(&LmHostObjectMutex);
-				memset(radio,0,sizeof(radio));
-				convert_ssid_to_radio(hosts.ssid, radio);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                 pthread_mutex_unlock(&LmHostObjectMutex);
 
@@ -2084,11 +2080,11 @@ void Hosts_LoggingThread()
 
 						if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi")))
 						{
-							if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.Radio.1")))
+							if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.1")))
 							{
 								Radio_2_Dev++;
 							}
-							else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.Radio.2")))
+							else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.2")))
 							{
 								Radio_5_Dev++;
 							}
@@ -2491,7 +2487,6 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 			*pos5			= NULL,
 			*Xpos2			= NULL,
 			*Xpos5			= NULL;
-	char radio[32] = {0};
 
 	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
 									__FUNCTION__,
@@ -2518,8 +2513,7 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 			Xlm_wrapper_get_info(pHost);
 
 			pthread_mutex_lock(&XLmHostObjectMutex);
-			convert_ssid_to_radio(ssid, radio);
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
 			pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
 			pHost->l1unReachableCnt = 1;
@@ -2778,23 +2772,4 @@ void get_uptime(int *uptime)
     struct 	sysinfo info;
     sysinfo( &info );
     *uptime= info.uptime;
-}
-
-void convert_ssid_to_radio(char *ssid, char *radio)
-{
-    if(ssid == NULL){
-        CcspTraceWarning(("Empty ssid\n"));
-    }
-    else{
-        if(strstr(ssid,".1") || strstr(ssid,".3")){
-               AnscCopyString(radio,"Device.WiFi.Radio.1");
-        }
-        else if(strstr(ssid,".2") || strstr(ssid,".4")){
-               AnscCopyString(radio,"Device.WiFi.Radio.2");
-        }
-        else{
-	       CcspTraceWarning(("Invalid ssid\n"));
-        }
-    
-    }
 }
