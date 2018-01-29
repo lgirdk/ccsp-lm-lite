@@ -165,7 +165,8 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_RDKCENTRAL_COM_Parent                 19
 #define LM_HOST_X_RDKCENTRAL_COM_DeviceType             20
 #define LM_HOST_X_RDKCENTRAL_COM_Layer1Interface        21
-#define LM_HOST_NumStringPara                           22 
+
+#define LM_HOST_NumStringPara                           23
 
 #define LM_HOST_IPAddress_IPAddressId     0
 #define LM_HOST_IPAddress_IPAddressSourceId     1
