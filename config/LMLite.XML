@@ -181,6 +181,11 @@
               <syntax>string</syntax>
               <writable>false</writable>
             </parameter>                        
+            <parameter>
+              <name>X_RDKCENTRAL-COM_Layer1Interface</name>
+              <type>string</type>
+              <syntax>string</syntax>
+            </parameter>
           </parameters>
           <objects>
             <object>

@@ -222,7 +222,7 @@ LmObjectHosts lmHosts = {
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
                                         "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
-                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType" },
+                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface" },
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
@@ -235,7 +235,7 @@ LmObjectHosts XlmHosts = {
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
                                         "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
-                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType" },
+                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface" },
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
@@ -1778,6 +1778,7 @@ void *Event_HandlerThread(void *threadid)
     mqd_t mq;
     struct mq_attr attr;
     char buffer[MAX_SIZE + 1];
+	char radio[32];
     int must_stop = 0;
 
     /* initialize the queue attributes */
@@ -1883,6 +1884,9 @@ void *Event_HandlerThread(void *threadid)
             if(hosts.Status)
             {
                 pthread_mutex_lock(&LmHostObjectMutex);
+				memset(radio,0,sizeof(radio));	
+                convert_ssid_to_radio(hosts.ssid, radio);				
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
@@ -1900,6 +1904,9 @@ void *Event_HandlerThread(void *threadid)
             else
             {
                 pthread_mutex_lock(&LmHostObjectMutex);
+				memset(radio,0,sizeof(radio));
+				convert_ssid_to_radio(hosts.ssid, radio);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                 pthread_mutex_unlock(&LmHostObjectMutex);
@@ -2487,6 +2494,7 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 			*pos5			= NULL,
 			*Xpos2			= NULL,
 			*Xpos5			= NULL;
+	char radio[32] 			= {0};
 
 	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
 									__FUNCTION__,
@@ -2513,6 +2521,8 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 			Xlm_wrapper_get_info(pHost);
 
 			pthread_mutex_lock(&XLmHostObjectMutex);
+			convert_ssid_to_radio(ssid, radio);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
 			pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
@@ -2772,4 +2782,23 @@ void get_uptime(int *uptime)
     struct 	sysinfo info;
     sysinfo( &info );
     *uptime= info.uptime;
+}
+
+void convert_ssid_to_radio(char *ssid, char *radio)
+{
+    if(ssid == NULL){
+        CcspTraceWarning(("Empty ssid\n"));
+    }
+    else{
+        if(strstr(ssid,".1") || strstr(ssid,".3")){
+               AnscCopyString(radio,"Device.WiFi.Radio.1");
+        }
+        else if(strstr(ssid,".2") || strstr(ssid,".4")){
+               AnscCopyString(radio,"Device.WiFi.Radio.2");
+        }
+        else{
+	       CcspTraceWarning(("Invalid ssid\n"));
+        }
+    
+    }
 }

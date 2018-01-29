@@ -164,6 +164,7 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_Comments                                18
 #define LM_HOST_X_RDKCENTRAL_COM_Parent                 19
 #define LM_HOST_X_RDKCENTRAL_COM_DeviceType             20
+#define LM_HOST_X_RDKCENTRAL_COM_Layer1Interface        21
 #define LM_HOST_NumStringPara                           22 
 
 #define LM_HOST_IPAddress_IPAddressId     0
@@ -325,4 +326,5 @@ char* FindParentIPInExtenderList(char* mac_address);
 char* FindMACByIPAddress(char * ip_address);
 void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status );
 void get_uptime(int *uptime);
+void convert_ssid_to_radio(char *ssid, char *radio);
 #endif
