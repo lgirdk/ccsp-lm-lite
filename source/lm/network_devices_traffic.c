@@ -391,37 +391,22 @@ void add_to_list_ndt(char* ip_table_line)
     const char * delim = "|";
     long long rx_packets, tx_packets = 0;
     long long external_bytes_down, external_bytes_up = 0;
-    char * rx_packets_str, external_bytes_down_str, tx_packets_str, external_bytes_up_str = NULL;
+    char *device_mac = NULL, *rx_packets_str = NULL, *external_bytes_down_str = NULL, *tx_packets_str = NULL, *external_bytes_up_str = NULL;
     struct networkdevicetrafficdata *ptr = NULL;
 
-    char* device_mac = strtok(ip_table_line, delim);
-    if (device_mac != NULL)
+    device_mac = strtok(ip_table_line, delim);
+    if (device_mac)
     {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n", device_mac ));
 	rx_packets_str =  strtok(NULL, delim);
-	if (rx_packets_str != NULL) 
+	if (rx_packets_str) 
         {
-	   rx_packets = atoll(rx_packets_str);
-	   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%lld] \n",rx_packets ));
-
 	   external_bytes_down_str = strtok(NULL, delim);
-	   if (external_bytes_down_str != NULL) 
+	   if (external_bytes_down_str) 
 	   {
-              external_bytes_down = atoll(external_bytes_down_str);
-	      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%lld] \n",external_bytes_down ));
-
 	      tx_packets_str =  strtok(NULL, delim);
-	      if (tx_packets_str != NULL)
-	      {	    
-		 tx_packets = atoll(tx_packets_str);
-	    	 CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%lld] \n", tx_packets ));
-
+	      if (tx_packets_str)
+	      {
 	         external_bytes_up_str = strtok(NULL, delim);
-		 if (external_bytes_up_str != NULL) 
-		 {
-		    external_bytes_up = atoll(external_bytes_up_str);
-		    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%lld] \n", external_bytes_up ));
-		 }
 	      }
            }
         }
@@ -430,6 +415,35 @@ void add_to_list_ndt(char* ip_table_line)
      {
 	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC is NULL \n"));
      }
+
+	if (device_mac)
+	{
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n", device_mac ));
+	}
+
+	if(rx_packets_str)
+	{
+		rx_packets = atoll(rx_packets_str);
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%lld] \n",rx_packets ));
+	}
+
+	if(external_bytes_down_str)
+	{
+		external_bytes_down = atoll(external_bytes_down_str);
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%lld] \n",external_bytes_down ));
+	}
+	
+	if(tx_packets_str)
+	{
+		tx_packets = atoll(tx_packets_str);
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%lld] \n", tx_packets ));
+	}
+	
+	if(external_bytes_up_str)
+	{
+		external_bytes_up = atoll(external_bytes_up_str);
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%lld] \n", external_bytes_up ));
+	}
 
     ptr = malloc(sizeof(*ptr));
     if (ptr == NULL)
