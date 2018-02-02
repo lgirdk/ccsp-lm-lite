@@ -413,7 +413,8 @@ void add_to_list_ndt(char* ip_table_line)
      }
      else 
      {
-	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC is NULL \n"));
+	    CcspLMLiteTrace(("RDK_LOG_ERROR, DeviceMAC is NULL \n"));
+	    return;
      }
 
 	if (device_mac)
