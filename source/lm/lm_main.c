@@ -1804,12 +1804,12 @@ void *Event_HandlerThread(void *threadid)
 
         buffer[bytes_read] = '\0';
 
-        memcpy(&EventMsg,buffer,sizeof(buffer));
+        memcpy(&EventMsg,buffer,sizeof(EventMsg));
 
         if(EventMsg.MsgType == MSG_TYPE_ETH)
         {
             char Mac_Id[18];
-            memcpy(&EthHost,EventMsg.Msg,sizeof(EventMsg.Msg));
+            memcpy(&EthHost,EventMsg.Msg,sizeof(EthHost));
 
             pHost = Hosts_FindHostByPhysAddress(EthHost.MacAddr);
 
@@ -1857,7 +1857,7 @@ void *Event_HandlerThread(void *threadid)
         }
         else if(EventMsg.MsgType == MSG_TYPE_WIFI)
         {
-            memcpy(&hosts,EventMsg.Msg,sizeof(EventMsg.Msg));
+            memcpy(&hosts,EventMsg.Msg,sizeof(hosts));
             pHost = Hosts_FindHostByPhysAddress(hosts.phyAddr);
             if ( !pHost )
             {
@@ -1919,7 +1919,7 @@ void *Event_HandlerThread(void *threadid)
         }
         else if(EventMsg.MsgType == MSG_TYPE_MOCA)
         {
-            memcpy(&mhosts,EventMsg.Msg,sizeof(EventMsg.Msg));
+            memcpy(&mhosts,EventMsg.Msg,sizeof(mhosts));
             pHost = Hosts_FindHostByPhysAddress(mhosts.phyAddr);
             if ( !pHost )
             {
@@ -2360,7 +2360,7 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
         memset(*pList, 0 , sizeof(Name_DM_t) * nname);
         if(NULL != *pList){
             for(i = 0; i < nname; i++){
-			int        ulEntryNameLen = NAME_DM_LEN ;
+			ULONG        ulEntryNameLen = NAME_DM_LEN ;
 			parameterValStruct_t varStruct = {0};
 			UCHAR      ucEntryParamName[NAME_DM_LEN] = {0}; 
 			
