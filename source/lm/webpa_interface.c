@@ -57,7 +57,6 @@ char deviceMAC[32]={'\0'};
 char fullDeviceMAC[32]={'\0'};
 #ifdef PARODUS_ENABLE
 libpd_instance_t client_instance;
-char parodus_url[URL_SIZE] = {'\0'};
 static void *handle_parodus();
 #else
 static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
@@ -139,46 +138,49 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     wrp_msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
     memset(wrp_msg, 0, sizeof(wrp_msg_t));
 
-    wrp_msg->msg_type = WRP_MSG_TYPE__EVENT;
-    wrp_msg->u.event.payload = (void *)payload;
-    wrp_msg->u.event.payload_size = payload_len;
-    wrp_msg->u.event.source = source;
-    wrp_msg->u.event.dest = dest;
-    wrp_msg->u.event.content_type = contentType;
-    
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->msg_type :%d\n",wrp_msg->msg_type));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload :%s\n",(char *)(wrp_msg->u.event.payload)));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload_size :%d\n",wrp_msg->u.event.payload_size));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.source :%s\n",wrp_msg->u.event.source));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.dest :%s\n",wrp_msg->u.event.dest));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.content_type :%s\n",wrp_msg->u.event.content_type));
-    
-    while(retry_count<=5)
+    if(wrp_msg != NULL)
     {
-        backoffRetryTime = (int) pow(2, c) -1;	
+        wrp_msg->msg_type = WRP_MSG_TYPE__EVENT;
+        wrp_msg->u.event.payload = (void *)payload;
+        wrp_msg->u.event.payload_size = payload_len;
+        wrp_msg->u.event.source = source;
+        wrp_msg->u.event.dest = dest;
+        wrp_msg->u.event.content_type = contentType;
 
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, retry_count : %d\n",retry_count));
-        sendStatus = libparodus_send(client_instance, wrp_msg);  
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, sendStatus is %d\n",sendStatus));
-        if(sendStatus == 0)
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->msg_type :%d\n",wrp_msg->msg_type));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload :%s\n",(char *)(wrp_msg->u.event.payload)));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload_size :%d\n",wrp_msg->u.event.payload_size));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.source :%s\n",wrp_msg->u.event.source));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.dest :%s\n",wrp_msg->u.event.dest));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.content_type :%s\n",wrp_msg->u.event.content_type));
+
+        while(retry_count<=5)
         {
-            retry_count = 0;
-            CcspTraceInfo(("Sent message successfully to parodus\n"));
-            break;
+            backoffRetryTime = (int) pow(2, c) -1;
+
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, retry_count : %d\n",retry_count));
+            sendStatus = libparodus_send(client_instance, wrp_msg);
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, sendStatus is %d\n",sendStatus));
+            if(sendStatus == 0)
+            {
+                retry_count = 0;
+                CcspTraceInfo(("Sent message successfully to parodus\n"));
+                break;
+            }
+            else
+            {
+                CcspTraceError(("Failed to send message: '%s', retrying ....\n",libparodus_strerror(sendStatus)));
+                CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, backoffRetryTime %d seconds\n", backoffRetryTime));
+                sleep(backoffRetryTime);
+                c++;
+                retry_count++;
+            }
         }
-        else
-        {
-            CcspTraceError(("Failed to send message: '%s', retrying ....\n",libparodus_strerror(sendStatus)));
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, backoffRetryTime %d seconds\n", backoffRetryTime));
-            sleep(backoffRetryTime);
-            c++;
-            retry_count++;
-        }
+
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before freeing wrp_msg\n"));
+        free(wrp_msg);
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After freeing wrp_msg\n"));
     }
-    
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before freeing wrp_msg\n"));    
-    free(wrp_msg);
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After freeing wrp_msg\n"));
 #else
     // Pack the message using msgpck WRP notification format and then using base64        
     packedMsg = packStructure(serviceName, dest, trans_id, payload, contentType,payload_len);              
@@ -249,7 +251,8 @@ static void *handle_parodus()
     //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
     int c =2;
 	int retval=-1;
-    
+    char *parodus_url = NULL;
+
     CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ******** Start of handle_parodus ********\n"));
 
     pthread_detach(pthread_self());
@@ -257,7 +260,7 @@ static void *handle_parodus()
     max_retry_sleep = (int) pow(2, backoff_max_time) -1;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, max_retry_sleep is %d\n", max_retry_sleep ));
 
-        get_parodus_url(parodus_url);
+        get_parodus_url(&parodus_url);
 	
 	libpd_cfg_t cfg1 = {.service_name = "lmlite",
 					.receive = false, .keepalive_timeout_secs = 0,
@@ -287,8 +290,8 @@ static void *handle_parodus()
         else
         {
             CcspTraceError(("LMLite: Init for parodus (url %s) failed: '%s'\n", parodus_url, libparodus_strerror(ret)));
-            if( '\0' == parodus_url[0] ) {
-                get_parodus_url(parodus_url);
+            if( NULL == parodus_url ) {
+                get_parodus_url(&parodus_url);
                 cfg1.parodus_url = parodus_url;
             }
             sleep(backoffRetryTime);

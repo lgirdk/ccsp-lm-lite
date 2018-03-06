@@ -16,7 +16,6 @@ extern "C" {
 /*                                   Macros                                   */
 /*----------------------------------------------------------------------------*/
 #define DEVICE_PROPS_FILE  "/etc/device.properties"
-#define URL_SIZE           64
 
 /*----------------------------------------------------------------------------*/
 /*                             Function Prototypes                            */
@@ -28,7 +27,7 @@ extern "C" {
  *
  *  @param url   [out] URL where parodus is listening.
  */
-void get_parodus_url(char *url);
+void get_parodus_url(char **url);
 
 #ifdef __cplusplus
 }

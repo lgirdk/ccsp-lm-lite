@@ -9,7 +9,7 @@
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
-void get_parodus_url(char *url)
+void get_parodus_url(char **url)
 {
     FILE *fp = fopen(DEVICE_PROPS_FILE, "r");
 
@@ -19,8 +19,8 @@ void get_parodus_url(char *url)
             char *value = NULL;
             if( value = strstr(str, "PARODUS_URL=") ) {
                 value = value + strlen("PARODUS_URL=");
-                strncpy(url, value, (strlen(str) - strlen("PARODUS_URL="))+1);
-                CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url is %s\n", url));
+                *url = strdup(value);
+                CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url is %s\n", *url));
             }
         }
     } else {
@@ -28,10 +28,10 @@ void get_parodus_url(char *url)
     }
     fclose(fp);
 
-    if( 0 == url[0] ) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus url is not present in device.properties file:%s\n", url));
+    if( NULL == *url ) {
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus url is not present in device.properties file\n"));
     }
 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url formed is %s\n", url));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url formed is %s\n", *url));
 }
 #endif
