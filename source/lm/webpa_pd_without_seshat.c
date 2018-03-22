@@ -24,6 +24,8 @@
 #include "webpa_interface.h"
 #include "webpa_pd.h"
 
+#define PARODUS_URL_DEFAULT      "tcp://127.0.0.1:6666"
+
 /*----------------------------------------------------------------------------*/
 /*                             External Functions                             */
 /*----------------------------------------------------------------------------*/
@@ -43,11 +45,14 @@ void get_parodus_url(char **url)
         }
     } else {
         CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to open device.properties file:%s\n", DEVICE_PROPS_FILE));
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Adding default value for parodus_url\n"));
+		*url = strdup(PARODUS_URL_DEFAULT);
     }
     fclose(fp);
 
     if( NULL == *url ) {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus url is not present in device.properties file\n"));
+        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus url is not present in device.properties file, adding default parodus_url\n"));
+		*url = strdup(PARODUS_URL_DEFAULT);
     }
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url formed is %s\n", *url));

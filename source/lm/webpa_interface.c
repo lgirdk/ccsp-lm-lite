@@ -124,22 +124,32 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, <======== Start of sendWebpaMsg =======>\n"));
 #ifdef PARODUS_ENABLE
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, deviceMAC *********:%s\n",deviceMAC));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest :%s\n",dest));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, transaction_id :%s\n",trans_id));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType :%s\n",contentType));
+    if(serviceName!= NULL){
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
+		snprintf(source, sizeof(source), "mac:%s/%s", deviceMAC, serviceName);
+	}
+	if(dest!= NULL){
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest :%s\n",dest));
+	}
+	if(trans_id!= NULL){
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, transaction_id :%s\n",trans_id));
+	}
+	if(contentType!= NULL){
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType :%s\n",contentType));
+    }
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, payload_len :%d\n",payload_len));
 
-    snprintf(source, sizeof(source), "mac:%s/%s", deviceMAC, serviceName);
+    
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",deviceMAC));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Source derived is %s\n", source));
     
     wrp_msg = (wrp_msg_t *)malloc(sizeof(wrp_msg_t));
-    memset(wrp_msg, 0, sizeof(wrp_msg_t));
+    
 
     if(wrp_msg != NULL)
-    {
+    {	
+		memset(wrp_msg, 0, sizeof(wrp_msg_t));
         wrp_msg->msg_type = WRP_MSG_TYPE__EVENT;
         wrp_msg->u.event.payload = (void *)payload;
         wrp_msg->u.event.payload_size = payload_len;
@@ -148,11 +158,15 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
         wrp_msg->u.event.content_type = contentType;
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->msg_type :%d\n",wrp_msg->msg_type));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload :%s\n",(char *)(wrp_msg->u.event.payload)));
+        if(wrp_msg->u.event.payload!=NULL) 
+        	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload :%s\n",(char *)(wrp_msg->u.event.payload)));
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.payload_size :%d\n",wrp_msg->u.event.payload_size));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.source :%s\n",wrp_msg->u.event.source));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.dest :%s\n",wrp_msg->u.event.dest));
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.content_type :%s\n",wrp_msg->u.event.content_type));
+		if(wrp_msg->u.event.source != NULL)
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.source :%s\n",wrp_msg->u.event.source));
+		if(wrp_msg->u.event.dest!=NULL)
+        	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.dest :%s\n",wrp_msg->u.event.dest));
+		if(wrp_msg->u.event.content_type!=NULL)
+	        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, wrp_msg->u.event.content_type :%s\n",wrp_msg->u.event.content_type));
 
         while(retry_count<=5)
         {
@@ -261,46 +275,48 @@ static void *handle_parodus()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, max_retry_sleep is %d\n", max_retry_sleep ));
 
         get_parodus_url(&parodus_url);
+	if(parodus_url != NULL)
+	{
 	
-	libpd_cfg_t cfg1 = {.service_name = "lmlite",
-					.receive = false, .keepalive_timeout_secs = 0,
-					.parodus_url = parodus_url,
-					.client_url = NULL
-				   };
-                
-    CcspLMLiteConsoleTrace(("RDK_LOG_INFO, Configurations => service_name : %s parodus_url : %s client_url : %s\n", cfg1.service_name, cfg1.parodus_url, cfg1.client_url ));
+		libpd_cfg_t cfg1 = {.service_name = "lmlite",
+						.receive = false, .keepalive_timeout_secs = 0,
+						.parodus_url = parodus_url,
+						.client_url = NULL
+					   };
+		            
+		CcspLMLiteConsoleTrace(("RDK_LOG_INFO, Configurations => service_name : %s parodus_url : %s client_url : %s\n", cfg1.service_name, cfg1.parodus_url, cfg1.client_url ));
 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Call parodus library init api \n"));
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Call parodus library init api \n"));
 
-    while(1)
-    {
-        if(backoffRetryTime < max_retry_sleep)
-        {
-            backoffRetryTime = (int) pow(2, c) -1;
-        }
+		while(1)
+		{
+		    if(backoffRetryTime < max_retry_sleep)
+		    {
+		        backoffRetryTime = (int) pow(2, c) -1;
+		    }
 
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, New backoffRetryTime value calculated as %d seconds\n", backoffRetryTime));
-        int ret =libparodus_init (&client_instance, &cfg1);
-        CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ret is %d\n",ret));
-        if(ret ==0)
-        {
-            CcspTraceWarning(("LMLite: Init for parodus Success..!!\n"));
-            break;
-        }
-        else
-        {
-            CcspTraceError(("LMLite: Init for parodus (url %s) failed: '%s'\n", parodus_url, libparodus_strerror(ret)));
-            if( NULL == parodus_url ) {
-                get_parodus_url(&parodus_url);
-                cfg1.parodus_url = parodus_url;
-            }
-            sleep(backoffRetryTime);
-            c++;
-        }
-	retval = libparodus_shutdown(client_instance);
-       
-    }
-
+		    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, New backoffRetryTime value calculated as %d seconds\n", backoffRetryTime));
+		    int ret =libparodus_init (&client_instance, &cfg1);
+		    CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ret is %d\n",ret));
+		    if(ret ==0)
+		    {
+		        CcspTraceWarning(("LMLite: Init for parodus Success..!!\n"));
+		        break;
+		    }
+		    else
+		    {
+		        CcspTraceError(("LMLite: Init for parodus (url %s) failed: '%s'\n", parodus_url, libparodus_strerror(ret)));
+		        if( NULL == parodus_url ) {
+		            get_parodus_url(&parodus_url);
+		            cfg1.parodus_url = parodus_url;
+		        }
+		        sleep(backoffRetryTime);
+		        c++;
+		    }
+		retval = libparodus_shutdown(client_instance);
+		   
+		}
+	}
     return 0;
 }
 
