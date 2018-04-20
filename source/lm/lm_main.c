@@ -944,16 +944,18 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
     char ssid[LM_GEN_STR_SIZE]={0};
-	if(!physAddress || !validate_mac(physAddress))
+
+    if(!physAddress || \
+       0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
+
+    if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
+
+	if(!validate_mac(physAddress))
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
 		return NULL;
 	}
 		
-    if(!physAddress || \
-       0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
-
-    if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
     PLmObjectHost pHost = Hosts_FindHostByPhysAddress(physAddress);
     if(pHost) return pHost;
 	

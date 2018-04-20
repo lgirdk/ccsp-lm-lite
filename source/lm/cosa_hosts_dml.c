@@ -1332,6 +1332,13 @@ Host_SetParamStringValue
 		pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
+	else if (AnscEqualString(ParamName, "AddressSource", TRUE))
+	{
+		/* save update to AddressSource */
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , pString);
+		pthread_mutex_unlock(&LmHostObjectMutex); 
+		return TRUE;
+	}
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;

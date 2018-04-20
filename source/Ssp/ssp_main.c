@@ -50,6 +50,10 @@
 #include "sysResource.h"
 #endif
 
+#if defined(_ENABLE_EPON_SUPPORT_)
+#include <syslog.h>
+#endif
+
 #define DEBUG_INI_NAME "/etc/debug.ini"
 extern char*                                pComponentName;
 char                                        g_Subsystem[32]         = {0};
@@ -229,7 +233,9 @@ int main(int argc, char* argv[])
     char *subSys            = NULL;  
     DmErr_t    err;
     debugLogFile = stderr;
-
+#if defined(_ENABLE_EPON_SUPPORT_)
+    setlogmask(LOG_UPTO(LOG_INFO));
+#endif
     for (idx = 1; idx < argc; idx++)
     {
         if ( (strcmp(argv[idx], "-subsys") == 0) )
