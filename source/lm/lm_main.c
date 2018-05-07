@@ -315,7 +315,8 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
 
 	if(ret != CCSP_SUCCESS)
 	{
-		printf("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret);
+		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
+		//printf("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret);
 		if(faultParam)
 		{
 			bus_info->freefunc(faultParam);
@@ -325,7 +326,7 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
 	else
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));
-		printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
+		//printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
 	}
 
 }
@@ -1006,7 +1007,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
     }
 #ifdef USE_NOTIFY_COMPONENT
 	
-	printf("LMlite-CLIENT <%s> <%d> : Connected Mac = %s \n",__FUNCTION__,__LINE__ ,pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+	CcspTraceWarning(("LMlite-CLIENT <%s> <%d> : Connected Mac = %s \n",__FUNCTION__,__LINE__ ,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 	pHost->bNotify = FALSE;
 #endif
     return pHost;
@@ -2586,7 +2587,8 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
 	
 	x = Hosts_FindHostIndexByPhysAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 	sscanf(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId],"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",&AP,&token);
-	printf("AP = %d token = %d\n",AP,token);
+	CcspTraceWarning(("AP = %d token = %d\n",AP,token));
+	//printf("AP = %d token = %d\n",AP,token);
 // modify uper indexes from token index
     for(y = x-1;y >= 0; y--)
 	{
@@ -2693,7 +2695,7 @@ void Send_MoCA_Host_Sync_Req()
         int ret = CCSP_FAILURE;
 
         CcspTraceWarning(("%s : Get MoCA Clients \n",__FUNCTION__));
-        printf("%s : Get MoCA Clients \n",__FUNCTION__);
+        //printf("%s : Get MoCA Clients \n",__FUNCTION__);
 		CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 
         ret = CcspBaseIf_setParameterValues(
@@ -2727,7 +2729,7 @@ void Send_Eth_Host_Sync_Req()
         int ret = CCSP_FAILURE;
 
         CcspTraceWarning(("%s : Get Ethernet Clients \n",__FUNCTION__));
-        printf("%s : Get Ethernet Clients \n",__FUNCTION__);
+        //printf("%s : Get Ethernet Clients \n",__FUNCTION__);
 		CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 
         ret = CcspBaseIf_setParameterValues(
@@ -2759,24 +2761,18 @@ void EthClient_AddtoQueue(char *phyAddr,int Status )
 		mqd_t mq;
         char buffer[MAX_SIZE];
 		
-		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
-		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
         CHECK((mqd_t)-1 != mq);
-		CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_ETH;
 
-				CcspTraceWarning(("<<< %s open event queue %d >>>\n",__FUNCTION__,__LINE__));
 		strcpy(EthHost.MacAddr,phyAddr);
 		EthHost.Active = Status;
 		memcpy(EventMsg.Msg,&EthHost,sizeof(EthHost));
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
-		CcspTraceWarning(("<<< %s Send msg to event queue EventMsg.MsgType %d>>>\n",__FUNCTION__,EventMsg.MsgType));
-		CcspTraceWarning(("<<< %s Send msg to event queue EthHost.MacAddr %s>>>\n",__FUNCTION__,EthHost.MacAddr));
+		CcspTraceWarning(("<<< %s Send msg to event queue EventMsg.MsgType %d, EthHost.MacAddr %s>>>\n", __FUNCTION__, EventMsg.MsgType, EthHost.MacAddr));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
-		CcspTraceWarning(("<<< %s close event queue >>>\n",__FUNCTION__));
 }
 
 void get_uptime(int *uptime)
