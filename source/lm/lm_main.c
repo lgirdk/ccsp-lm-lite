@@ -1176,7 +1176,7 @@ void extract(char* line, char* mac, char * ip)
 void Add_IPv6_from_Dibbler()
 {
 	FILE *fptr = NULL;
-	char line[128]={0},ip[64]={0},mac[18]={0};
+	char line[256]={0},ip[64]={0},mac[18]={0};
 	PLmObjectHost	pHost	= NULL;
 
 	if ((fptr=fopen("/etc/dibbler/server-cache.xml","r")) != NULL )
