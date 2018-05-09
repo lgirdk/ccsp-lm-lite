@@ -254,7 +254,7 @@ pthread_mutex_t XLmHostObjectMutex;
 
 extern ANSC_HANDLE bus_handle;
 void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
-void extract(char* line, char* mac, char * ip);
+int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
 
 void Send_Notification(char* interface, char*mac , ClientConnectState status, char *hostname)
@@ -1138,10 +1138,17 @@ Add_Update_IPv6Address
 	return pCur;
 }
 
-void extract(char* line, char* mac, char * ip)
+int extract(char* line, char* mac, char * ip)
 {
 	PLmObjectHost pHost;
 	int i,pivot=0,mac_start=0,flag=0;
+
+	if((strstr(line,"<entry") == NULL) || (strstr(line,"</entry>") == NULL))
+	{
+		//CcspTraceWarning(("Invalid dibbler entry : %s\n",line));
+		return 1;
+	}
+
 	for (i=0;i<(strlen(line));i++)
 	{
 		if(line[i]=='>')
@@ -1171,6 +1178,7 @@ void extract(char* line, char* mac, char * ip)
 			mac[i]='\0';
 		}
 	}
+	return 0;
 }
 
 void Add_IPv6_from_Dibbler()
@@ -1185,7 +1193,8 @@ void Add_IPv6_from_Dibbler()
 		{
 			if(strstr(line,"addr") != NULL)
 			{
-				extract(line,mac,ip);
+				if(1 == extract(line,mac,ip))
+					continue;
 				pHost = Hosts_AddHostByPhysAddress(mac);
 				if(pHost)
 				{
