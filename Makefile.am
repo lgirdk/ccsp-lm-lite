@@ -1,4 +1,4 @@
-##########################################################################
+########################################################################
 # If not stated otherwise in this file or this component's Licenses.txt
 # file the following copyright and licenses apply:
 #
@@ -37,7 +37,7 @@ if CCSP_ARCH_PC
 liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
 endif
 
-liblmapi_la_LDFLAGS= -lccsp_common
+liblmapi_la_LDFLAGS= -lccsp_common -lsecure_wrapper
 
 if CCSP_ARCH_PC
 liblmapi_la_SOURCES= ${SUBDIRS}/lm/lm_api.c

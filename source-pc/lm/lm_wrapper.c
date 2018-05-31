@@ -831,7 +831,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
     snprintf(buf, sizeof(buf), "ip nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}'", physAddress);
     system(buf);
 
-        if(!(fp = popen(buf, "r")))
+        if(!(fp = v_secure_popen(buf)))
 		{
 	        return -1;
         }
@@ -840,7 +840,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
 		output[strlen(output) - 1] = '\0';
 	}
 	strcpy(IPAddress,output);
-    fclose(fp);
+    v_secure_pclose(fp);
 
     return 0;
 

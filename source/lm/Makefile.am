@@ -35,6 +35,7 @@ AM_LDFLAGS += -lsysevent
 AM_LDFLAGS += -lutapi
 AM_LDFLAGS += -lutctx
 AM_LDFLAGS += -lulog
+AM_LDFLAGS += -lsecure_wrapper
 
 AM_CPPFLAGS = -Wall -Werror
 ACLOCAL_AMFLAGS = -I m4
@@ -61,11 +62,11 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						cosa_xhosts_dml.c 
 
 if PARODUS_ENABLE
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus -lsecure_wrapper
 if ENABLE_SESHAT
 libCcspLM_la_LDFLAGS +=  -llibseshat
 endif
 else
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lsecure_wrapper
 endif
 
