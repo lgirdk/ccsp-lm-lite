@@ -351,7 +351,7 @@ int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize)
     char *ptr = retBuf;
     int bufSize = retBufSize, bufbytes = 0, readbytes = 0;
 
-    if ((f = popen(cmd, "r")) == NULL) {
+    if ((f = v_secure_popen(cmd)) == NULL) {
         CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : popen %s error\n",__FUNCTION__, cmd));
         return -1;
     }
@@ -372,7 +372,7 @@ int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize)
         bufSize -= readbytes;
         ptr += readbytes;
     }
-    pclose(f);
+    v_secure_pclose(f);
     retBuf[retBufSize - 1] = 0;
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
