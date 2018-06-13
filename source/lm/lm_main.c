@@ -130,6 +130,16 @@
 #define MSG_TYPE_WIFI   2
 #define MSG_TYPE_MOCA   3
 
+#define VALIDATE_QUEUE_NAME             "/Validate_host_queue"
+#define MAX_SIZE_VALIDATE_QUEUE         sizeof(ValidateHostQData)
+#define MAX_COUNT_VALIDATE_RETRY        (3)
+#define MAX_WAIT_VALIDATE_RETRY         (15)
+#define ARP_CACHE                       "/tmp/arp.txt"
+#define DNSMASQ_CACHE                   "/tmp/dns.txt"
+#define DNSMASQ_FILE                    "/nvram/dnsmasq.leases"
+#define ACTION_FLAG_ADD                 (1)
+#define ACTION_FLAG_DEL                 (2)
+
 typedef enum {
     CLIENT_STATE_OFFLINE,
     CLIENT_STATE_DISCONNECT,
@@ -154,6 +164,24 @@ typedef struct _Name_DM
     char name[NAME_DM_LEN];
     char dm[NAME_DM_LEN];
 }Name_DM_t;
+
+typedef struct _ValidateHostQData
+{
+    char phyAddr[18];
+    char AssociatedDevice[LM_GEN_STR_SIZE];
+    char ssid[LM_GEN_STR_SIZE];
+    int RSSI;
+    int Status;
+} ValidateHostQData;
+
+typedef struct _RetryHostList
+{
+    ValidateHostQData host;
+    int retryCount;
+    struct _RetryHostList *next;
+} RetryHostList;
+
+RetryHostList *pListHead = NULL;
 
 int g_IPIfNameDMListNum = 0;
 Name_DM_t *g_pIPIfNameDMList = NULL;
@@ -249,6 +277,10 @@ pthread_mutex_t HostNameMutex;
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
 pthread_mutex_t XLmHostObjectMutex;
+pthread_mutex_t LmRetryHostListMutex;
+
+static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
+
 
 #ifdef USE_NOTIFY_COMPONENT
 
@@ -2205,6 +2237,281 @@ Hosts_PollHost()
     pthread_mutex_unlock(&PollHostMutex);
 }
 
+static BOOL ValidateHost(char *mac)
+{
+    char buf[200] = {0};
+    FILE *fp = NULL;
+
+    snprintf(buf, sizeof(buf), "ip nei show | grep -i %s > %s", mac, ARP_CACHE);
+    system(buf);
+    if (NULL == (fp = fopen(ARP_CACHE, "r")))
+    {
+        return FALSE;
+    }
+    memset(buf, 0, sizeof(buf));
+    if(fgets(buf, sizeof(buf), fp)!= NULL)
+    {
+        fclose(fp);
+        unlink(ARP_CACHE);
+        return TRUE;
+    }
+    else
+    {
+        fclose(fp);
+        fp = NULL;
+        unlink(ARP_CACHE);
+
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf), "cat %s | grep -i %s > %s", DNSMASQ_FILE, mac, DNSMASQ_CACHE);
+        system(buf);
+        if (NULL == (fp = fopen(DNSMASQ_CACHE, "r")))
+        {
+            CcspTraceWarning(("%s not able to open dnsmasq cache file\n", __FUNCTION__));
+            return FALSE;
+        }
+        memset(buf, 0, sizeof(buf));
+        if(NULL != fgets(buf, sizeof(buf), fp))
+        {
+            fclose(fp);
+            unlink(DNSMASQ_CACHE);
+            return TRUE;
+        }
+        fclose(fp);
+        unlink(DNSMASQ_CACHE);
+    }
+
+    return FALSE;
+}
+
+static RetryHostList *CreateValidateHostEntry(ValidateHostQData *pValidateHost)
+{
+    RetryHostList *pHost;
+
+    pHost = (RetryHostList *)malloc(sizeof(RetryHostList));
+    if (pHost)
+    {
+        memset(pHost, 0, sizeof(RetryHostList));
+        strcpy(pHost->host.phyAddr, pValidateHost->phyAddr);
+        strcpy(pHost->host.AssociatedDevice, pValidateHost->AssociatedDevice);
+        strcpy(pHost->host.ssid, pValidateHost->ssid);
+        pHost->host.RSSI = pValidateHost->RSSI;
+        pHost->host.Status = pValidateHost->Status;
+        pHost->retryCount = 0;
+        pHost->next = NULL;
+    }
+
+    return pHost;
+}
+
+static void UpdateHostRetryValidateList(ValidateHostQData *pValidateHostMsg, int actionFlag)
+{
+    RetryHostList *pHostNode = NULL;
+    RetryHostList *retryList = NULL;
+    RetryHostList *prevNode = NULL;
+
+    if (!pValidateHostMsg)
+    {
+        CcspTraceWarning(("%s Null Param\n",__FUNCTION__));
+        return;
+    }
+
+    pthread_mutex_lock(&LmRetryHostListMutex);
+    retryList = pListHead;
+    prevNode = NULL;
+    while(retryList)
+    {
+        if (!strcmp(retryList->host.phyAddr, pValidateHostMsg->phyAddr))
+        {
+            /* found the mac */
+            if (actionFlag == ACTION_FLAG_DEL)
+            {
+                if (NULL == prevNode)
+                {
+                    /* First Node */
+                    pListHead = retryList->next;
+                }
+                else
+                {
+                    prevNode->next = retryList->next;
+                }
+                CcspTraceWarning(("Deleted mac = %s from retryList\n", retryList->host.phyAddr));
+                free(retryList);
+            }
+            else if (ACTION_FLAG_ADD == actionFlag)
+            {
+                /* Alreday present in list. Just reset the retry count */
+                CcspTraceWarning(("reset count from %d to 0 for  mac = %s in retryList\n",
+                                    retryList->retryCount, retryList->host.phyAddr));
+                retryList->retryCount = 0;
+            }
+            pthread_mutex_unlock(&LmRetryHostListMutex);
+            return;
+        }
+        prevNode = retryList;
+        retryList = retryList->next;
+    }
+
+    if (ACTION_FLAG_ADD == actionFlag)
+    {
+        /* Not found in list. Add it. */
+        pHostNode = CreateValidateHostEntry(pValidateHostMsg);
+        if (!pHostNode)
+        {
+            CcspTraceWarning(("%s Malloc failed....\n",__FUNCTION__));
+            pthread_mutex_unlock(&LmRetryHostListMutex);
+            return;
+        }
+        if (NULL == prevNode)
+        {
+            /* empty list */
+            pListHead = pHostNode;
+        }
+        else
+        {
+            /* add at last */
+            prevNode->next = pHostNode;
+        }
+        CcspTraceWarning(("%s Added mac = %s in retryList\n",
+                            __FUNCTION__, pHostNode->host.phyAddr));
+    }
+
+    pthread_mutex_unlock(&LmRetryHostListMutex);
+    return;
+}
+
+static void RemoveHostRetryValidateList(RetryHostList *pPrevNode, RetryHostList *pHost)
+{
+    if (NULL == pPrevNode)
+    {
+        //First Node
+        pListHead = pHost->next;
+    }
+    else
+    {
+        pPrevNode->next = pHost->next;
+    }
+    CcspTraceWarning(("%s Deleted mac = %s from retryList\n", __FUNCTION__, pHost->host.phyAddr));
+    free(pHost);
+    return;
+}
+
+void *ValidateHostRetry_Thread(void *arg)
+{
+    RetryHostList *retryList;
+    RetryHostList *prevNode = NULL;
+    CcspTraceWarning(("%s started\n", __FUNCTION__));
+    do
+    {
+        sleep(MAX_WAIT_VALIDATE_RETRY);
+        pthread_mutex_lock(&LmRetryHostListMutex);
+        if (pListHead)
+        {
+            retryList = pListHead;
+            prevNode = NULL;
+            while(retryList)
+            {
+                CcspTraceWarning(("%s ValidateHost for mac = %s AssociatedDevice = %s,\n"
+                        "ssid = %s, RSSI = %d, Status = %d, retryCount = %d\n",
+                        __FUNCTION__,
+                        retryList->host.phyAddr,
+                        retryList->host.AssociatedDevice,
+                        retryList->host.ssid,
+                        retryList->host.RSSI,
+                        retryList->host.Status,
+                        retryList->retryCount));
+
+                retryList->retryCount++;
+                if (TRUE == ValidateHost(retryList->host.phyAddr))
+                {
+                    CcspTraceWarning(("%s ValidateHost SUCCESS for mac = %s\n",
+                                    __FUNCTION__, retryList->host.phyAddr));
+                    Wifi_ServerSyncHost(retryList->host.phyAddr,
+                                        retryList->host.AssociatedDevice,
+                                        retryList->host.ssid,
+                                        retryList->host.RSSI,
+                                        retryList->host.Status);
+
+                    CcspTraceWarning(("%s DEL from List mac = %s\n",
+                                __FUNCTION__, retryList->host.phyAddr));
+                    /* Valide Host. Remove from Retry Validate list */
+                    RemoveHostRetryValidateList(prevNode, retryList);
+                    retryList = (NULL == prevNode) ? pListHead : prevNode->next;
+                    continue;
+                }
+                else if (retryList->retryCount >= MAX_COUNT_VALIDATE_RETRY)
+                {
+                    CcspTraceWarning(("%s Reached max retry. DEL from List mac = %s"
+                            " retryList = 0x%x prevNode = 0x%x \n pListHead = 0x%x\n",
+                            __FUNCTION__, retryList->host.phyAddr, retryList, prevNode, pListHead));
+                    /* Reached maximum retry. Remove from the Retry Validate list */
+                    RemoveHostRetryValidateList(prevNode, retryList);
+                    retryList = (NULL == prevNode) ? pListHead : prevNode->next;
+                    continue;
+                }
+                prevNode = retryList;
+                retryList = retryList->next;
+            }
+        }
+        pthread_mutex_unlock(&LmRetryHostListMutex);
+    } while (1);
+    pthread_exit(NULL);
+}
+
+void *ValidateHost_Thread(void *arg)
+{
+    mqd_t mq;
+    struct mq_attr attr;
+
+    /* initialize the queue attributes */
+    attr.mq_flags = 0;
+    attr.mq_maxmsg = 100;
+    attr.mq_msgsize = MAX_SIZE_VALIDATE_QUEUE;
+    attr.mq_curmsgs = 0;
+
+    CcspTraceWarning(("%s started\n", __FUNCTION__));
+
+    /* create the message queue */
+    mq = mq_open(VALIDATE_QUEUE_NAME, O_CREAT | O_RDONLY, 0644, &attr);
+    CHECK((mqd_t)-1 != mq);
+
+    do
+    {
+        ssize_t bytes_read;
+        ValidateHostQData ValidateHostMsg = {0};
+
+        CcspTraceWarning(("%s Waiting for msg\n", __FUNCTION__));
+        /* receive the message */
+        bytes_read = mq_receive(mq, (char *)&ValidateHostMsg, MAX_SIZE_VALIDATE_QUEUE, NULL);
+        CHECK(bytes_read >= 0);
+
+        CcspTraceWarning(("%s mq_receive phyAddr = %s\n", __FUNCTION__, ValidateHostMsg.phyAddr));
+        if (TRUE == ValidateHost(ValidateHostMsg.phyAddr))
+        {
+            CcspTraceWarning(("%s ValidateHost SUCCESS for mac = %s\n",
+                                __FUNCTION__, ValidateHostMsg.phyAddr));
+            Wifi_ServerSyncHost(ValidateHostMsg.phyAddr,
+                                ValidateHostMsg.AssociatedDevice,
+                                ValidateHostMsg.ssid,
+                                ValidateHostMsg.RSSI,
+                                ValidateHostMsg.Status);
+            /* Valid Host. Remove from retry list if present */
+            CcspTraceWarning(("%s DEL from List if present mac = %s\n",
+                                __FUNCTION__, ValidateHostMsg.phyAddr));
+            UpdateHostRetryValidateList(&ValidateHostMsg, ACTION_FLAG_DEL);
+        }
+        else
+        {
+            CcspTraceWarning(("%s ValidateHost FAILED for mac = %s\n",
+                                __FUNCTION__, ValidateHostMsg.phyAddr));
+            CcspTraceWarning(("%s ADD in List phyAddr = %s\n",
+                                __FUNCTION__, ValidateHostMsg.phyAddr));
+            /* Host is not valide. Add the host details in retry list */
+            UpdateHostRetryValidateList(&ValidateHostMsg, ACTION_FLAG_ADD);
+        }
+    } while(1);
+    pthread_exit(NULL);
+}
+
 const char compName[25]="LOG.RDK.LM";
 void LM_main()
 {
@@ -2216,6 +2523,7 @@ void LM_main()
     pthread_mutex_init(&LmHostObjectMutex,0);
 	pthread_mutex_init(&XLmHostObjectMutex,0);
     pthread_mutex_init(&HostNameMutex,0);
+    pthread_mutex_init(&LmRetryHostListMutex, 0);
     lm_wrapper_init();
     lmHosts.hostArray = LanManager_Allocate(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
     lmHosts.sizeHost = LM_HOST_ARRAY_STEP;
@@ -2271,6 +2579,18 @@ void LM_main()
 #ifdef PARODUS_ENABLE    
     initparodusTask();
 #endif
+
+    pthread_t ValidateHost_ThreadID;
+    res = pthread_create(&ValidateHost_ThreadID, NULL, ValidateHost_Thread, "ValidateHost_Thread");
+    if(res != 0) {
+        CcspTraceError(("Create Event_HandlerThread error %d\n", res));
+    }
+
+    pthread_t ValidateHostRetry_ThreadID;
+    pthread_create(&ValidateHostRetry_ThreadID, NULL, ValidateHostRetry_Thread, "ValidateHostRetry_Thread");
+    if(res != 0) {
+        CcspTraceError(("Create ValidateHostRetry_Thread error %d\n", res));
+    }
 
 	pthread_t Event_HandlerThreadID;
     res = pthread_create(&Event_HandlerThreadID, NULL, Event_HandlerThread, "Event_HandlerThread");
@@ -2500,7 +2820,7 @@ void XLM_get_host_info()
 
 }
 
-void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status )
+void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status)
 {
 	char 	*pos2			= NULL,
 			*pos5			= NULL,
@@ -2575,6 +2895,36 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		CHECK((mqd_t)-1 != mq_close(mq));
 		CcspTraceWarning(("<<< %s close event queue >>>\n",__FUNCTION__));
 	}
+}
+
+void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status )
+{
+	ValidateHostQData ValidateHostMsg = {0};
+	mqd_t mq;
+
+	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
+						__FUNCTION__,
+						(NULL != phyAddr) ? phyAddr : "NULL",
+						(NULL != AssociatedDevice) ? AssociatedDevice : "NULL",
+						(NULL != ssid) ? ssid : "NULL",
+						RSSI,
+						Status));
+	mq = mq_open(VALIDATE_QUEUE_NAME, O_WRONLY);
+    CHECK((mqd_t)-1 != mq);
+	CcspTraceWarning(("<<< %s open validate host queue %d >>>\n",__FUNCTION__,__LINE__));
+
+	strcpy(ValidateHostMsg.phyAddr, phyAddr);
+    strcpy(ValidateHostMsg.AssociatedDevice, AssociatedDevice);
+    strcpy(ValidateHostMsg.ssid, ssid);
+    ValidateHostMsg.RSSI = RSSI;
+    ValidateHostMsg.Status = Status;
+
+	CcspTraceWarning(("<<< %s open validate host queue %d >>>\n",__FUNCTION__,__LINE__));
+    CcspTraceWarning(("<<< %s Send msg to validate host queue ValidateHostMsg.phyAddr %s>>>\n",
+                        __FUNCTION__, ValidateHostMsg.phyAddr));
+	CHECK(0 <= mq_send(mq, (char *)&ValidateHostMsg, MAX_SIZE_VALIDATE_QUEUE, 0));
+	CHECK((mqd_t)-1 != mq_close(mq));
+	CcspTraceWarning(("<<< %s close validate host queue >>>\n",__FUNCTION__));
 }
 
 int Hosts_FindHostIndexByPhysAddress(char * physAddress)
