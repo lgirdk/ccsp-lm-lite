@@ -1950,6 +1950,7 @@ void *Event_HandlerThread(void *threadid)
                 pthread_mutex_lock(&LmHostObjectMutex);
 				memset(radio,0,sizeof(radio));
 				convert_ssid_to_radio(hosts.ssid, radio);
+				DelAndShuffleAssoDevIndx(pHost);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
