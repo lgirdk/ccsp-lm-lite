@@ -27,7 +27,7 @@
 #else
 #define NETWORK_DEVICE_STATUS_AVRO_FILENAME			"/usr/ccsp/lm/NetworkDevicesStatus.avsc"
 #endif
-#define CHK_AVRO_ERR (strlen(avro_strerror()) > 0)
+#define CHK_AVRO_ERR (( NULL != avro_strerror() ) && ( strlen(avro_strerror()) > 0) )
 
 struct networkdevicestatusdata
 {
