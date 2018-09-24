@@ -81,9 +81,7 @@
 #include "ccsp_base_api.h"
 #include "lm_main.h"
 #include "lm_util.h"
-#ifdef PARODUS_ENABLE
 #include "webpa_interface.h"
-#endif
 #include "lm_wrapper.h"
 #include "lm_api.h"
 #include "lm_wrapper_priv.h"
@@ -2553,9 +2551,7 @@ void LM_main()
 		rdk_logger_init(DEBUG_INI_NAME);
 	#endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
-#ifdef PARODUS_ENABLE    
     initparodusTask();
-#endif
 
     pthread_t ValidateHost_ThreadID;
     res = pthread_create(&ValidateHost_ThreadID, NULL, ValidateHost_Thread, "ValidateHost_Thread");

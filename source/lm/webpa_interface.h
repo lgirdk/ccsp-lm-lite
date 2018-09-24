@@ -43,8 +43,6 @@ char * getDeviceMac();
  * @return deviceMAC
 */
 char * getFullDeviceMac();
-#ifdef PARODUS_ENABLE 
 void initparodusTask();
-#endif
 
 #endif /* WEB_INTERFACE_H_ */

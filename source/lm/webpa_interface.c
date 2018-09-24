@@ -24,25 +24,8 @@
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_util.h"
 #include <sysevent/sysevent.h>
-
-#ifdef PARODUS_ENABLE
 #include <libparodus.h>
 #include "webpa_pd.h"
-#else
-#include "msgpack.h"
-#include "base64.h"
-
-#define WEBPA_COMPONENT_NAME    "eRT.com.cisco.spvtg.ccsp.webpaagent"
-#define WEBPA_DBUS_PATH         "/com/cisco/spvtg/ccsp/webpaagent"
-#define WEBPA_PARAMETER_NAME    "Device.Webpa.PostData" 
-#define CONTENT_TYPE            "content_type"
-#define WEBPA_MSG_TYPE          "msg_type"
-#define WEBPA_SOURCE            "source"
-#define WEBPA_DESTINATION       "dest"
-#define WEBPA_TRANSACTION_ID    "transaction_uuid"
-#define WEBPA_PAYLOAD           "payload"
-#define WEBPA_MAP_SIZE          6
-#endif
 
 #define MAX_PARAMETERNAME_LEN   512
 
@@ -55,12 +38,9 @@ char fullDeviceMAC[32]={'\0'};
 #define ETH_WAN_STATUS_PARAM "Device.Ethernet.X_RDKCENTRAL-COM_WAN.Enabled"
 #define RDKB_ETHAGENT_COMPONENT_NAME                  "com.cisco.spvtg.ccsp.ethagent"
 #define RDKB_ETHAGENT_DBUS_PATH                       "/com/cisco/spvtg/ccsp/ethagent"
-#ifdef PARODUS_ENABLE
+
 libpd_instance_t client_instance;
 static void *handle_parodus();
-#else
-static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
-#endif
 
 static void macToLower(char macValue[]);
 static void waitForEthAgentComponentReady();
@@ -108,22 +88,14 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
 void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentType, char *payload, unsigned int payload_len)
 {
     pthread_mutex_lock(&webpa_mutex);
-#ifdef PARODUS_ENABLE
     wrp_msg_t *wrp_msg ;
     int retry_count = 0, backoffRetryTime = 0, c = 2;
     int sendStatus = -1;
     char source[MAX_PARAMETERNAME_LEN/2] = {'\0'};
-#else
-    char* faultParam = NULL;
-    int ret = -1;
-    parameterValStruct_t val = {0};
-    char * packedMsg = NULL;
-#endif
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, <======== Start of sendWebpaMsg =======>\n"));
-#ifdef PARODUS_ENABLE
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, deviceMAC *********:%s\n",deviceMAC));
     if(serviceName!= NULL){
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
@@ -196,38 +168,6 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
         free(wrp_msg);
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After freeing wrp_msg\n"));
     }
-#else
-    // Pack the message using msgpck WRP notification format and then using base64        
-    packedMsg = packStructure(serviceName, dest, trans_id, payload, contentType,payload_len);              
-    
-/*    if(consoleDebugEnable)    
-        {
-            fprintf(stderr, "RDK_LOG_DEBUG, base64 encoded msgpack packed data containing %d bytes is : %s\n",strlen(packedMsg),packedMsg);
-        }*/
-    
-    // set this packed message as value of WebPA Post parameter 
-    val.parameterValue = packedMsg;
-    val.type = ccsp_base64;
-    val.parameterName = WEBPA_PARAMETER_NAME;
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, val.parameterName %s, val.type %d\n",val.parameterName,val.type));
-    ret = CcspBaseIf_setParameterValues(bus_handle,
-                WEBPA_COMPONENT_NAME, WEBPA_DBUS_PATH, 0,
-                0x0000000C, /* session id and write id */
-                &val, 1, TRUE, /* no commit */
-                &faultParam);
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, CcspBaseIf_setParameterValues ret %d\n",ret));
-    if (ret != CCSP_SUCCESS && faultParam) 
-    {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, ~~~~ Error:Failed to SetValue for param  '%s' ~~~~ ret : %d \n", faultParam, ret));
-    }
-    
-    if(packedMsg != NULL)
-    {
-        free(packedMsg);
-        packedMsg = NULL;
-    }
-#endif
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,  <======== End of sendWebpaMsg =======>\n"));
 
@@ -236,7 +176,6 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     pthread_mutex_unlock(&webpa_mutex);
 }
 
-#ifdef PARODUS_ENABLE
 void initparodusTask()
 {
 	int err = 0;
@@ -320,119 +259,6 @@ const char *rdk_logger_module_fetch(void)
 {
     return "LOG.RDK.LM";
 }
-#else
-static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len)
-{           
-    msgpack_sbuffer sbuf;
-    msgpack_packer pk;  
-    char* b64buffer =  NULL;
-    size_t encodeSize = 0;
-    char source[MAX_PARAMETERNAME_LEN/2] = {'\0'}; 
-    int msg_type = 4;
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, deviceMAC *********:%s\n",deviceMAC));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest :%s\n",dest));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, transaction_id :%s\n",trans_id));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType :%s\n",contentType));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, payload_len :%d\n",payload_len));
-
-    snprintf(source, sizeof(source), "mac:%s/%s", deviceMAC, serviceName);
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",deviceMAC));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Source derived is %s\n", source));
-  
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, <======== Start of packStructure ======>\n"));
-    
-    // Start of msgpack encoding
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, -----------Start of msgpack encoding------------\n"));
-
-    msgpack_sbuffer_init(&sbuf);
-    msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
-    msgpack_pack_map(&pk, WEBPA_MAP_SIZE);
-
-    msgpack_pack_str(&pk, strlen(WEBPA_MSG_TYPE));
-    msgpack_pack_str_body(&pk, WEBPA_MSG_TYPE,strlen(WEBPA_MSG_TYPE));
-    msgpack_pack_int(&pk, msg_type);   
-    
-    msgpack_pack_str(&pk, strlen(WEBPA_SOURCE));
-    msgpack_pack_str_body(&pk, WEBPA_SOURCE,strlen(WEBPA_SOURCE));
-    msgpack_pack_str(&pk, strlen(source));
-    msgpack_pack_str_body(&pk, source,strlen(source));
-    
-    msgpack_pack_str(&pk, strlen(WEBPA_DESTINATION));
-    msgpack_pack_str_body(&pk, WEBPA_DESTINATION,strlen(WEBPA_DESTINATION));       
-    msgpack_pack_str(&pk, strlen(dest));
-    msgpack_pack_str_body(&pk, dest,strlen(dest));
-    
-    msgpack_pack_str(&pk, strlen(WEBPA_TRANSACTION_ID));
-    msgpack_pack_str_body(&pk, WEBPA_TRANSACTION_ID,strlen(WEBPA_TRANSACTION_ID));
-    msgpack_pack_str(&pk, strlen(trans_id));
-    msgpack_pack_str_body(&pk, trans_id,strlen(trans_id));
-     
-    msgpack_pack_str(&pk, strlen(WEBPA_PAYLOAD));
-    msgpack_pack_str_body(&pk, WEBPA_PAYLOAD,strlen(WEBPA_PAYLOAD));
-       
-    if(strcmp(contentType,"avro/binary") == 0)
-    {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, msg->payload binary\n"));
-        msgpack_pack_bin(&pk, payload_len);
-        msgpack_pack_bin_body(&pk, payload, payload_len);
-    }
-    else // string: "contentType :application/json"
-    {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, msg->payload string\n"));
-        msgpack_pack_str(&pk, strlen(payload));
-        msgpack_pack_str_body(&pk, payload,strlen(payload));
-    }
-  
-    msgpack_pack_str(&pk, strlen(CONTENT_TYPE));
-    msgpack_pack_str_body(&pk, CONTENT_TYPE,strlen(CONTENT_TYPE));
-    msgpack_pack_str(&pk, strlen(contentType));
-    msgpack_pack_str_body(&pk, contentType,strlen(contentType));
-    
-    /*if(consoleDebugEnable)
-        fprintf(stderr, "RDK_LOG_DEBUG,msgpack encoded data contains %d bytes and data is : %s\n",(int)sbuf.size,sbuf.data);*/
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,-----------End of msgpack encoding------------\n"));
-    // End of msgpack encoding
-    
-    // Start of Base64 Encode
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,-----------Start of Base64 Encode ------------\n"));
-    encodeSize = b64_get_encoded_buffer_size( sbuf.size );
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,encodeSize is %d\n", (int)encodeSize));
-    b64buffer = malloc(encodeSize + 1); // one byte extra for terminating NULL byte
-    b64_encode((const uint8_t *)sbuf.data, sbuf.size, (uint8_t *)b64buffer);
-    b64buffer[encodeSize] = '\0' ;    
- 
-    
-    /*if(consoleDebugEnable)
-    {
-    int i;
-    fprintf(stderr, "RDK_LOG_DEBUG,\n\n b64 encoded data is : ");
-    for(i = 0; i < encodeSize; i++)
-        fprintf(stderr,"%c", b64buffer[i]);      
-
-    fprintf(stderr,"\n\n");       
-    }*/
-
-    //CcspLMLiteTrace(("RDK_LOG_DEBUG,\nb64 encoded data length is %d\n",i));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,---------- End of Base64 Encode -------------\n"));
-    // End of Base64 Encode
-    
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,Destroying sbuf.....\n"));
-    msgpack_sbuffer_destroy(&sbuf);
-    
-    //CcspLMLiteTrace(("RDK_LOG_DEBUG,Final Encoded data: %s\n",b64buffer));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,Final Encoded data length: %d\n",(int)strlen(b64buffer)));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,<======== End of packStructure ======>\n"));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
-
-    return b64buffer;
-}
-#endif
 
 char * getFullDeviceMac()
 {

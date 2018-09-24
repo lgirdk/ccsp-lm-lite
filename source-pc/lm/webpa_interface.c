@@ -29,29 +29,11 @@
 #include "mlt_malloc.h"
 #endif
 
-#ifdef PARODUS_ENABLE
 #include <libparodus.h>
 #define DEVICE_PROPS_FILE   "/etc/device.properties"
 #define URL_SIZE 	    64
 #define CLIENT_PORT_NUM     6662
 #define PARODUS_SERVICE    "Parodus"
-#else
-#include "msgpack.h"
-#include "base64.h"
-
-//#define WEBPA_COMPONENT_NAME    "eRT.com.cisco.spvtg.ccsp.webpaagent"  //RDKB-EMU
-#define WEBPA_COMPONENT_NAME    "com.cisco.spvtg.ccsp.webpaagent"
-#define WEBPA_DBUS_PATH         "/com/cisco/spvtg/ccsp/webpaagent"
-#define WEBPA_PARAMETER_NAME    "Device.Webpa.PostData" 
-#define CONTENT_TYPE            "content_type"
-#define WEBPA_MSG_TYPE          "msg_type"
-#define WEBPA_SOURCE            "source"
-#define WEBPA_DESTINATION       "dest"
-#define WEBPA_TRANSACTION_ID    "transaction_uuid"
-#define WEBPA_PAYLOAD           "payload"
-#define WEBPA_MAP_SIZE          6
-#endif
-
 #define MAX_PARAMETERNAME_LEN   512
 extern ANSC_HANDLE bus_handle;
 pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -59,16 +41,12 @@ pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 char deviceMAC[32]={'\0'}; 
 char fullDeviceMAC[32]={'\0'};
-#ifdef PARODUS_ENABLE
 libpd_instance_t client_instance;
 char seshat_url[URL_SIZE] = {'\0'};
 char parodus_url[URL_SIZE] = {'\0'};
 static void *handle_parodus();
 static void get_seshat_url();
 static void get_parodus_url();
-#else
-static char * packStructure(char *serviceName, char *dest, char *trans_id, char *payload, char *contentType, unsigned int payload_len);
-#endif
 
 static void macToLower(char macValue[]);
 
@@ -120,23 +98,14 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
 void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentType, char *payload, unsigned int payload_len)
 {
     pthread_mutex_lock(&webpa_mutex);
-#ifdef PARODUS_ENABLE
     wrp_msg_t *wrp_msg ;
     int retry_count = 0, backoffRetryTime = 0, c = 2;
     int sendStatus = -1;
     char source[MAX_PARAMETERNAME_LEN/2] = {'\0'};
-#else
-    char* faultParam = NULL;
-    int ret = -1;
-    parameterValStruct_t val = {0};
-    char * packedMsg = NULL;
-    CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
-#endif
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, <======== Start of sendWebpaMsg =======>\n"));
-#ifdef PARODUS_ENABLE
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, deviceMAC *********:%s\n",deviceMAC));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName :%s\n",serviceName));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest :%s\n",dest));
@@ -192,43 +161,6 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before freeing wrp_msg\n"));    
     free(wrp_msg);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After freeing wrp_msg\n"));
-#else
-    // Pack the message using msgpck WRP notification format and then using base64        
-    packedMsg = packStructure(serviceName, dest, trans_id, payload, contentType,payload_len);              
-    
-/*    if(consoleDebugEnable)    
-        {
-            fprintf(stderr, "RDK_LOG_DEBUG, base64 encoded msgpack packed data containing %d bytes is : %s\n",strlen(packedMsg),packedMsg);
-        }*/
-    
-    // set this packed message as value of WebPA Post parameter 
-    val.parameterValue = packedMsg;
-    val.type = ccsp_base64;
-    val.parameterName = WEBPA_PARAMETER_NAME;
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, val.parameterName %s, val.type %d\n",val.parameterName,val.type));
-    ret = CcspBaseIf_setParameterValues(bus_handle,
-                WEBPA_COMPONENT_NAME, WEBPA_DBUS_PATH, 0,
-                0x0000000C, /* session id and write id */
-                &val, 1, TRUE, /* no commit */
-                &faultParam);
-
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, CcspBaseIf_setParameterValues ret %d\n",ret));
-    if (ret != CCSP_SUCCESS)
-    {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, ~~~~ Error:Failed to SetValue - ret : %d\n", ret));
-        if(faultParam)
-        {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, ~~~~ Error:Failed to SetValue for param : '%s'\n", faultParam));
-            bus_info->freefunc(faultParam);
-        }
-    }
-    
-    if(packedMsg != NULL)
-    {
-        free(packedMsg);
-        packedMsg = NULL;
-    }
-#endif
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG,  <======== End of sendWebpaMsg =======>\n"));
 
@@ -237,7 +169,6 @@ void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentTy
     pthread_mutex_unlock(&webpa_mutex);
 }
 
-#ifdef PARODUS_ENABLE
 void initparodusTask()
 {
 	int err = 0;
@@ -485,7 +416,6 @@ static char * packStructure(char *serviceName, char *dest, char *trans_id, char 
 
     return b64buffer;
 }
-#endif
 
 char * getFullDeviceMac()
 {

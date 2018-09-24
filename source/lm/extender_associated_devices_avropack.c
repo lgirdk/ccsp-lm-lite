@@ -810,14 +810,12 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
   }*/
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before AD WebPA SEND message call\n"));
-#ifdef PARODUS_ENABLE  
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName: %s\n", serviceName));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest: %s\n", dest));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, trans_id: %s\n", trans_id));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType: %s\n", contentType));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AvroSerializedBufIDW: %s\n", AvroSerializedBufIDW));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AvroSerializedSizeIDW: %d\n", (int)AvroSerializedSizeIDW));
-#endif
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBufIDW, AvroSerializedSizeIDW);
   CcspTraceWarning(("ExtenderDevicesWifi report sent to Webpa, Destination=%s, Transaction-Id=%s  \n",dest,trans_id));

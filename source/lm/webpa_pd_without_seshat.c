@@ -16,7 +16,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 **************************************************************************/
-#if defined(PARODUS_ENABLE) && !defined(ENABLE_SESHAT)
+#ifndef ENABLE_SESHAT
 #include "ssp_global.h"
 #include "stdlib.h"
 #include "ccsp_dm_api.h"

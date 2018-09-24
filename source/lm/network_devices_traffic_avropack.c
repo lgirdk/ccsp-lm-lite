@@ -523,14 +523,12 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   }*/
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before ND WebPA SEND message call\n"));
-#ifdef PARODUS_ENABLE 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, serviceName: %s\n", serviceName));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, dest: %s\n", dest));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, trans_id: %s\n", trans_id));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, contentType: %s\n", contentType));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AvroSerializedBuf: %s\n", AvroSerializedBuf));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AvroSerializedSize: %d\n", (int)AvroSerializedSize));
-#endif
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
   CcspTraceWarning(("NetworkDevicesTraffic report sent to Webpa, Destination=%s, Transaction-Id=%s  \n",dest,trans_id));
