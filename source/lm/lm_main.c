@@ -2836,6 +2836,26 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 			pHost->activityChangeTime = time((time_t*)NULL);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+
+			if( Status ) 
+			{
+				if( pHost->ipv4Active == TRUE )
+				{
+					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client online:%s,%s\n",
+												pHost->pStringParaValue[LM_HOST_PhysAddressId],
+												( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL"  ));
+				}
+			}  
+			else 
+			{
+				if( pHost->ipv4Active == TRUE )
+				{
+					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client offline:%s,%s\n",
+												pHost->pStringParaValue[LM_HOST_PhysAddressId],
+												( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL"  ));
+				}
+			}
+
 			pthread_mutex_unlock(&XLmHostObjectMutex);
 		}
 	}
