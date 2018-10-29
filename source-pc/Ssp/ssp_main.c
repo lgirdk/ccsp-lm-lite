@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 #ifdef FEATURE_SUPPORT_RDKLOG
-    RDK_LOGGER_INIT();
+            rdk_logger_init(DEBUG_INI_NAME);
 #endif
     system("touch /tmp/lmlite_initialized");
 

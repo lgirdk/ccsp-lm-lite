@@ -1932,7 +1932,7 @@ void LM_main()
     pComponentName = compName;
 
 #ifdef FEATURE_SUPPORT_RDKLOG
-    RDK_LOGGER_INIT();
+    rdk_logger_init(DEBUG_INI_NAME);
 #endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
 
