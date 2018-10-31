@@ -1137,7 +1137,8 @@ Add_Update_IPv6Address
 			}
 			else
 			{
-				temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString("EMPTY");
+				//temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString("EMPTY");
+				temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(" "); // fix for RDKB-19836
 				(*num)++;
 				temp->instanceNum = *num;
 				temp->pNext=prev;
@@ -1961,7 +1962,8 @@ void *Event_HandlerThread(void *threadid)
 				DelAndShuffleAssoDevIndx(pHost);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+                //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                 pthread_mutex_unlock(&LmHostObjectMutex);
 
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
