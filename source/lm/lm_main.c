@@ -2009,7 +2009,7 @@ void *Event_HandlerThread(void *threadid)
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("<<< %s client type is MoCA, IPAddr is not updated in ARP %d >>\n>",__FUNCTION__,__LINE__));
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
                     Hosts_SyncDHCP();
                     CcspTraceWarning(("<<< %s client type is MoCA, IPAddr is not updated in ARP %d %s >>\n>",__FUNCTION__,__LINE__,pHost->pStringParaValue[LM_HOST_IPAddressId]));
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));

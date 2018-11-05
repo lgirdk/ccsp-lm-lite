@@ -83,7 +83,6 @@ LanManager_ParamValueChanged
             Hosts_PollHost();
         }
     }
-    return TRUE;
 }
 
 /*
@@ -276,7 +275,7 @@ void LanManager_Free
 )
 {
     //return AnscFreeMemoryCountSize(pComponentName, p);
-    return AnscFreeMemory(p);
+    AnscFreeMemory(p);
     //if(p) return free(p);
 }
 
