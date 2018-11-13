@@ -397,6 +397,118 @@ int _syscmd(char *cmd, char *retBuf, int retBufSize)
     return 0;
 }
 
+char* NDS_GetIpAddress(PLmObjectHost host)
+{
+    PLmObjectHostIPAddress pIpAddrList;
+    size_t ipv4_len = 0;
+    size_t ipv6_index1_len = 0;
+    size_t ipv6_index3_len = 0;
+    size_t total_len = 0;
+    char *pIpv4address = NULL;
+    char *pIpv6addressindex1 = NULL;
+    char *pIpv6addressindex3 = NULL;
+
+    if (!host)
+        return strdup("Unknown");
+
+    // By default PLmObjectHost pStringParaValue ipaddress holds ipv4 address.
+    if(host->pStringParaValue[LM_HOST_IPAddressId])
+    {
+        pIpv4address = host->pStringParaValue[LM_HOST_IPAddressId];
+    }
+
+    if ((!host->ipv6Active) && (!pIpv4address))
+        return strdup("Unknown");
+
+    /*
+     * Get 1st instance ipv6 address ( pass index value 2 to get first instance ipv6 address ,
+     * because linked list stored in stack order hence first instance store last index)
+    */
+    pIpAddrList = LM_GetIPArr_FromIndex(host,2,IP_V6);
+    if (pIpAddrList)
+    {
+        if (pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
+        {
+            char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
+            if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
+            {
+                pIpv6addressindex1 = ipadd;
+            }
+        }
+    }
+
+    /*
+     * If valid ipv6 not found in 1st instance then check 3rd instance
+     * Get 3rd instance ipv6 address ( pass index value 0 to get 3rd instance ipv6 address ,
+     * because linked list stored in stack order hence last instance store first index)
+    */
+    pIpAddrList = LM_GetIPArr_FromIndex(host,0,IP_V6);
+    if (pIpAddrList)
+    {
+        if (pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
+        {
+            char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
+            if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
+            {
+                pIpv6addressindex3 = ipadd;
+            }
+        }
+    }
+
+    if (pIpv4address)
+    {
+        ipv4_len = strlen(pIpv4address);
+    }
+
+    if (pIpv6addressindex1)
+    {
+        ipv6_index1_len = strlen(pIpv6addressindex1);
+    }
+
+    if (pIpv6addressindex3)
+    {
+        ipv6_index3_len = strlen(pIpv6addressindex3);
+    }
+
+    total_len = ipv4_len + ipv6_index1_len + ipv6_index3_len;
+
+    // Below logic to send ipv4, ipv6 index1 and index3 together with delimeter space.
+    if (total_len > 0)
+    {
+        char * dest = (char *)malloc(total_len + 5);
+        // This below case will comes atleast either ipv4 or ipv6 available.
+        if (dest)
+        {
+            memset (dest,0,total_len + 5);
+            if (pIpv4address)
+            {
+                strncat(dest, pIpv4address, ipv4_len);
+                if (pIpv6addressindex1 || pIpv6addressindex3)
+                {
+                    strncat(dest," ",1);
+                }
+            }
+
+            if (pIpv6addressindex1)
+            {
+                strncat(dest, pIpv6addressindex1, ipv6_index1_len);
+                if (pIpv6addressindex3)
+                {
+                    strncat(dest," ",1);
+                }
+            }
+
+            if (pIpv6addressindex3)
+            {
+                strncat(dest, pIpv6addressindex3, ipv6_index3_len);
+            }
+
+            return dest;
+        }
+    }
+    return strdup("Unknown");
+}
+
 void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
@@ -448,10 +560,8 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
 
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, HostName[%s] \n",ptr->hostname ));
 
-        if(host->pStringParaValue[LM_HOST_IPAddressId])
-                ptr->ipaddress = strdup(host->pStringParaValue[LM_HOST_IPAddressId]);
-        else
-                ptr->ipaddress = strdup("Unknown");
+    
+        ptr->ipaddress = NDS_GetIpAddress(host);;
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, IPAddress[%s] \n",ptr->ipaddress ));
 
@@ -562,7 +672,7 @@ void GetLMHostData()
 
             //printf("RDK_LOG_DEBUG, bClientReady [%d] \n", lmHosts.hostArray[i]->bClientReady);
 
-	    if ( (!lmHosts.hostArray[i]->bClientReady) && (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ) && (lmHosts.hostArray[i]->ipv4Active))
+	    if ( (!lmHosts.hostArray[i]->bClientReady) && (!strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource], "DHCP")) && ( LeaseTimeRemaining <= 0 ) && ((lmHosts.hostArray[i]->ipv4Active) || (lmHosts.hostArray[i]->ipv6Active)))
                 continue;
 
             if (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL)
