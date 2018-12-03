@@ -2069,9 +2069,14 @@ void Hosts_SyncArp()
                 }
                 else
                 {
-                    pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
                     if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
                     {
+						/*
+						  * We need to maintain recent reachable IP in "Device.Hosts.Host.1.IPAddress" host. so 
+						  * that we are doing swap here.
+						  */
+						pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
+
                         Host_SetIPAddress(pIP, 0, "NONE");
 
                         _getLanHostComments(hosts[i].phyAddr, comments);
@@ -2082,7 +2087,15 @@ void Hosts_SyncArp()
                     }
                     else
                     {
-                        Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
+						/*
+						  * We need to update non-reachable IP in host details. No need to swap.
+						  */
+						pIP = LM_FindIPv4BaseFromLink( pHost, hosts[i].ipAddr );
+
+						if( NULL != pIP )
+						{
+							Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
+						}
                     }
                 }
 
@@ -3139,4 +3152,22 @@ void convert_ssid_to_radio(char *ssid, char *radio)
         }
     
     }
+}
+
+/* LM_FindIPv4BaseFromLink(  ) */
+PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAddress )
+{
+	  PLmObjectHostIPAddress pIpAddrList = NULL, pCur = NULL;
+
+	  pIpAddrList = pHost->ipv4AddrArray;
+
+	  for( pCur = pIpAddrList; pCur != NULL; pCur = pCur->pNext )
+	  {
+		if( AnscEqualString( pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE ) )
+		{
+			return pCur;
+		}
+	  }
+
+		return NULL;
 }
