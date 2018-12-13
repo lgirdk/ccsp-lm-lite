@@ -545,14 +545,14 @@ void delete_partial_list_ndt()
 
     while (list != NULL)
     {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s],timestamp[%u] \n",__FUNCTION__, (ulong)list, list->device_mac, list->timestamp.tv_sec));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s],timestamp[%u] \n",__FUNCTION__, (ulong)list, ( list ?  ( list->device_mac ?  list->device_mac : "NULL" ) : "LIST NULL" ), list->timestamp.tv_sec));
 
         next = list->next;
 	
 	// retain the entries with timestamp from last polling cycle 
 	if( list->timestamp.tv_sec != last_timestamp )
 	{
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting node [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, list->device_mac));
+            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting node [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, ( list ?  ( list->device_mac ?  list->device_mac : "NULL" ) : "LIST NULL" ) ));
         	free(list->device_mac);
         	list->device_mac = NULL;
         	free(list->parent);
@@ -566,7 +566,7 @@ void delete_partial_list_ndt()
 	}
 	else
 	{
-             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Last polled timestamp [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, list->device_mac));
+             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Last polled timestamp [%lx] with SSID[%s] \n",__FUNCTION__, (ulong)list, ( list ?  ( list->device_mac ?  list->device_mac : "NULL" ) : "LIST NULL" )));
 		if( prev == NULL )
 			headnode = list;
 		prev = list;
