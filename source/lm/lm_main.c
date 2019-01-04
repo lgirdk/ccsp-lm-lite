@@ -2370,7 +2370,16 @@ static void UpdateHostRetryValidateList(ValidateHostQData *pValidateHostMsg, int
             }
             else if (ACTION_FLAG_ADD == actionFlag)
             {
-                /* Alreday present in list. Just reset the retry count */
+                /* 
+                 * Alreday present in list, if it was off before and now it's on,
+                 * update info, and reset the retry count 
+                 */
+                if (!retryList->host.Status && pValidateHostMsg->Status) {
+                    strcpy(retryList->host.AssociatedDevice, pValidateHostMsg->AssociatedDevice);
+                    strcpy(retryList->host.ssid, pValidateHostMsg->ssid);
+                    retryList->host.RSSI = pValidateHostMsg->RSSI;
+                    retryList->host.Status = pValidateHostMsg->Status;
+                }
                 retryList->retryCount = 0;
             }
             pthread_mutex_unlock(&LmRetryHostListMutex);
