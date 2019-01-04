@@ -278,9 +278,16 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   if ( macStr == NULL )
   {
     macStr = getDeviceMac();
-
+	if( macStr != NULL )
+	{
     strncpy( CpemacStr, macStr, sizeof(CpemacStr));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",macStr));
+  	}
+	else
+	{
+	CcspTraceError(("Received DeviceMac from Atom side is NULL \n"));
+		return;
+	}
   }
 
   char CpeMacHoldingBuf[ 20 ] = {0};

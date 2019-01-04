@@ -292,10 +292,18 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
     if ( macStr == NULL )
     {
       macStr = getDeviceMac();
-
+	if (macStr !=NULL )
+	{
       strncpy( CpemacStr, macStr, sizeof(CpemacStr));
       CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",macStr));
-    }
+   	 }
+	else
+	{
+		CcspTraceError(("Received DeviceMac from Atom side is NULL \n"));
+		return;
+	}
+     }	
+
 
 
     for (k = 0; k < 6; k++ )
@@ -383,9 +391,16 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
     if ( macStr == NULL )
     {
       macStr = getDeviceMac();
-
-      strncpy( CpemacStr, macStr, sizeof(CpemacStr));
-      CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",macStr));
+	if( macStr != NULL )
+		{
+	strncpy( CpemacStr, macStr, sizeof(CpemacStr));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Received DeviceMac from Atom side: %s\n",macStr));
+		}
+	else
+		{
+		CcspTraceError(("Received DeviceMac from Atom side is NULL \n"));
+		return;
+		}
     }
 
     memset(CpeMacHoldingBuf, 0, sizeof CpeMacHoldingBuf);
