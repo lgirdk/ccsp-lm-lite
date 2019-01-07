@@ -35,7 +35,6 @@ AM_LDFLAGS += -lsysevent
 AM_LDFLAGS += -lutapi
 AM_LDFLAGS += -lutctx
 AM_LDFLAGS += -lulog
-AM_LDFLAGS += -lsecure_wrapper
 
 AM_CPPFLAGS = -Wall -Werror
 ACLOCAL_AMFLAGS = -I m4
@@ -62,5 +61,5 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						cosa_extassocdevices_dml.c \ 
 						cosa_xhosts_dml.c 
 
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus -llibseshat -lsecure_wrapper
+libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus -llibseshat 
 

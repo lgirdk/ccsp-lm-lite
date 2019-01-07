@@ -1260,7 +1260,7 @@ pthread_mutex_lock(&HostNameMutex);
     memset(buf,0,sizeof(buf));
     snprintf(buf, sizeof(buf), "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE);
     system(buf);
-        if(!(fp = v_secure_popen(buf)))
+        if(!(fp = popen(buf, "r")))
         {
             return -1;
         }
@@ -1286,18 +1286,18 @@ pthread_mutex_lock(&HostNameMutex);
 	else
 	{
             CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d Hostname not available\n",count));
-            v_secure_pclose(fp);
+            pclose(fp);
             break;
     	}
     }
     else
 	{
 	   ret =1;
-           v_secure_pclose(fp);
+           pclose(fp);
 	   break;
 	}
 
-    v_secure_pclose(fp);
+    pclose(fp);
     if(count > HOST_NAME_RETRY)
 	break;
 
@@ -1318,7 +1318,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
     snprintf(buf, sizeof(buf), "ip -4 nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1", physAddress);
     system(buf);
 
-        if(!(fp = v_secure_popen(buf)))
+        if(!(fp = popen(buf, "r")))
 		{
 	        return -1;
         }
@@ -1327,7 +1327,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
 		output[strlen(output) - 1] = '\0';
 	}
 	strcpy(IPAddress,output);
-    v_secure_pclose(fp);
+    pclose(fp);
 
     return 0;
 

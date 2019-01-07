@@ -35,7 +35,6 @@ AM_LDFLAGS += -lsysevent
 AM_LDFLAGS += -lutapi
 AM_LDFLAGS += -lutctx
 AM_LDFLAGS += -lulog
-AM_LDFLAGS += -lsecure_wrapper
 
 AM_CPPFLAGS = -Wall -Werror
 ACLOCAL_AMFLAGS = -I m4

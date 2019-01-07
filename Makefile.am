@@ -37,7 +37,7 @@ if CCSP_ARCH_PC
 liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
 endif
 
-liblmapi_la_LDFLAGS= -lccsp_common -lsecure_wrapper
+liblmapi_la_LDFLAGS= -lccsp_common 
 
 if CCSP_ARCH_PC
 liblmapi_la_SOURCES= ${SUBDIRS}/lm/lm_api.c
