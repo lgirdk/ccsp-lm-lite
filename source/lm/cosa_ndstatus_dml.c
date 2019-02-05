@@ -200,6 +200,12 @@ NetworkDevicesStatus_SetParamBoolValue
         g_pReports->bNDSEnabledChanged = true;
         g_pReports->bNDSEnabled = bValue;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, bValue ));
+	if(g_pReports->bNDSEnabled) {
+		CcspTraceInfo(("NetworkDevicesStatus:Enabled\n"));
+	}
+	else {
+		CcspTraceInfo(("NetworkDevicesStatus:Disabled\n"));
+	}
         return TRUE;
     }
 
