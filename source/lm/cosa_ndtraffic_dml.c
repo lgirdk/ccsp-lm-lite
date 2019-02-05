@@ -309,6 +309,12 @@ NetworkDevicesTraffic_SetParamBoolValue
         g_pReports->bNDTEnabledChanged = true;
         g_pReports->bNDTEnabled = bValue;
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, bValue ));
+	if(g_pReports->bNDTEnabled) {
+		CcspTraceInfo(("NetworkDevicesTraffic:Enabled\n"));
+	}
+	else {
+		CcspTraceInfo(("NetworkDevicesTraffic:Disabled\n"));
+	}
         return TRUE;
     }
 
