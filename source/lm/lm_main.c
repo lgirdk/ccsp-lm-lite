@@ -1960,7 +1960,10 @@ void *Event_HandlerThread(void *threadid)
             }
             else
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
+
+		 if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],hosts.ssid))
+		 {
+                	pthread_mutex_lock(&LmHostObjectMutex);
 				memset(radio,0,sizeof(radio));
 				convert_ssid_to_radio(hosts.ssid, radio);
 				DelAndShuffleAssoDevIndx(pHost);
@@ -1969,8 +1972,8 @@ void *Event_HandlerThread(void *threadid)
                 //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                 pthread_mutex_unlock(&LmHostObjectMutex);
-
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+		}
             }
             
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
