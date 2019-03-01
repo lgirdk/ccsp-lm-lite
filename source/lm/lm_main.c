@@ -1961,6 +1961,8 @@ void *Event_HandlerThread(void *threadid)
             else
             {
 
+	if( (hosts.ssid != NULL) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
+	{
 		 if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],hosts.ssid))
 		 {
                 	pthread_mutex_lock(&LmHostObjectMutex);
@@ -1974,6 +1976,7 @@ void *Event_HandlerThread(void *threadid)
                 pthread_mutex_unlock(&LmHostObjectMutex);
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 		}
+	}
             }
             
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
