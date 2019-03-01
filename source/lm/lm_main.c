@@ -561,7 +561,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
             // We are going to send offline notifications to mesh when clients go offline.
             if(pHost->bNotify == TRUE)
             {
-                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Offline \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+                //CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Offline \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
                 Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_OFFLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
             }
 			#endif
@@ -611,7 +611,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				{
 				    // This case is for "Online" events after we have send a connection message. WebPA apparently only wants a
 				    // single connect request and no online/offline events.
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Online  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    //CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Online  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
                     Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_ONLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
 
 				}
