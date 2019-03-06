@@ -2890,10 +2890,18 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 	{
 
 		LM_wifi_wsta_t hosts;
-		strcpy(hosts.AssociatedDevice,AssociatedDevice);
-		strncpy(hosts.phyAddr,phyAddr,17);
+		memset(&hosts, 0, sizeof(hosts));
+		if (AssociatedDevice) {
+		    strncpy(hosts.AssociatedDevice, AssociatedDevice,
+			sizeof(hosts.AssociatedDevice));
+		}
+		if (phyAddr) {
+		    strncpy(hosts.phyAddr, phyAddr, sizeof(hosts.phyAddr));
+		}
 		hosts.phyAddr[17] = '\0';
-		strcpy(hosts.ssid,ssid);
+		if (ssid) {
+		    strncpy(hosts.ssid, ssid, sizeof(hosts.ssid));
+		}
 		hosts.RSSI = RSSI;
 		hosts.Status = Status;
 		EventQData EventMsg;
