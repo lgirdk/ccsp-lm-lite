@@ -42,7 +42,7 @@
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
 #include <netpacket/packet.h>
-
+#include "secure_wrapper.h"
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_wrapper.h"
@@ -671,12 +671,10 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 #endif
  
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
-    	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > %s", netName,pAtomBRMac,ARP_CACHE_FILE);
+    	v_secure_system(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName, pAtomBRMac);
     } else {
-    	snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  > %s", netName,ARP_CACHE_FILE);
+    	v_secure_system(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  > "ARP_CACHE_FILE, netName);
     }	
-
-    system(buf);
 
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
     {
@@ -824,26 +822,20 @@ int getIPAddress(char *physAddress,char *IPAddress)
 {
 
     FILE *fp = NULL;
-    char buf[200] = {0};
     char output[50] = {0};
 
-    system("ip nei show | grep brlan0");
-    snprintf(buf, sizeof(buf), "ip nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}'", physAddress);
-    system(buf);
-
-        if(!(fp = popen(buf, "r")))
-		{
-	        return -1;
-        }
-	while(fgets(output, sizeof(output), fp)!=NULL)
-	{
-		output[strlen(output) - 1] = '\0';
-	}
-	strcpy(IPAddress,output);
-    pclose(fp);
-
+    v_secure_system("ip -4 nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1 > /tmp/LMgetIP.txt ", physAddress);
+      
+    fp = fopen ("/tmp/LMgetIP.txt", "r");
+  
+    if (fp != NULL) 
+    {
+        while(fgets(output, sizeof(output), fp)!=NULL);
+        fclose (fp);
+    }
+    
+    strcpy(IPAddress,output);
     return 0;
-
 }
 
 void lm_wrapper_get_dhcpv4_client()

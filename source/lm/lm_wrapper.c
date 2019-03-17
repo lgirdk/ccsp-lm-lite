@@ -43,7 +43,7 @@
 #include <linux/if_ether.h>
 #include <netpacket/packet.h>
 #include <sys/un.h>
-
+#include "secure_wrapper.h"
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_wrapper.h"
@@ -1094,19 +1094,15 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 #endif
  
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
-    	snprintf(buf, sizeof(buf), "ip -4 nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > %s", netName,pAtomBRMac,ARP_CACHE_FILE);
-        system(buf);
-        snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep -i -v %s >> %s",netName,pAtomBRMac,ARP_CACHE_FILE);
-        system(buf);
+    	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName,pAtomBRMac);
+        v_secure_system("ip -6 nei show | grep %s | grep -i -v %s >> "ARP_CACHE_FILE, netName, pAtomBRMac);
     } else {
-    	snprintf(buf, sizeof(buf), "ip -4 nei show | grep %s | grep -v 192.168.10 > %s", netName,ARP_CACHE_FILE);
-	system(buf);
+	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10 > "ARP_CACHE_FILE, netName);
 #ifdef _HUB4_PRODUCT_REQ_
-	snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep -v fd | grep -v fc >> %s",netName,ARP_CACHE_FILE);
+	v_secure_system("ip -6 nei show | grep %s | grep -v fd | grep -v fc >> "ARP_CACHE_FILE, netName);
 #else
-        snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s  >> %s",netName,ARP_CACHE_FILE);
-#endif
-	system(buf);
+        v_secure_system("ip -6 nei show | grep %s  >> "ARP_CACHE_FILE, netName);
+#endif      
     }
 
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
@@ -1259,7 +1255,6 @@ int get_HostName(char *physAddress,char *HostName)
 {
 pthread_mutex_lock(&HostNameMutex);
     FILE *fp = NULL;
-    char buf[200] = {0};
     char output[50] = {0};
     int ret = 1;
     int count = 0;
@@ -1268,17 +1263,15 @@ pthread_mutex_lock(&HostNameMutex);
     while(1)
     {
     sleep(HOST_NAME_RETRY_INTERVAL);
-    memset(buf,0,sizeof(buf));
-    snprintf(buf, sizeof(buf), "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE);
-    system(buf);
-        if(!(fp = popen(buf, "r")))
+        if(!(fp = v_secure_popen("r", "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE)))
         {
+            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: v_secure_popen() failed \n" ));
+            pthread_mutex_unlock(&HostNameMutex);
             return -1;
         }
-    while(fgets(output, sizeof(output), fp)!=NULL)
-    {
-        output[strlen(output) - 1] = '\0';
-    }
+      
+    while(fgets(output, sizeof(output), fp)!=NULL);
+    v_secure_pclose(fp);
     strcpy(HostName,output);
     if((HostName[0] == '*') && (HostName[1] == '\0'))
     {
@@ -1290,30 +1283,27 @@ pthread_mutex_lock(&HostNameMutex);
         ret = 0;
 
 	if(count < HOST_NAME_RETRY)
-	{
+	{           
 	   count++;
            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d for HostName\n",count));
 	}
 	else
 	{
             CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d Hostname not available\n",count));
-            pclose(fp);
             break;
     	}
     }
     else
 	{
 	   ret =1;
-           pclose(fp);
-	   break;
+           break;
 	}
 
-    pclose(fp);
     if(count > HOST_NAME_RETRY)
 	break;
 
     }
-
+    
 pthread_mutex_unlock(&HostNameMutex);
     return ret;
 }
@@ -1322,26 +1312,20 @@ int getIPAddress(char *physAddress,char *IPAddress)
 {
 
     FILE *fp = NULL;
-    char buf[200] = {0};
     char output[50] = {0};
 
-//    system("ip nei show | grep brlan0");
-    snprintf(buf, sizeof(buf), "ip -4 nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1", physAddress);
-    system(buf);
-
-        if(!(fp = popen(buf, "r")))
-		{
-	        return -1;
-        }
-	while(fgets(output, sizeof(output), fp)!=NULL)
-	{
-		output[strlen(output) - 1] = '\0';
-	}
-	strcpy(IPAddress,output);
-    pclose(fp);
-
+    v_secure_system("ip -4 nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1 > /tmp/LMgetIP.txt ", physAddress);
+     
+    fp = fopen ("/tmp/LMgetIP.txt", "r");
+  
+    if (fp != NULL) 
+    {
+        while(fgets(output, sizeof(output), fp)!=NULL);
+        fclose (fp);
+    }
+    
+    strcpy(IPAddress,output);
     return 0;
-
 }
 
 void Xlm_wrapper_get_info(PLmObjectHost pHost)
