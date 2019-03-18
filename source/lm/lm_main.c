@@ -1359,7 +1359,9 @@ int LM_get_online_device()
             /* Do NOT count TrueStaticIP client */
             for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
-                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) 
+                     0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) ||
+                     (	(0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4)) && \
+                     	(0 != strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.16.12", 9) ) ) 
                    )
                 num++;
                 break;
