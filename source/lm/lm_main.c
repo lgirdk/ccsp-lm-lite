@@ -2254,7 +2254,7 @@ void Hosts_StatSyncThreadFunc()
             if(bridgemode)
             {
                 Send_Eth_Host_Sync_Req(); 
-#ifndef _CBR_PRODUCT_REQ_ 
+#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
                 Send_MoCA_Host_Sync_Req(); 
 #endif
                 SyncWiFi();
@@ -2656,9 +2656,9 @@ void LM_main()
 #endif
 	if(!Hosts_stop_scan()) {
 		 Send_Eth_Host_Sync_Req();
- 	#ifndef _CBR_PRODUCT_REQ_ 
+#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 		 Send_MoCA_Host_Sync_Req();
- 	#endif
+#endif
 		 SyncWiFi( );
 	 }
     //pthread_join(Hosts_StatSyncThread, &status);
