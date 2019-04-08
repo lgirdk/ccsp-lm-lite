@@ -692,13 +692,18 @@ void Hosts_FreeHost(PLmObjectHost pHost){
     if(pHost == NULL)
         return;
     for(i=0; i<LM_HOST_NumStringPara; i++)
+    {
         if(NULL != pHost->pStringParaValue[i])
             LanManager_Free(pHost->pStringParaValue[i]);
+        pHost->pStringParaValue[i] = NULL;
+    }
     if(pHost->objectName != NULL)
         LanManager_Free(pHost->objectName);
 	if(pHost->Layer3Interface != NULL)
         LanManager_Free(pHost->Layer3Interface);
-	
+
+	pHost->objectName = NULL;
+    pHost->Layer3Interface = NULL;
     Host_FreeIPAddress(pHost, 4);
     Host_FreeIPAddress(pHost, 6);
 
@@ -716,6 +721,7 @@ void Hosts_RmHosts(){
 
     for(i = 0; i < lmHosts.numHost; i++){
         Hosts_FreeHost(lmHosts.hostArray[i]);
+        lmHosts.hostArray[i] = NULL;
     }
     LanManager_Free(lmHosts.hostArray);
     lmHosts.availableInstanceNum = 1;
@@ -1059,6 +1065,7 @@ void Host_FreeIPAddress(PLmObjectHost pHost, int version)
         pCur = pIpAddrList;
         pIpAddrList = pIpAddrList->pNext;
         LanManager_Free(pCur); /*RDKB-7348, CID-33198, free current list*/
+        pCur = NULL;
         *ppHeader = NULL;
     }
 }
@@ -1231,11 +1238,13 @@ void Add_IPv6_from_Dibbler()
 			{
 				if(1 == extract(line,mac,ip))
 					continue;
+		        pthread_mutex_lock(&LmHostObjectMutex);
 				pHost = Hosts_AddHostByPhysAddress(mac);
 				if(pHost)
 				{
 					Add_Update_IPv6Address(pHost,ip,DIBBLER_IPv6);
 				}
+                pthread_mutex_unlock(&LmHostObjectMutex);
 			}
 		}
 		fclose(fptr);
