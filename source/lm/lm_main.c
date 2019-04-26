@@ -1701,6 +1701,7 @@ void lm_cmd_thread_func()
 
     PRINTD("start listen\n");
     while(1){
+	len = sizeof(clt_addr);
         cmd_fd = accept(listen_fd,(struct sockaddr *)&clt_addr,&len);
         if(cmd_fd < 0 )
            continue;
