@@ -2880,18 +2880,14 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 			{
 				if( pHost->ipv4Active == TRUE )
 				{
-					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client online:%s,%s\n",
-												pHost->pStringParaValue[LM_HOST_PhysAddressId],
-												( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL"  ));
+					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client online:%s,%s\n", ( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL", pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 				}
 			}  
 			else 
 			{
 				if( pHost->ipv4Active == TRUE )
 				{
-					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client offline:%s,%s\n",
-												pHost->pStringParaValue[LM_HOST_PhysAddressId],
-												( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL"  ));
+					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client offline:%s,%s\n", ( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL", pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 				}
 			}
 
