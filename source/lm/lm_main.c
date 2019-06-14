@@ -91,7 +91,8 @@
 
 #define DNS_LEASE "/nvram/dnsmasq.leases"
 #define DEBUG_INI_NAME  "/etc/debug.ini"
-#define HOST_ENTRY_LIMIT 250
+#define HOST_ENTRY_LIMIT 175
+#define HOST_OBJECT_SIZE	200
 #define ARP_IPv6 0
 #define DIBBLER_IPv6 1
 
@@ -837,57 +838,66 @@ Clean_Host_Table()
 
 PLmObjectHost Hosts_AddHost(int instanceNum)
 {
-    //printf("in Hosts_AddHost %d \n", instanceNum);
-    PLmObjectHost pHost = LanManager_Allocate(sizeof(LmObjectHost));
-    if(pHost == NULL)
-    {
-        return NULL;
-    }
-    pHost->instanceNum = instanceNum;
-    /* Compose Host object name. */
-    char objectName[100] = LM_HOST_OBJECT_NAME_HEADER;
-    char instanceNumStr[50] = {0};
-    _ansc_itoa(pHost->instanceNum, instanceNumStr, 10);
-    strcat(instanceNumStr, ".");
-    strcat(objectName, instanceNumStr);
-    pHost->objectName = LanManager_CloneString(objectName);
-
-    pHost->l3unReachableCnt = 0;
-    pHost->l1unReachableCnt = 0;
-    pHost->ipv4AddrArray = NULL;
-    pHost->numIPv4Addr = 0;
-    pHost->ipv6AddrArray = NULL;
-    pHost->numIPv6Addr = 0;
-	pHost->pStringParaValue[LM_HOST_IPAddressId] = NULL;
-    /* Default it is inactive. */
-    pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
-    pHost->ipv4Active = FALSE;
-    pHost->ipv6Active = FALSE;
-    pHost->activityChangeTime  = time(NULL);
-
-    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
-    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
-
-	pHost->Layer3Interface = NULL;
-
-	memset(pHost->backupHostname,0,64);
-    int i;
-    for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
 	Clean_Host_Table();
-    if(lmHosts.numHost >= lmHosts.sizeHost){
-        lmHosts.sizeHost += LM_HOST_ARRAY_STEP;
-        PLmObjectHost *newArray = LanManager_Allocate(lmHosts.sizeHost * sizeof(PLmObjectHost));
-        for(i=0; i<lmHosts.numHost; i++){
-            newArray[i] = lmHosts.hostArray[i];
-        }
-        PLmObjectHost *backupArray = lmHosts.hostArray;
-        lmHosts.hostArray = newArray;
-        if(backupArray) LanManager_Free(backupArray);
-    }
-    pHost->id = lmHosts.numHost;
-    lmHosts.hostArray[pHost->id] = pHost;
-    lmHosts.numHost++;
-    return pHost;
+
+	if(lmHosts.numHost < HOST_OBJECT_SIZE)/* RDKB-23038, max client support to 200 */
+	{	
+	    //printf("in Hosts_AddHost %d \n", instanceNum);
+	    PLmObjectHost pHost = LanManager_Allocate(sizeof(LmObjectHost));
+	    if(pHost == NULL)
+	    {
+	        return NULL;
+	    }
+	    pHost->instanceNum = instanceNum;
+	    /* Compose Host object name. */
+	    char objectName[100] = LM_HOST_OBJECT_NAME_HEADER;
+	    char instanceNumStr[50] = {0};
+	    _ansc_itoa(pHost->instanceNum, instanceNumStr, 10);
+	    strcat(instanceNumStr, ".");
+	    strcat(objectName, instanceNumStr);
+	    pHost->objectName = LanManager_CloneString(objectName);
+
+	    pHost->l3unReachableCnt = 0;
+	    pHost->l1unReachableCnt = 0;
+	    pHost->ipv4AddrArray = NULL;
+	    pHost->numIPv4Addr = 0;
+	    pHost->ipv6AddrArray = NULL;
+	    pHost->numIPv6Addr = 0;
+		pHost->pStringParaValue[LM_HOST_IPAddressId] = NULL;
+	    /* Default it is inactive. */
+	    pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
+	    pHost->ipv4Active = FALSE;
+	    pHost->ipv6Active = FALSE;
+	    pHost->activityChangeTime  = time(NULL);
+
+	    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
+	    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
+
+		pHost->Layer3Interface = NULL;
+
+		memset(pHost->backupHostname,0,64);
+	    int i;
+	    for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
+	    if(lmHosts.numHost >= lmHosts.sizeHost){
+	        lmHosts.sizeHost += LM_HOST_ARRAY_STEP;
+	        PLmObjectHost *newArray = LanManager_Allocate(lmHosts.sizeHost * sizeof(PLmObjectHost));
+	        for(i=0; i<lmHosts.numHost; i++){
+	            newArray[i] = lmHosts.hostArray[i];
+	        }
+	        PLmObjectHost *backupArray = lmHosts.hostArray;
+	        lmHosts.hostArray = newArray;
+	        if(backupArray) LanManager_Free(backupArray);
+	    }
+	    pHost->id = lmHosts.numHost;
+	    lmHosts.hostArray[pHost->id] = pHost;
+	    lmHosts.numHost++;
+	    return pHost;
+	}
+	else
+	{
+		CcspTraceWarning((" [%s][%d] MAX Host reach to %d \n",__FUNCTION__,__LINE__,lmHosts.numHost));
+	}
+	return NULL;
 }
 
 void Host_SetIPAddress(PLmObjectHostIPAddress pIP, int l3unReachableCnt, char *source)
@@ -1035,13 +1045,16 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 		pHost->bClientReady = FALSE;
 		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
 		lmHosts.availableInstanceNum++;
-    }
+
 #ifdef USE_NOTIFY_COMPONENT
 	
 	CcspTraceWarning(("LMlite-CLIENT <%s> <%d> : Connected Mac = %s \n",__FUNCTION__,__LINE__ ,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 	pHost->bNotify = FALSE;
 #endif
     return pHost;
+	}
+
+	return NULL;
 }
 void Host_FreeIPAddress(PLmObjectHost pHost, int version)
 {
