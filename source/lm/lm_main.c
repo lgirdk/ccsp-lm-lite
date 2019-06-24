@@ -2250,6 +2250,7 @@ void Hosts_StatSyncThreadFunc()
         }
         else
         {
+#if !defined(_PLATFORM_RASPBERRYPI_)
             if(bridgemode)
             {
                 Send_Eth_Host_Sync_Req(); 
@@ -2259,7 +2260,10 @@ void Hosts_StatSyncThreadFunc()
                 SyncWiFi();
                 bridgemode = FALSE;
             }
-
+#else
+             Send_Eth_Host_Sync_Req();
+             SyncWiFi();
+#endif
             sleep(30);
             Hosts_SyncDHCP();
             Hosts_SyncArp();
