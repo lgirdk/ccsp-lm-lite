@@ -29,6 +29,8 @@
       <name>Hosts</name>
       <objectType>object</objectType>
       <functions>
+        <func_GetParamBoolValue>Hosts_GetParamBoolValue</func_GetParamBoolValue>
+        <func_SetParamBoolValue>Hosts_SetParamBoolValue</func_SetParamBoolValue>
         <func_GetParamUlongValue>Hosts_GetParamUlongValue</func_GetParamUlongValue>
 		<func_SetParamUlongValue>Hosts_SetParamUlongValue</func_SetParamUlongValue>
         <func_GetParamStringValue>Hosts_GetParamStringValue</func_GetParamStringValue>	
@@ -78,6 +80,60 @@
               <name>X_RDKCENTRAL-COM_EthHost_Sync</name>
               <type>string</type>
               <syntax>string</syntax>
+              <writable>true</writable>
+            </parameter> 
+            <parameter>
+                <name>X_RDK_PresenceDetectEnable</name>
+                <type>boolean</type>
+                <syntax>bool</syntax>
+                <writable>true</writable>
+            </parameter>
+            <parameter>
+                <name>X_RDK_WebPA_PresenceNotificationEnable</name>
+                <type>boolean</type>
+                <syntax>bool</syntax>
+                <writable>true</writable>
+            </parameter>
+            <parameter>
+              <name>X_RDKCENTRAL-COM_AddPresenceNotificationMac</name>
+              <type>string</type>
+              <syntax>string</syntax>
+              <writable>true</writable>
+            </parameter> 
+            <parameter>
+              <name>X_RDKCENTRAL-COM_DeletePresenceNotificationMac</name>
+              <type>string</type>
+              <syntax>string</syntax>
+              <writable>true</writable>
+            </parameter> 
+            <parameter>
+              <name>X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+             <writable>true</writable>
+            </parameter> 
+            <parameter>
+              <name>X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+              <writable>true</writable>
+            </parameter> 
+            <parameter>
+              <name>X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+              <writable>true</writable>
+            </parameter> 
+            <parameter>
+              <name>X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+             <writable>true</writable>
+            </parameter> 
+            <parameter>
+              <name>X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
               <writable>true</writable>
             </parameter> 
 	    </parameters>
@@ -167,6 +223,11 @@
               <syntax>int</syntax>
             </parameter>
             <parameter>
+              <name>RDK_PresenceActiveLastChange</name>
+              <type>unsignedInt</type>
+              <syntax>uint32</syntax>
+            </parameter>
+            <parameter>
               <name>X_COMCAST-COM_LastChange</name>
               <type>unsignedInt</type>
               <syntax>uint32</syntax>
@@ -205,6 +266,17 @@
               <type>string</type>
               <syntax>string</syntax>
             </parameter>
+            <parameter>
+              <name>X_RDKCENTRAL-COM_PresenceNotificationEnabled</name>
+              <type>boolean</type>
+              <syntax>bool</syntax>
+            </parameter>
+            <parameter>
+              <name>RDK_PresenceActive</name>
+              <type>boolean</type>
+              <syntax>bool</syntax>
+            </parameter>
+
           </parameters>
           <objects>
             <object>

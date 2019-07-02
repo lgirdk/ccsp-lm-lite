@@ -105,8 +105,10 @@
 #include <mqueue.h>
 
 #define EVENT_QUEUE_NAME  "/Event_queue"
+#define DNSMASQ_NOTIFY_QUEUE_NAME  "/dnsmasq_eventqueue"
 
 #define MAX_SIZE    2048
+#define MAX_SIZE_DNSMASQ_Q    512
 #define MAX_SIZE_EVT    1024
 
 #define CHECK(x) \
@@ -122,6 +124,11 @@
 #define MSG_TYPE_ETH    1
 #define MSG_TYPE_WIFI   2
 #define MSG_TYPE_MOCA   3
+#define MSG_TYPE_PRESENCE_NOTIFICATION  4 
+#define MSG_TYPE_RFC  5
+#define MSG_TYPE_DNSMASQ  6
+#define MSG_TYPE_PRESENCE_ADD 7
+#define MSG_TYPE_PRESENCE_REMOVE 8
 
 #define VALIDATE_QUEUE_NAME             "/Validate_host_queue"
 #define MAX_SIZE_VALIDATE_QUEUE         sizeof(ValidateHostQData)
@@ -236,9 +243,9 @@ int g_Client_Poll_interval;
 #define STRNCPY_NULL_CHK(x, y, z) if((y) != NULL) strncpy((x),(y),(z)); else  *(unsigned char*)(x) = 0;
 
 LmObjectHosts lmHosts = {
-    .pHostBoolParaName = {"Active"},
+    .pHostBoolParaName = {"Active","X_RDKCENTRAL-COM_PresenceNotificationEnabled","RDK_PresenceActive"},
     .pHostIntParaName = {"X_CISCO_COM_ActiveTime", "X_CISCO_COM_InactiveTime", "X_CISCO_COM_RSSI"},
-    .pHostUlongParaName = {"X_CISCO_COM_DeviceType", "X_CISCO_COM_NetworkInterface", "X_CISCO_COM_ConnectionStatus", "X_CISCO_COM_OSType"},
+    .pHostUlongParaName = {"X_CISCO_COM_DeviceType", "X_CISCO_COM_NetworkInterface", "X_CISCO_COM_ConnectionStatus", "X_CISCO_COM_OSType","X_COMCAST-COM_LastChange","RDK_PresenceActiveLastChange"},
     .pHostStringParaName = {"Alias", "PhysAddress", "IPAddress", "DHCPClient", "AssociatedDevice", "Layer1Interface", "Layer3Interface", "HostName",
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
@@ -249,9 +256,9 @@ LmObjectHosts lmHosts = {
 };
 
 LmObjectHosts XlmHosts = {
-    .pHostBoolParaName = {"Active"},
+    .pHostBoolParaName = {"Active","X_RDKCENTRAL-COM_PresenceNotificationEnabled","RDK_PresenceActive"},
     .pHostIntParaName = {"X_CISCO_COM_ActiveTime", "X_CISCO_COM_InactiveTime", "X_CISCO_COM_RSSI"},
-    .pHostUlongParaName = {"X_CISCO_COM_DeviceType", "X_CISCO_COM_NetworkInterface", "X_CISCO_COM_ConnectionStatus", "X_CISCO_COM_OSType"},
+    .pHostUlongParaName = {"X_CISCO_COM_DeviceType", "X_CISCO_COM_NetworkInterface", "X_CISCO_COM_ConnectionStatus", "X_CISCO_COM_OSType","X_COMCAST-COM_LastChange","RDK_PresenceActiveLastChange"},
     .pHostStringParaName = {"Alias", "PhysAddress", "IPAddress", "DHCPClient", "AssociatedDevice", "Layer1Interface", "Layer3Interface", "HostName",
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
@@ -281,6 +288,80 @@ extern ANSC_HANDLE bus_handle;
 void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
 int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
+
+
+void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
+{
+
+	char  str[500] = {0};
+	parameterValStruct_t notif_val[1];
+	char param_name[256] = "Device.NotifyComponent.SetNotifi_ParamName";
+	char compo[256] = "eRT.com.cisco.spvtg.ccsp.notifycomponent";
+	char bus[256] = "/com/cisco/spvtg/ccsp/notifycomponent";
+	char* faultParam = NULL;
+	int ret = 0;
+	char status_str[256]={0};
+	
+
+	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
+	switch (status) {
+	case CLIENT_STATE_OFFLINE:
+	    strcpy(status_str,"Presence Leave Detected");
+	    break;
+   case CLIENT_STATE_ONLINE:
+        strcpy(status_str,"Presence Join Detected");
+        break;
+   default:
+        break;
+	}
+	
+	if(mac && strlen(mac))
+	{
+		
+	snprintf(str,sizeof(str)/sizeof(str[0]),"PresenceNotification,%s,%s,%s,%s",
+										interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
+										mac!=NULL ? (strlen(mac)>0 ? mac:"NULL") : "NULL",
+										status_str!=NULL ? (strlen(status_str)>0 ? status_str:"NULL") : "NULL",
+										hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
+
+	notif_val[0].parameterName =  param_name ;
+	notif_val[0].parameterValue = str;
+	notif_val[0].type = ccsp_string;
+
+	ret = CcspBaseIf_setParameterValues(
+		  bus_handle,
+		  compo,
+		  bus,
+		  0,
+		  0,
+		  notif_val,
+		  1,
+		  TRUE,
+		  &faultParam
+		  );
+
+	if(ret != CCSP_SUCCESS)
+	{
+		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));		
+        if(faultParam)
+        {
+            bus_info->freefunc(faultParam);
+        }
+
+	}
+    else
+    {
+		CcspTraceWarning(("RDKB_PRESENCE: Mac %s status %s Notification sent successfully\n",mac,status_str));
+
+    }
+	}
+	else
+	{
+		CcspTraceWarning(("RDKB_PRESENCE: MacAddress is NULL, hence Presence notifications are not sent\n"));
+		//printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
+	}
+
+}
 
 void Send_Notification(char* interface, char*mac , ClientConnectState status, char *hostname)
 {
@@ -692,6 +773,12 @@ void Hosts_FreeHost(PLmObjectHost pHost){
     int i;
     if(pHost == NULL)
         return;
+    pHost->bBoolParaValue[LM_HOST_PresenceActiveId] = FALSE;
+    if (pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId])
+    {
+        pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId] = FALSE;
+        Hosts_UpdateDeviceIntoPresenceDetection(pHost,FALSE);
+    }
     for(i=0; i<LM_HOST_NumStringPara; i++)
     {
         if(NULL != pHost->pStringParaValue[i])
@@ -874,6 +961,7 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
 	    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
 
 		pHost->Layer3Interface = NULL;
+    pHost->bBoolParaValue[LM_HOST_PresenceActiveId] = FALSE;
 
 		memset(pHost->backupHostname,0,64);
 	    int i;
@@ -1015,6 +1103,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
         {
             pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
         }
+        pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId] = Hosts_GetPresenceNotificationEnableStatus(physAddress);
 /* #ifdef USE_NOTIFY_COMPONENT
         if(bWifiHost)
         {
@@ -1256,6 +1345,7 @@ void Add_IPv6_from_Dibbler()
 				if(pHost)
 				{
 					Add_Update_IPv6Address(pHost,ip,DIBBLER_IPv6);
+                    Hosts_UpdateDeviceIntoPresenceDetection(pHost, TRUE);
 				}
                 pthread_mutex_unlock(&LmHostObjectMutex);
 			}
@@ -1286,6 +1376,7 @@ Host_AddIPAddress
 	{
 		pCur = Add_Update_IPv6Address(pHost,ipAddress,ARP_IPv6);
     }
+    Hosts_UpdateDeviceIntoPresenceDetection(pHost,TRUE);
 	return pCur;
 }
 
@@ -2056,7 +2147,38 @@ void *Event_HandlerThread(void *threadid)
 
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }       
-        }           
+        }
+        else if (MSG_TYPE_PRESENCE_ADD == EventMsg.MsgType)
+        {
+            Hosts_CheckAndUpdatePresenceDeviceMac (EventMsg.Msg,TRUE);
+        }
+        else if (MSG_TYPE_PRESENCE_REMOVE == EventMsg.MsgType)
+        {
+            Hosts_CheckAndUpdatePresenceDeviceMac (EventMsg.Msg,FALSE);
+        }
+        else if (MSG_TYPE_RFC == EventMsg.MsgType)
+        {   
+            if (!strcmp(EventMsg.Msg,"true"))
+            {
+                Hosts_EnablePresenceDetectionTask();
+            }
+            else
+            {
+                Hosts_DisablePresenceDetectionTask();
+            }
+        }
+        else if (MSG_TYPE_PRESENCE_NOTIFICATION == EventMsg.MsgType)
+        {
+            LmPresenceNotifyInfo info = {0};
+            memcpy(&info,EventMsg.Msg,sizeof(LmPresenceNotifyInfo));
+            pHost = Hosts_FindHostByPhysAddress(info.physaddress);
+            if (pHost)
+            {
+                pthread_mutex_lock(&LmHostObjectMutex);
+                Hosts_PresenceHandling(pHost,info.status);
+                pthread_mutex_unlock(&LmHostObjectMutex);
+            }
+        }        
 
     } while(1);
    pthread_exit(NULL);
@@ -2278,6 +2400,7 @@ void Hosts_StatSyncThreadFunc()
              SyncWiFi();
 #endif
             sleep(30);
+            Sendmsg_dnsmasq(lmHosts.enablePresence);
             Hosts_SyncDHCP();
             Hosts_SyncArp();
             Add_IPv6_from_Dibbler();
@@ -2561,6 +2684,7 @@ void LM_main()
     lmHosts.numHost = 0;
     lmHosts.lastActivity = 0;
     lmHosts.availableInstanceNum = 1;
+    lmHosts.enablePresence = FALSE;
 
 	XlmHosts.hostArray = LanManager_Allocate(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
 	XlmHosts.sizeHost = LM_HOST_ARRAY_STEP;
@@ -2570,6 +2694,7 @@ void LM_main()
 	
     pComponentName = compName;
 	syscfg_init();
+    Hosts_GetPresenceParamFromSysDb(&lmHosts.param_val); // update presence syscfg param into lmhost object.
 	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
     if( buf != NULL )
     	{
@@ -2674,6 +2799,11 @@ void LM_main()
 #endif
 		 SyncWiFi( );
 	 }
+    syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
+    if (!strcmp(buf,"true"))
+    {
+        Hosts_EnablePresenceDetectionTask();
+    }
     //pthread_join(Hosts_StatSyncThread, &status);
     //pthread_join(Hosts_CmdThread, &status);
     return 0;
@@ -3217,4 +3347,471 @@ PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAd
 	  }
 
 		return NULL;
+}
+
+BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
+{
+    char buf1[16];
+    memset(buf1, 0, sizeof(buf1));
+    snprintf(buf1,sizeof(buf1),"%d",uValue);
+    if (syscfg_set(NULL, paramName , buf1) != 0) {
+        return FALSE;
+    } else {
+
+        if (syscfg_commit() != 0)
+        {
+            CcspTraceWarning(("%s syscfg_commit failed\n",paramName));
+            return FALSE;
+        }
+    }
+    return TRUE;
+
+}
+
+void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
+{
+        DnsmasqEventQData EventMsg;
+        mqd_t mq;
+        char buffer[MAX_SIZE_DNSMASQ_Q];
+        char buf_ip[32];
+
+        mq = mq_open(DNSMASQ_NOTIFY_QUEUE_NAME, O_WRONLY | O_NONBLOCK);
+        CHECK((mqd_t)-1 != mq);
+        memset(buffer, 0, MAX_SIZE_DNSMASQ_Q);
+        EventMsg.MsgType = MSG_TYPE_DNSMASQ;
+
+        if (enablePresenceFeature)
+        {
+            strcpy(EventMsg.enable,"true");
+        }
+        else
+        {
+            strcpy(EventMsg.enable,"false");
+        }
+        syscfg_get( NULL, "lan_ipaddr", buf_ip, sizeof(buf_ip)); 
+        strcpy (EventMsg.ip,buf_ip);
+        memcpy(buffer,&EventMsg,sizeof(EventMsg));
+        CHECK(0 <= mq_send(mq, buffer, MAX_SIZE_DNSMASQ_Q, 0));
+        CHECK((mqd_t)-1 != mq_close(mq));
+}
+
+
+int Hosts_EnablePresenceDetectionTask()
+{
+    int ret_val = 0;
+    char buf[12];
+    syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
+    if ((!strcmp(buf,"true")) && (!lmHosts.enablePresence))
+    {
+        lmHosts.enablePresence = TRUE;
+    }
+    else
+    {
+        CcspTraceWarning(("RDKB_PRESENCE:  ignored! presence detection feature already enabled\n"));
+        return ret_val;
+    }
+    ret_val = Hosts_InitPresenceDetection();
+    if (0 == ret_val)
+    {
+        Hosts_RegisterPresenceClbk(Hosts_PresenceDetectionClbkFunc);
+        Hosts_UpdatePresenceDetectionParam(&lmHosts.param_val,HOST_PRESENCE_PARAM_ALL);
+        Hosts_StartPresenceDetection();
+        Sendmsg_dnsmasq(TRUE);
+        CcspTraceWarning(("RDKB_PRESENCE: Presence Detection enabled Successfully\n"));
+    }
+    
+}
+
+int Hosts_DisablePresenceDetectionTask()
+{
+    PLmObjectHost pHost = NULL;
+    LmHostPresenceDetectionParam param = {0};
+    char tmpmac[64];
+    char dbParam[128];
+    int ret = 0;
+    int i = 0;
+    if (!lmHosts.enablePresence)
+    {
+        CcspTraceWarning(("RDKB_PRESENCE: Presence Detection already disabled !!!\n"));
+        return 0;
+    }
+    // clear all param related to presence.
+    Sendmsg_dnsmasq(FALSE);
+    syscfg_set(NULL, "notify_presence_webpa", "false");
+    pthread_mutex_lock(&LmHostObjectMutex);
+    lmHosts.enablePresence = FALSE;
+    for(i = 0; i < lmHosts.numHost; i++)
+    {
+        pHost = lmHosts.hostArray[i];
+        if (pHost)
+        {
+            if (pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId])
+            {
+                pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId] = FALSE;
+                pHost->bBoolParaValue[LM_HOST_PresenceActiveId] = FALSE;
+                pHost->ulUlongParaValue[LM_HOST_X_RDK_PresenceActiveLastChange] = 0;
+                if (pHost->pStringParaValue[LM_HOST_PhysAddressId])
+                {
+                    snprintf(tmpmac,sizeof(tmpmac),"%s",pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+                    LanManager_StringToLower(tmpmac);
+                    snprintf(dbParam,sizeof(dbParam), "PDE_%s",tmpmac);
+                    ret = syscfg_unset(NULL, dbParam);
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        }
+    }
+    pthread_mutex_unlock(&LmHostObjectMutex);
+    syscfg_commit();
+    memset(&param,0,sizeof(LmHostPresenceDetectionParam));
+    Hosts_UpdatePresenceDetectionParam(&param,HOST_PRESENCE_PARAM_ALL);
+    Hosts_StopPresenceDetection();
+    Hosts_DeInitPresenceDetection();
+    CcspTraceWarning(("RDKB_PRESENCE: Presence Detection disabled Successfully\n"));
+    return 0;
+}
+
+
+BOOL Hosts_GetPresenceNotificationEnableStatus(char *Mac)
+{
+    char tmpmac[64];
+    char dbParam[128];
+    char result[12] = {0};
+
+    if (!Mac)
+        return FALSE;
+    snprintf(tmpmac,sizeof(tmpmac),"%s",Mac);
+    LanManager_StringToLower(tmpmac);
+    snprintf(dbParam,sizeof(dbParam), "PDE_%s",tmpmac);
+    syscfg_get(NULL, dbParam, result, sizeof(result));
+    if (!strcmp(result,"true"))
+    {
+        return TRUE;
+    }
+    return FALSE;
+}
+
+int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut)
+{
+    char result[16] = {0};
+
+    if (!paramOut)
+        return -1;
+
+    syscfg_get(NULL, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval", result, sizeof(result));
+    paramOut->ipv4CheckInterval = atol(result);
+
+    syscfg_get(NULL, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries", result, sizeof(result));
+    paramOut->ipv4RetryCount    = atol(result);
+    
+    syscfg_get(NULL, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval", result, sizeof(result)); 
+    paramOut->ipv6CheckInterval = atol(result);
+
+    syscfg_get(NULL, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries", result, sizeof(result)); 
+    paramOut->ipv6RetryCount    = atol(result);
+
+    syscfg_get(NULL, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval", result, sizeof(result));
+    paramOut->bkgrndjoinInterval = atol(result);
+
+    return 0;
+}
+
+int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddressUpdate)
+{
+    LmPresenceDetectionInfo status = { 0 };
+    PLmObjectHostIPAddress pIpAddrList;
+
+    if (!pHost || !lmHosts.enablePresence) 
+        return -1;   
+    if (pHost->pStringParaValue[LM_HOST_PhysAddressId])
+    {
+        snprintf(status.physaddress,sizeof(status.physaddress),"%s",pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+    }
+    else
+    {
+        return -1;
+    }
+    status.enable = pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId];
+    if (!status.enable)
+    {
+        if (isIpAddressUpdate)
+            return 0;
+        pHost->bBoolParaValue[LM_HOST_PresenceActiveId] = FALSE;
+    }
+    else
+    {
+        status.ipv4Active = pHost->ipv4Active;
+        status.ipv6Active = pHost->ipv6Active;
+        status.currentActive = pHost->bBoolParaValue[LM_HOST_ActiveId];
+        if (status.ipv6Active)
+        {
+            memset(status.ipv6,0,sizeof(status.ipv6));
+            pIpAddrList = LM_GetIPArr_FromIndex(pHost,2,IP_V6); 
+            if (pIpAddrList)
+            {
+                if (pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
+                {
+                    char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
+                    if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
+                    {
+                        strcpy (status.ipv6,pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
+                    }
+                }
+            }
+            if (0 == strlen(status.ipv6))
+            {
+                pIpAddrList = LM_GetIPArr_FromIndex(pHost,0,IP_V6); 
+                if (pIpAddrList)
+                {
+                    if (pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
+                    {
+                        char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
+                        if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
+                        {
+                            strcpy (status.ipv6,pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
+                        }
+                    }
+                }
+            }
+            if (0 == strlen(status.ipv6))
+            {
+                pIpAddrList = LM_GetIPArr_FromIndex(pHost,1,IP_V6); // Local link address starts with "fe80"
+
+                if (pIpAddrList)
+                {
+                    if (pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId])
+                    {
+                        char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
+                        if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
+                        {
+                            strcpy (status.ipv6,pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
+                        }
+                    }
+                }
+            }
+        }
+        if ((status.ipv4Active) && (pHost->pStringParaValue[LM_HOST_IPAddressId]))
+        {
+            strcpy (status.ipv4,pHost->pStringParaValue[LM_HOST_IPAddressId]);
+        }
+    }
+    Hosts_UpdatePresenceDetectionStatus(&status);
+    return 0;
+}
+
+BOOL Hosts_CheckAndUpdatePresenceDeviceMac(char *Mac, BOOL val)
+{
+    if (!Mac || !lmHosts.enablePresence)
+        return FALSE;     
+    pthread_mutex_lock(&LmHostObjectMutex);    
+    PLmObjectHost pHost = Hosts_FindHostByPhysAddress(Mac);
+    if (pHost)
+    {
+        char tmpmac[64];
+        char dbParam[128];
+        int ret = 0;
+        pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId] = val;        
+        snprintf(tmpmac,sizeof(tmpmac),"%s",Mac);
+        LanManager_StringToLower(tmpmac);
+        snprintf(dbParam,sizeof(dbParam), "PDE_%s",tmpmac);
+        Hosts_UpdateDeviceIntoPresenceDetection(pHost,FALSE);
+        if (val)
+        {
+            ret = syscfg_set(NULL, dbParam , "true");
+        }
+        else
+        {
+            ret = syscfg_unset(NULL, dbParam);
+        }
+        if (0 == ret)
+        {
+            syscfg_commit();
+        }
+        else
+        {
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            return FALSE;
+        }
+    }
+    else
+    {
+        //Not found in host table
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        return FALSE;
+    }
+    pthread_mutex_unlock(&LmHostObjectMutex);
+    return TRUE;
+}
+
+int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencestatus)
+{
+    char buf[8];
+	char interface[32] = {0};
+    BOOL notify_to_webpa = FALSE;
+    ClientConnectState status;
+
+    if (!pHost)
+        return -1;
+    if (HOST_PRESENCE_JOIN == presencestatus)    
+    {
+        if (!pHost->bBoolParaValue[LM_HOST_PresenceActiveId])
+        {
+            pHost->ulUlongParaValue[LM_HOST_X_RDK_PresenceActiveLastChange] = time((time_t*)NULL);
+            pHost->bBoolParaValue[LM_HOST_PresenceActiveId] = TRUE;
+            status = CLIENT_STATE_ONLINE;
+        }
+        else
+        {
+            return 0;
+        }
+
+    }
+    else
+    {
+        if (pHost->bBoolParaValue[LM_HOST_PresenceActiveId])
+        {
+            pHost->bBoolParaValue[LM_HOST_PresenceActiveId] = FALSE;
+            status = CLIENT_STATE_OFFLINE;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    if (!pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId])
+        return -1;
+
+    syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf));
+
+    if( buf != NULL )
+    {
+        if (strcmp(buf, "true") == 0)
+            notify_to_webpa = TRUE;
+    }
+
+    if (notify_to_webpa)
+    {
+
+        if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
+        {
+            if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
+                strcpy(interface,"WiFi");
+            }
+            else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
+            {
+                strcpy(interface,"MoCA");
+            }
+            else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
+            {
+                strcpy(interface,"Ethernet");
+            }
+            else
+            {
+                strcpy(interface,"Other");
+            }
+        }
+        Send_PresenceNotification(
+                interface,
+                pHost->pStringParaValue[LM_HOST_PhysAddressId],
+                status,
+                pHost->pStringParaValue[LM_HOST_HostNameId]);
+    }
+}
+
+BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
+{
+    EventQData EventMsg;
+    mqd_t mq;
+    char buffer[MAX_SIZE];
+    mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
+    CHECK((mqd_t)-1 != mq);
+    memset(buffer, 0, MAX_SIZE);
+
+    if (isNeedToAdd)
+    {
+        EventMsg.MsgType = MSG_TYPE_PRESENCE_ADD;
+    }
+    else
+    {
+        EventMsg.MsgType = MSG_TYPE_PRESENCE_REMOVE;
+    }
+    if (mac)
+    {
+         PLmObjectHost pHost = NULL;
+         pthread_mutex_lock(&LmHostObjectMutex);
+         if(!lmHosts.enablePresence)
+         {
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            return FALSE;
+         }
+         pHost = Hosts_FindHostByPhysAddress(mac);        
+         if (!pHost)
+         {
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            return FALSE;
+         }
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        strcpy(EventMsg.Msg,mac);
+    }
+    else
+    {
+        return FALSE;
+    }
+    memcpy(buffer,&EventMsg,sizeof(EventMsg));
+    CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
+    CHECK((mqd_t)-1 != mq_close(mq));
+    return TRUE;
+}
+
+void Update_RFC_Presencedetection(BOOL enablePresenceFeature)
+{
+        EventQData EventMsg;
+        mqd_t mq;
+        char buffer[MAX_SIZE];
+        mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
+        CHECK((mqd_t)-1 != mq);
+        memset(buffer, 0, MAX_SIZE);
+        EventMsg.MsgType = MSG_TYPE_RFC;
+
+        if (enablePresenceFeature)
+        {
+            strcpy(EventMsg.Msg,"true");
+        }
+        else
+        {
+            strcpy(EventMsg.Msg,"false");
+        }
+        memcpy(buffer,&EventMsg,sizeof(EventMsg));
+        CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
+        CHECK((mqd_t)-1 != mq_close(mq));
+}
+
+void Hosts_PresenceNotify(PLmPresenceNotifyInfo pinfo)
+{
+        EventQData EventMsg;
+        mqd_t mq;
+        char buffer[MAX_SIZE];
+        if (!pinfo)
+            return;
+        mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
+        CHECK((mqd_t)-1 != mq);
+        memset(buffer, 0, MAX_SIZE);
+        EventMsg.MsgType = MSG_TYPE_PRESENCE_NOTIFICATION;
+
+        memcpy(EventMsg.Msg,pinfo,sizeof(LmPresenceNotifyInfo));
+        memcpy(buffer,&EventMsg,sizeof(EventMsg));
+        CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
+        CHECK((mqd_t)-1 != mq_close(mq));
+}
+
+void Hosts_PresenceDetectionClbkFunc(void *arg)
+{
+    PLmPresenceNotifyInfo pinfo = (PLmPresenceNotifyInfo) arg;
+    if (pinfo)
+    {
+        Hosts_PresenceNotify(pinfo);
+    }
 }

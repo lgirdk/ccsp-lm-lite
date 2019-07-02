@@ -66,11 +66,14 @@
 #define  _LM_MAIN_H_
 
 #include "lm_api.h"
+#include "network_devices_interface.h"
 
 #define LM_HOST_POLLINGINTERVAL                 10 
 
 #define LM_HOST_ActiveId                        0
-#define LM_HOST_NumBoolPara                     1
+#define LM_HOST_PresenceNotificationEnabledId   1
+#define LM_HOST_PresenceActiveId                2
+#define LM_HOST_NumBoolPara                     3
 
 #define LM_HOST_X_CISCO_COM_ActiveTimeId        0
 #define LM_HOST_X_CISCO_COM_InactiveTimeId      1
@@ -82,7 +85,8 @@
 #define LM_HOST_X_CISCO_COM_ConnectionStatusId  2
 #define LM_HOST_X_CISCO_COM_OSType              3
 #define LM_HOST_X_COMCAST-COM_LastChange        4 
-#define LM_HOST_NumUlongPara                    5
+#define LM_HOST_X_RDK_PresenceActiveLastChange  5
+#define LM_HOST_NumUlongPara                    6
 
 //Unknown(1),Airport Base Station(2),AirTunes(3),AppleTV(4),Apple Device(5),Workstation(6),Network Storage(7),Set-Top Box(8),Router(9),Media Player(10), Printer(11)
 #define LM_HOST_X_CISCO_COM_DeviceType_Unkown               1
@@ -271,6 +275,8 @@ _LmObjectHosts
     int sizeHost;
     int numHost;
     ULONG lastActivity; 
+    BOOL enablePresence;
+    LmHostPresenceDetectionParam param_val;
 }
 LmObjectHosts,  *PLmObjectHosts;
 
@@ -322,4 +328,13 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 void get_uptime(int *uptime);
 void convert_ssid_to_radio(char *ssid, char *radio);
 PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAddress );
+BOOL Hosts_GetPresenceNotificationEnableStatus(char *Mac);
+BOOL Hosts_CheckAndUpdatePresenceDeviceMac(char *Mac, BOOL val);
+BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue);
+void Hosts_PresenceDetectionClbkFunc(void *arg);
+BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd);
+void Hosts_PresenceNotify(PLmPresenceNotifyInfo pinfo);
+void Update_RFC_Presencedetection(BOOL enablePresenceFeature);
+int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencestatus);
+int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost,BOOL val);
 #endif
