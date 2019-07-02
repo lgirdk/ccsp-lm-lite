@@ -88,6 +88,15 @@ Hosts_GetParamBoolValue
     );
 
 BOOL
+Hosts_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    );
+
+
+BOOL
 Hosts_GetParamIntValue
     (
         ANSC_HANDLE                 hInsContext,

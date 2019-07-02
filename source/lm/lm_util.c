@@ -61,6 +61,16 @@
 #include "mlt_malloc.h"
 #endif
 
+void LanManager_StringToLower( char *pstring )
+{
+    ULONG i;
+
+    for ( i = 0; pstring[i] != '\0' ; i++ )
+    {
+        if ( pstring[i] >= 'A' && pstring[i] <= 'Z' )
+            pstring[i] += 32; // convert to lower case
+    }
+}
 
 
 /* Listent to value change signal on the following parameters:

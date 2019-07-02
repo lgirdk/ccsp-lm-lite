@@ -119,6 +119,7 @@ extern int g_Client_Poll_interval;
     Hosts.
 
     *  Hosts_GetParamBoolValue
+    *  Hosts_SetParamBoolValue
     *  Hosts_GetParamIntValue
     *  Hosts_GetParamUlongValue
     *  Hosts_GetParamStringValue
@@ -164,8 +165,118 @@ Hosts_GetParamBoolValue
     )
 {
     /* check the parameter name and return the corresponding value */
+     char buf[8];
+
+    /* check the parameter name and return the corresponding value */
+
+    if( AnscEqualString(ParamName, "X_RDK_WebPA_PresenceNotificationEnable", TRUE))
+    {
+        /* collect value */
+        syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf));
+
+        if( buf != NULL )
+        {
+            if (strcmp(buf, "true") == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        return TRUE;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDK_PresenceDetectEnable", TRUE))
+    {
+        /* collect value */
+        syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
+
+        if( buf != NULL )
+        {
+            if (strcmp(buf, "true") == 0)
+                *pBool = TRUE;
+            else
+                *pBool = FALSE;
+        }
+        return TRUE;
+    }
+
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
+    return FALSE;
+}
+
+/**********************************************************************  
+
+    caller:     owner of this object 
+
+    prototype: 
+
+        BOOL
+        Hosts_SetParamBoolValue
+            (
+                ANSC_HANDLE                 hInsContext,
+                char*                       ParamName,
+                BOOL                        bValue
+            );
+
+    description:
+
+        This function is called to set BOOL parameter value; 
+
+    argument:   ANSC_HANDLE                 hInsContext,
+                The instance handle;
+
+                char*                       ParamName,
+                The parameter name;
+
+                BOOL                        bValue
+                The updated BOOL value;
+
+    return:     TRUE if succeeded.
+
+**********************************************************************/
+BOOL
+Hosts_SetParamBoolValue
+    (
+        ANSC_HANDLE                 hInsContext,
+        char*                       ParamName,
+        BOOL                        bValue
+    )
+{
+    /* check the parameter name and set the corresponding value */
+
+    if( AnscEqualString(ParamName, "X_RDK_WebPA_PresenceNotificationEnable", TRUE))
+    {
+        char buf[8];
+        memset (buf,0,sizeof(buf));
+        syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
+
+        if (strcmp(buf, "false") == 0)
+        {
+            AnscTraceWarning(("Not supported (%s) to set when Presence Feature is disabled \n",ParamName));
+            return FALSE;
+        }
+
+        /* collect value */
+        if( bValue == TRUE)
+        {
+            syscfg_set(NULL, "notify_presence_webpa", "true");
+        }
+        else
+        {
+            syscfg_set(NULL, "notify_presence_webpa", "false");
+        }
+        syscfg_commit();
+        return TRUE;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDK_PresenceDetectEnable", TRUE))
+    {
+        Update_RFC_Presencedetection(bValue);
+        return TRUE;
+    }
+
+    
+    /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
 
@@ -251,6 +362,53 @@ Hosts_GetParamUlongValue
         ULONG*                      puLong
     )
 {
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval", TRUE))
+    {
+        /* collect value */
+	    pthread_mutex_lock(&LmHostObjectMutex);   
+        *puLong = lmHosts.param_val.ipv4CheckInterval;
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        return TRUE;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries", TRUE))
+    {
+        /* collect value */
+	    pthread_mutex_lock(&LmHostObjectMutex);   
+        *puLong = lmHosts.param_val.ipv4RetryCount;
+        pthread_mutex_unlock(&LmHostObjectMutex); 
+        return TRUE;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval", TRUE))
+    {
+        /* collect value */
+	    pthread_mutex_lock(&LmHostObjectMutex);   
+        *puLong = lmHosts.param_val.ipv6CheckInterval;
+        pthread_mutex_unlock(&LmHostObjectMutex); 
+        return TRUE;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries", TRUE))
+    {
+        /* collect value */
+	    pthread_mutex_lock(&LmHostObjectMutex);   
+        *puLong = lmHosts.param_val.ipv6RetryCount;
+        pthread_mutex_unlock(&LmHostObjectMutex);     
+        return TRUE;
+    }
+
+    // To do
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval", TRUE))
+    {
+        /* collect value */
+        pthread_mutex_lock(&LmHostObjectMutex);   
+        *puLong = lmHosts.param_val.bkgrndjoinInterval;
+        pthread_mutex_unlock(&LmHostObjectMutex);     
+        return TRUE;
+    }
+
     /* check the parameter name and return the corresponding value */
     if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectedDeviceNumber", TRUE))
     {
@@ -297,6 +455,55 @@ Hosts_SetParamUlongValue
         ULONG                       uValue
     )
 {
+    BOOL updatePresenceParam = FALSE;
+    HostPresenceParamUpdate flag = HOST_PRESENCE_PARAM_NONE;
+
+	pthread_mutex_lock(&LmHostObjectMutex);   
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval", TRUE))
+    {
+        updatePresenceParam = TRUE;
+        flag = HOST_PRESENCE_IPV4_ARP_LEAVE_INTERVAL;
+	    lmHosts.param_val.ipv4CheckInterval = uValue;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries", TRUE))
+    {
+        updatePresenceParam = TRUE;
+        flag = HOST_PRESENCE_IPV4_RETRY_COUNT;
+	    lmHosts.param_val.ipv4RetryCount = uValue;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval", TRUE))
+    {
+        updatePresenceParam = TRUE;
+        flag = HOST_PRESENCE_IPV6_ARP_LEAVE_INTERVAL;
+	    lmHosts.param_val.ipv6CheckInterval = uValue;
+    }
+
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries", TRUE))
+    {
+        updatePresenceParam = TRUE;
+        flag = HOST_PRESENCE_IPV6_RETRY_COUNT;
+	    lmHosts.param_val.ipv6RetryCount = uValue;
+    }
+
+    // To Do
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval", TRUE))
+    {
+        updatePresenceParam = TRUE;
+        flag = HOST_PRESENCE_BKG_JOIN_INTERVAL;
+        lmHosts.param_val.bkgrndjoinInterval = uValue;
+    }
+
+    if (updatePresenceParam)
+    {
+        Hosts_UpdatePresenceDetectionParam (&lmHosts.param_val,flag);
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        return Hosts_UpdateSysDb(ParamName,uValue);
+    }
+    pthread_mutex_unlock(&LmHostObjectMutex);
+
     /* check the parameter name and set the corresponding value */
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod", TRUE))
     {
@@ -379,6 +586,22 @@ Hosts_GetParamStringValue
         return 0;
     }
 
+    /* check the parameter name and return the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac", TRUE))
+    {
+        /* collect value */
+        AnscCopyString(pValue, "");
+        return 0;
+    }
+
+    /* check the parameter name and return the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac", TRUE))
+    {
+        /* collect value */
+        AnscCopyString(pValue, "");
+        return 0;
+    }
+
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return -1;
 }
@@ -421,6 +644,29 @@ Hosts_SetParamStringValue
         char*                       pString
     )
 {
+
+    /* check the parameter name and return the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac", TRUE))
+    {        
+        // To DO
+        if (!pString)
+            return FALSE;
+        // Add into queue
+        BOOL retStatus = Presencedetection_DmlNotifyMac(pString,TRUE);
+        return retStatus;
+    }
+
+    /* check the parameter name and return the corresponding value */
+    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac", TRUE))
+    {
+        // To DO
+        if (!pString)
+            return FALSE;
+        // Add into queue
+        BOOL retStatus = Presencedetection_DmlNotifyMac(pString,FALSE);
+        return retStatus;
+    }
+
     /* check the parameter name and set the corresponding value */
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
     {

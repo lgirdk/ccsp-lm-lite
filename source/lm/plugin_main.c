@@ -82,6 +82,8 @@ COSA_Init
     
     pPlugInfo->uPluginVersion       = THIS_PLUGIN_VERSION;
     /* register the back-end apis for the data model */
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_GetParamBoolValue",  Hosts_GetParamBoolValue);
+    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_SetParamBoolValue",  Hosts_SetParamBoolValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_GetParamUlongValue",  Hosts_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_SetParamUlongValue",  Hosts_SetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Hosts_GetParamStringValue",  Hosts_GetParamStringValue);
