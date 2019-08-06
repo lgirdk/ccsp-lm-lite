@@ -1319,7 +1319,17 @@ Host_SetParamStringValue
     if( AnscEqualString(ParamName, "Comments", TRUE))
     {
         /* save update to backup */
-        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]) , pString);
+#if defined(_HUB4_PRODUCT_REQ_)
+        /* to avoid failure scenario check the parameter value is empty or not, if it is empty reset the existing value
+         * and updates DM with empty */
+        if(pString && !strlen(pString) && pHost->pStringParaValue[LM_HOST_Comments])
+        {
+            memset(pHost->pStringParaValue[LM_HOST_Comments],0,strlen(pHost->pStringParaValue[LM_HOST_Comments]));
+            (pHost->pStringParaValue[LM_HOST_Comments])[0] = '\0';
+        }
+        else
+#endif
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]) , pString);
 		pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
