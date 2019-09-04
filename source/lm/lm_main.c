@@ -1460,6 +1460,10 @@ int LM_get_online_device()
     int i;
     int num = 0;
     PLmObjectHostIPAddress pIP4;
+#if defined(_HUB4_PRODUCT_REQ_)
+    PLmObjectHostIPAddress pIP6;
+    bool isDeviceHasIPv4;
+#endif /*_HUB4_PRODUCT_REQ_*/
 
 	if(0 != Hosts_stop_scan()){
         PRINTD("bridge mode\n");
@@ -1469,6 +1473,9 @@ int LM_get_online_device()
    // pthread_mutex_lock(&LmHostObjectMutex);
     for(i = 0; i < lmHosts.numHost; i++){
         if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
+#if defined(_HUB4_PRODUCT_REQ_)
+            isDeviceHasIPv4 = FALSE;
+#endif /*_HUB4_PRODUCT_REQ_*/
             /* Do NOT count TrueStaticIP client */
             for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
@@ -1476,9 +1483,25 @@ int LM_get_online_device()
                      (	(0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4)) && \
                      	(0 != strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.16.12", 9) ) ) 
                    )
-                num++;
-                break;
+                {
+#if defined(_HUB4_PRODUCT_REQ_)
+                    isDeviceHasIPv4 = TRUE;
+#endif /*_HUB4_PRODUCT_REQ_*/
+                    num++;
+                    break;
+                }
             }
+/* Device Count is not updated for IPv6 only configured clients.
+ * Added code to count IPv6 only configured clients
+ * by checking the condition whether device is counted for IPv4 or not.*/
+#if defined(_HUB4_PRODUCT_REQ_)
+            if ( FALSE == isDeviceHasIPv4 ){
+                for(pIP6 = lmHosts.hostArray[i]->ipv6AddrArray; pIP6 != NULL; pIP6 = pIP6->pNext){
+                    num++;
+                    break;
+                }
+            }
+#endif /*_HUB4_PRODUCT_REQ_*/
         }
     }
     //pthread_mutex_unlock(&LmHostObjectMutex);
