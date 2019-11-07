@@ -53,6 +53,7 @@
 #include "plugin_main.h"
 #include "dslh_dmagnt_interface.h"
 #include "ccsp_trace.h"
+#include "dm_pack_create_func.h"
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
@@ -183,11 +184,11 @@ ssp_engage
     }
 
     returnStatus =
-        pDslhCpeController->RegisterCcspDataModel
+        pDslhCpeController->RegisterCcspDataModel2
             (
                 (ANSC_HANDLE)pDslhCpeController,
                 CrName, /* CCSP_DBUS_INTERFACE_CR,*/              /* CCSP CR ID */
-                CCSP_DATAMODEL_XML_FILE,             /* Data Model XML file. Can be empty if only base data model supported. */
+                DMPackCreateDataModelXML,             /* Data Model XML file. Can be empty if only base data model supported. */
                 CCSP_COMPONENT_NAME_LMLITE,            /* Component Name    */
                 CCSP_COMPONENT_VERSION_LMLITE,         /* Component Version */
                 CCSP_COMPONENT_PATH_LMLITE,            /* Component Path    */
