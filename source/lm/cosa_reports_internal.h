@@ -51,8 +51,9 @@
     ULONG                           uNDTReportingPeriodDefault;    \
     BOOLEAN                         bNDTDefPollingPeriodChanged;    \
     BOOLEAN                         bNDTDefReportingPeriodChanged;    \
-    ULONG                           uNDTOverrideTTL;
-
+    ULONG                           uNDTOverrideTTL;                  \
+    SLIST_HEADER                    MangDevList;                      \
+    ULONG                           MangDevNextInsNum;
 
 typedef  struct
 _COSA_DATAMODEL_REPORTS                                               

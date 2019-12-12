@@ -47,6 +47,7 @@
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
 #endif
+#include "cosa_managementserver_dml.h"
 
 //extern void* g_pDslhDmlAgent;
 
@@ -141,6 +142,7 @@ CosaReportsInitialize
         return  returnStatus;
     }
 
+    returnStatus = CosaDmlManagedDeviceInit((ANSC_HANDLE)hThisObject);
     return returnStatus;
 }
 
