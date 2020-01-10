@@ -1582,9 +1582,24 @@ Host_SetParamStringValue
 	else if (AnscEqualString(ParamName, "AddressSource", TRUE))
 	{
 		/* save update to AddressSource */
-		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , pString);
-		pthread_mutex_unlock(&LmHostObjectMutex); 
-		return TRUE;
+		if( strcasecmp(pString, "DHCP") == 0 )
+		{
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , pString);
+
+			pthread_mutex_unlock(&LmHostObjectMutex);
+			return TRUE;
+		}
+		else if ( (strcasecmp(pString, "Static") == 0) || (strcasecmp(pString, "Reserved") == 0) )
+		{
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , "Reserved");
+
+			pthread_mutex_unlock(&LmHostObjectMutex);
+			return TRUE;
+		}
+		else
+		{
+			AnscTraceWarning(("<%s> Enter Valid AddressSource [%s] is invalid\n",__FUNCTION__,pString));
+		}
 	}
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
