@@ -1098,7 +1098,11 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     } else {
     	snprintf(buf, sizeof(buf), "ip -4 nei show | grep %s | grep -v 192.168.10 > %s", netName,ARP_CACHE_FILE);
 	system(buf);
-	snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s  >> %s",netName,ARP_CACHE_FILE);
+#ifdef _HUB4_PRODUCT_REQ_
+	snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s | grep -v fd | grep -v fc >> %s",netName,ARP_CACHE_FILE);
+#else
+        snprintf(buf, sizeof(buf), "ip -6 nei show | grep %s  >> %s",netName,ARP_CACHE_FILE);
+#endif
 	system(buf);
     }
 
