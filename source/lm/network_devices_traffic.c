@@ -137,14 +137,12 @@ bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size)
 
 int ResetEBTables()
 {
-    char rxtxcmd[128] = {0};
-    char rxtxarr[128] = {0};
     int ret  = 0;
-    sprintf(rxtxcmd, "/usr/ccsp/tad/rxtx_sta.sh");
-    ret = _syscmd_ndt(rxtxcmd, rxtxarr, sizeof(rxtxarr));
+    ret = system("sh /usr/ccsp/tad/rxtx_sta.sh > /dev/null");
+
     if(ret)
     {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX STA shell script failed. ret:[%d] \n",__FUNCTION__, ret));
         return -1;
     }
     else
@@ -153,7 +151,7 @@ int ResetEBTables()
 #ifndef UTC_ENABLE
         reset_timestamp.tv_sec -= tm_offset;
 #endif
-        CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+        CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] \n",__FUNCTION__, ret));
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Reset Timestamp[%u] \n", __FUNCTION__, reset_timestamp.tv_sec ));
 
@@ -597,14 +595,12 @@ void GetIPTableData()
     char ip_table_line[256];
     FILE *fp = NULL;
 
-    char rxtxcmd[128] = {0};
-    char rxtxarr[128] = {0};
     int ret  = 0;
-    sprintf(rxtxcmd, "/usr/ccsp/tad/rxtx_cur.sh");
-    ret = _syscmd_ndt(rxtxcmd, rxtxarr, sizeof(rxtxarr));
+    ret = system("sh /usr/ccsp/tad/rxtx_cur.sh > /dev/null");
+
     if(ret)
     {
-        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX Cur shell script [%d] [%s] \n",__FUNCTION__, ret, rxtxarr));
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for RXTX Cur shell script failed. ret:[%d] \n",__FUNCTION__, ret));
         return;
     }
 
