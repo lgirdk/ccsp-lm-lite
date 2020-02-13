@@ -51,6 +51,9 @@
 #include "lm_util.h"
 #include "ccsp_lmliteLog_wrapper.h"
 
+// TELEMETRY 2.0 //RDKB-25996
+#include <telemetry_busmessage_sender.h>
+
 /* Fix RDKB-499 */
 #define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63[^,]"
 #define LM_DHCP_CLIENT_FORMAT   "%63d %17s %63s %63s"      
@@ -1474,8 +1477,9 @@ void lm_wrapper_get_dhcpv4_client()
                 {
                     strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
                     lmHosts.lastActivity++;
-                CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
-                    char buf[8];
+                    CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+		    t2_event_d("SYS_INFO_Hostname_changed", 1);
+		    char buf[8];
                     snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
                     if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
                     {
@@ -1598,7 +1602,8 @@ void lm_wrapper_get_dhcpv4_reserved()
                 {
 					strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
 					lmHosts.lastActivity++;
-				CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+					CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+					t2_event_d("SYS_INFO_Hostname_changed", 1);
 					char buf[8];
 					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
 					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
