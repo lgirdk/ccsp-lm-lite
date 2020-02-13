@@ -86,6 +86,9 @@
 #define OnboardLog(...)
 #endif
 
+#include <telemetry_busmessage_sender.h>
+#define TELEMETRY_MAX_BUFFER 256
+
 #define LM_IPC_SUPPORT
 #include "ccsp_dm_api.h"
 
@@ -526,6 +529,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				OnboardLog("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s and HostName is %s appeared online\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
 
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s , address source is %s and HostName is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource],pHost->pStringParaValue[LM_HOST_HostNameId]));
+
 				}
 			}  
 			else 
@@ -535,6 +539,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress and %s HostName gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 				OnboardLog("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress and %s HostName gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
 				CcspWifiTrace(("RDK_LOG_WARN: Wifi client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+				t2_event_d("WIFI_INFO_clientdisconnect", 1);
 				}
 #ifndef USE_NOTIFY_COMPONENT
 				remove_Mac_to_band_mapping(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
@@ -571,7 +576,6 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				}  else {
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 					OnboardLog("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
-
 				}
 			}
 			strcpy(interface,"Ethernet");
@@ -668,8 +672,9 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				if(pHost->bNotify == FALSE)
 				{
 					get_uptime(&uptime);
-                  	CcspTraceWarning(("Client_Connect_complete:%d\n",uptime));	
+                  			CcspTraceWarning(("Client_Connect_complete:%d\n",uptime));	
 					OnboardLog("Client_Connect_complete:%d\n",uptime);
+					t2_event_d("bootuptime_ClientConnectComplete_split", uptime);
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 					lmHosts.lastActivity++;
 					pHost->bClientReady = TRUE;
@@ -2412,7 +2417,14 @@ void Hosts_LoggingThread()
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Ethernet_Clients=%d\n",TotalEthDev));
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_MoCA_Clients=%d\n",TotalMoCADev));
 		CcspTraceWarning(("-------------------------------------------------------------------\n"));
-		
+
+		t2_event_d("Total_devices_connected_split", TotalDevCount);
+		t2_event_d("Total_online_clients_split", TotalOnlineDev);
+		t2_event_d("Total_offline_clients_split", TotalOffLineDev);
+		t2_event_d("Total_wifi_clients_split", TotalWiFiDev);
+		t2_event_d("Total_Ethernet_Clients_split", TotalEthDev);
+		t2_event_d("Total_MoCA_Clients_split", TotalMoCADev);
+	
 		TotalDevCount = 0;
 		TotalOnlineDev = 0;
 		TotalOffLineDev = 0;
@@ -3067,6 +3079,8 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 	pos2	= strstr( ssid,".1" );
 	pos5	= strstr( ssid,".2" );
 
+	char telemetryBuff[TELEMETRY_MAX_BUFFER] = { '\0' };
+
 	if( ( NULL != Xpos2 ) || \
 		( NULL != Xpos5 ) 
 	   )
@@ -3096,6 +3110,21 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 				if( pHost->ipv4Active == TRUE )
 				{
 					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client online:%s,%s\n", ( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL", pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+			
+					memset(telemetryBuff, 0, TELEMETRY_MAX_BUFFER);
+					snprintf(telemetryBuff,16,"%s",pHost->pStringParaValue[LM_HOST_HostNameId]);
+					if(strncmp(telemetryBuff,"SC",strlen("SC")) == 0)
+					{
+						t2_event_d("WIFI_INFO_XHCAM_online", 1);
+					}
+					else if(strncmp(telemetryBuff,"android",strlen("android")) == 0)
+					{
+						t2_event_d("WIFI_INFO_XHTS_online", 1);
+					}
+					else
+					{
+						t2_event_d("WIFI_INFO_XHclient_online", 1);
+					}
 				}
 			}  
 			else 
@@ -3103,6 +3132,21 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 				if( pHost->ipv4Active == TRUE )
 				{
 					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client offline:%s,%s\n", ( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL", pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+
+					memset(telemetryBuff, 0, TELEMETRY_MAX_BUFFER);
+					snprintf(telemetryBuff,16,"%s",pHost->pStringParaValue[LM_HOST_HostNameId]);
+					if(strncmp(telemetryBuff,"SC",strlen("SC")) == 0)
+					{
+						t2_event_d("WIFI_INFO_XHCAM_offline", 1);
+					}
+					else if(strncmp(telemetryBuff,"android",strlen("android")) == 0) 
+					{
+						t2_event_d("WIFI_INFO_XHTS_offline", 1);
+					}
+					else
+					{
+						t2_event_d("WIFI_INFO_XHclient_offline", 1);
+					}
 				}
 			}
 
