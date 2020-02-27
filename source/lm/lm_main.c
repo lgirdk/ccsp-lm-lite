@@ -1983,6 +1983,7 @@ void *Event_HandlerThread(void *threadid)
     char buffer[MAX_SIZE + 1];
 	char radio[32];
     int must_stop = 0;
+    BOOL do_dhcpsync = FALSE;
 
     /* initialize the queue attributes */
     attr.mq_flags = 0;
@@ -2008,17 +2009,17 @@ void *Event_HandlerThread(void *threadid)
         buffer[bytes_read] = '\0';
 
         memcpy(&EventMsg,buffer,sizeof(EventMsg));
+        do_dhcpsync = FALSE;
 
         if(EventMsg.MsgType == MSG_TYPE_ETH)
         {
             char Mac_Id[18];
             memcpy(&EthHost,EventMsg.Msg,sizeof(EthHost));
 
+            pthread_mutex_lock(&LmHostObjectMutex);
             pHost = Hosts_FindHostByPhysAddress(EthHost.MacAddr);
-
             if ( !pHost )
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
                 pHost = Hosts_AddHostByPhysAddress(EthHost.MacAddr);
 
                 if ( pHost )
@@ -2034,20 +2035,17 @@ void *Event_HandlerThread(void *threadid)
                     pthread_mutex_unlock(&LmHostObjectMutex);
                     continue;
                 }      
-                pthread_mutex_unlock(&LmHostObjectMutex);
             }
 
             if(EthHost.Active)
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
-                pthread_mutex_unlock(&LmHostObjectMutex);
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
-                    Hosts_SyncDHCP();
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
+                    do_dhcpsync = TRUE;
                 }
+ 
                 LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
             }
             else
@@ -2057,16 +2055,29 @@ void *Event_HandlerThread(void *threadid)
             
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+            pthread_mutex_unlock(&LmHostObjectMutex);
+
+            if(EthHost.Active && do_dhcpsync)
+            {
+                Hosts_SyncDHCP();
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_FindHostByPhysAddress(EthHost.MacAddr);
+                if (pHost && pHost->pStringParaValue[LM_HOST_PhysAddressId] && pHost->pStringParaValue[LM_HOST_IPAddressId])
+                {
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
+                }
+                pthread_mutex_unlock(&LmHostObjectMutex);
+            }
+
         }
         else if(EventMsg.MsgType == MSG_TYPE_WIFI)
         {
             memcpy(&hosts,EventMsg.Msg,sizeof(hosts));
+            pthread_mutex_lock(&LmHostObjectMutex);
             pHost = Hosts_FindHostByPhysAddress(hosts.phyAddr);
             if ( !pHost )
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
                 pHost = Hosts_AddHostByPhysAddress(hosts.phyAddr);
-
                 if ( pHost )
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
@@ -2081,12 +2092,10 @@ void *Event_HandlerThread(void *threadid)
                     continue;
                 }   
                 
-                pthread_mutex_unlock(&LmHostObjectMutex);
             }
 
             if(hosts.Status)
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
 				memset(radio,0,sizeof(radio));	
                 convert_ssid_to_radio(hosts.ssid, radio);				
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
@@ -2094,47 +2103,57 @@ void *Event_HandlerThread(void *threadid)
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
                 pHost->l1unReachableCnt = 1;
-                pthread_mutex_unlock(&LmHostObjectMutex);
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
-                    Hosts_SyncDHCP();
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
-                }
+                    do_dhcpsync = TRUE;
+               }
 
                 LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
             }
             else
             {
 
-	if( (hosts.ssid != NULL) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
-	{
-		 if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],hosts.ssid))
-		 {
-                	pthread_mutex_lock(&LmHostObjectMutex);
-				memset(radio,0,sizeof(radio));
-				convert_ssid_to_radio(hosts.ssid, radio);
-				DelAndShuffleAssoDevIndx(pHost);
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
-                //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
-                pthread_mutex_unlock(&LmHostObjectMutex);
-                LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
-		}
-	}
+                if( (hosts.ssid != NULL) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
+                {
+                    if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],hosts.ssid))
+                    {
+                        memset(radio,0,sizeof(radio));
+                        convert_ssid_to_radio(hosts.ssid, radio);
+                        DelAndShuffleAssoDevIndx(pHost);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
+                        //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
+                        LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                    }
+                }
             }
             
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+            pthread_mutex_unlock(&LmHostObjectMutex);
+
+            if(hosts.Status && do_dhcpsync) 
+            {
+                Hosts_SyncDHCP();
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_FindHostByPhysAddress(hosts.phyAddr);
+                if (pHost && pHost->pStringParaValue[LM_HOST_PhysAddressId] && pHost->pStringParaValue[LM_HOST_IPAddressId])
+                {
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId])); 
+                }
+                pthread_mutex_unlock(&LmHostObjectMutex);
+            }
+
         }
         else if(EventMsg.MsgType == MSG_TYPE_MOCA)
         {
             memcpy(&mhosts,EventMsg.Msg,sizeof(mhosts));
+            pthread_mutex_lock(&LmHostObjectMutex);
             pHost = Hosts_FindHostByPhysAddress(mhosts.phyAddr);
             if ( !pHost )
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
                 pHost = Hosts_AddHostByPhysAddress(mhosts.phyAddr);
 
                 if ( pHost )
@@ -2150,40 +2169,48 @@ void *Event_HandlerThread(void *threadid)
                     pthread_mutex_unlock(&LmHostObjectMutex);
                     continue;
                 }   
-                pthread_mutex_unlock(&LmHostObjectMutex);
             }
 
             if(mhosts.Status)
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), mhosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), mhosts.AssociatedDevice);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), mhosts.parentMac);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), mhosts.deviceType);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = mhosts.RSSI;
                 pHost->l1unReachableCnt = 1;
-                pthread_mutex_unlock(&LmHostObjectMutex);
 
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
+                    do_dhcpsync = TRUE;
                     CcspTraceWarning(("<<< %s client type is MoCA, IPAddr is not updated in ARP %d >>\n>",__FUNCTION__,__LINE__));
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-                    Hosts_SyncDHCP();
-                    CcspTraceWarning(("<<< %s client type is MoCA, IPAddr is not updated in ARP %d %s >>\n>",__FUNCTION__,__LINE__,pHost->pStringParaValue[LM_HOST_IPAddressId]));
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
                 }
                 
                 LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
             }
             else
             {
-                pthread_mutex_lock(&LmHostObjectMutex);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), mhosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), mhosts.AssociatedDevice);
-                pthread_mutex_unlock(&LmHostObjectMutex);
 
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }       
+            pthread_mutex_unlock(&LmHostObjectMutex);
+
+            if(mhosts.Status && do_dhcpsync)
+            {
+                Hosts_SyncDHCP();
+                pthread_mutex_lock(&LmHostObjectMutex);
+                pHost = Hosts_FindHostByPhysAddress(mhosts.phyAddr);
+                if (pHost && pHost->pStringParaValue[LM_HOST_PhysAddressId] && pHost->pStringParaValue[LM_HOST_IPAddressId])
+                {
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
+                }
+
+                pthread_mutex_unlock(&LmHostObjectMutex);
+            }
+            
         }
         else if (MSG_TYPE_PRESENCE_ADD == EventMsg.MsgType)
         {
