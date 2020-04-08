@@ -47,7 +47,6 @@ char fullDeviceMAC[32]={'\0'};
 libpd_instance_t client_instance;
 static void *handle_parodus();
 
-static void macToLower(char macValue[]);
 static void waitForEthAgentComponentReady();
 static void checkComponentHealthStatus(char * compName, char * dbusPath, char *status, int *retStatus);
 static int check_ethernet_wan_status();
@@ -430,7 +429,7 @@ char * getDeviceMac()
         if(CCSP_SUCCESS == check_ethernet_wan_status() && sysevent_get(fd, token, "eth_wan_mac", deviceMACValue, sizeof(deviceMACValue)) == 0 && deviceMACValue[0] != '\0')
         {
             strcpy(fullDeviceMAC, deviceMACValue);
-            macToLower(deviceMACValue);
+            AnscMacToLower(deviceMAC, deviceMACValue, sizeof(deviceMAC));
             CcspTraceInfo(("deviceMAC is %s\n", deviceMAC));
         }
         else
@@ -465,7 +464,7 @@ char * getDeviceMac()
                 }
                 CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Calling macToLower to get deviceMacId\n"));
                 strcpy(fullDeviceMAC, parameterval[0]->parameterValue);
-                macToLower(parameterval[0]->parameterValue);
+                AnscMacToLower(deviceMAC, parameterval[0]->parameterValue, sizeof(deviceMAC));
                 if(pcomponentName)
                 {
                     AnscFreeMemory(pcomponentName);
@@ -494,37 +493,4 @@ char * getDeviceMac()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
 
     return deviceMAC;
-}
-
-void macToLower(char macValue[])
-{
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-
-    int i = 0;
-    int j;
-    char *token[32];
-    char tmp[32];
-    strncpy(tmp, macValue,sizeof(tmp));
-    token[i] = strtok(tmp, ":");
-    if(token[i]!=NULL)
-    {
-        strncpy(deviceMAC, token[i],sizeof(deviceMAC)-1);
-        deviceMAC[31]='\0';
-        i++;
-    }
-    while ((token[i] = strtok(NULL, ":")) != NULL) 
-    {
-        strncat(deviceMAC, token[i],sizeof(deviceMAC)-1);
-        deviceMAC[31]='\0';
-        i++;
-    }
-    deviceMAC[31]='\0';
-    for(j = 0; deviceMAC[j]; j++)
-    {
-        deviceMAC[j] = tolower(deviceMAC[j]);
-    }
-    
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Inside macToLower:: Device MAC: %s check\n",deviceMAC));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
-
 }
