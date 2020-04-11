@@ -10,11 +10,10 @@
 #include <netinet/ip.h>       // IP_MAXPACKET (which is 65535)
 #include <arpa/inet.h>        // inet_pton() and inet_ntop()
 #include <sys/ioctl.h>        // macro ioctl is defined
-#include <bits/ioctls.h>      // defines values for argument "request" of ioctl.
 #include <net/if.h>           // struct ifreq
+#include <net/ethernet.h>
 #include <linux/if_ether.h>   // ETH_P_ARP = 0x0806
 #include <linux/if_packet.h>  // struct sockaddr_ll (see man 7 packet)
-#include <net/ethernet.h>
 #include <pthread.h> 
 #include <errno.h>            // errno, perror()
 #include <sys/socket.h>
