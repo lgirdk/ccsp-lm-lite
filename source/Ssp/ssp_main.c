@@ -228,6 +228,11 @@ int main(int argc, char* argv[])
     extern ANSC_HANDLE bus_handle;
     char *subSys            = NULL;  
     DmErr_t    err;
+
+    // Buffer characters till newline for stdout and stderr
+    setlinebuf(stdout);
+    setlinebuf(stderr);
+
     debugLogFile = stderr;
 #if defined(_ENABLE_EPON_SUPPORT_)
     setlogmask(LOG_UPTO(LOG_INFO));
