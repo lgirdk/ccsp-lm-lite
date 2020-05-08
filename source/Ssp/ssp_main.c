@@ -242,6 +242,10 @@ int main(int argc, char* argv[])
     int           ret          = 0;
     errno_t       rc           = -1;
 
+    // Buffer characters till newline for stdout and stderr
+    setlinebuf(stdout);
+    setlinebuf(stderr);
+
     debugLogFile = stderr;
 #if defined(_ENABLE_EPON_SUPPORT_)
     setlogmask(LOG_UPTO(LOG_INFO));
