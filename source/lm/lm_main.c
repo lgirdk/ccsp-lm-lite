@@ -1355,7 +1355,11 @@ void Add_IPv6_from_Dibbler()
 				if(1 == extract(line,mac,ip))
 					continue;
 		        pthread_mutex_lock(&LmHostObjectMutex);
-				pHost = Hosts_AddHostByPhysAddress(mac);
+				/* TCCBR-4621:
+				 * - Dont add host from dibbler and
+				 *   update only ipv6 address from dibbler cache for the client.
+				 */
+				pHost = Hosts_FindHostByPhysAddress(mac);
 				if(pHost)
 				{
 					Add_Update_IPv6Address(pHost,ip,DIBBLER_IPv6);
