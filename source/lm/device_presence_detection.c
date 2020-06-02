@@ -908,8 +908,9 @@ void RecvHCPv4ClientConnects()
         printf("\n Hello message sent\n");
         if(strlen(buffer) != 0)
         {
-            char* token = strtok(buffer, " ");
-            char* ip = strtok(NULL," ");
+            char* st = NULL;
+            char* token = strtok_r(buffer, " ", &st);
+            char* ip = strtok_r(NULL, " ", &st);
             char found = 0;
             if(token != NULL)
             {
@@ -1029,6 +1030,7 @@ void read_event(int sock)
     }
     else
     {
+        char* st = NULL;
         char* token = NULL;
         char *ip = NULL;
         char found = 0;
@@ -1038,11 +1040,11 @@ void read_event(int sock)
         memset(buffer1,0,sizeof(buffer1));
         strcpy(buffer1,NLMSG_DATA((struct nlmsghdr *) &buffer));
         CcspTraceDebug(("buffer1: %s\n", buffer1));
-        token = strtok(buffer1, ",");
+        token = strtok_r(buffer1, ",", &st);
         if(token != NULL)
         {
-            token = strtok(NULL, ",");  // Mac
-            ip = strtok(NULL,","); // ipv6 address
+            token = strtok_r(NULL, ",", &st);  // Mac
+            ip = strtok_r(NULL, ",", &st); // ipv6 address
             pthread_mutex_lock(&PresenceDetectionMutex);
             CheckandupdatePresence(token,IPV6,ip,STATE_JOIN_DETECTED_ND);	
             pthread_mutex_unlock(&PresenceDetectionMutex);

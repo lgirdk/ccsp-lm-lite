@@ -400,17 +400,18 @@ void macToLower(char macValue[])
 
     int i = 0;
     int j;
+    char *st = NULL;
     char *token[32];
     char tmp[32];
     strncpy(tmp, macValue,sizeof(tmp));
-    token[i] = strtok(tmp, ":");
+    token[i] = strtok_r(tmp, ":", &st);
     if(token[i]!=NULL)
     {
         strncpy(deviceMAC, token[i],sizeof(deviceMAC)-1);
         deviceMAC[31]='\0';
         i++;
     }
-    while ((token[i] = strtok(NULL, ":")) != NULL) 
+    while ((token[i] = strtok_r(NULL, ":", &st)) != NULL) 
     {
         strncat(deviceMAC, token[i],sizeof(deviceMAC)-1);
         deviceMAC[31]='\0';

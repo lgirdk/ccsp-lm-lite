@@ -389,24 +389,25 @@ void add_to_list_ndt(char* ip_table_line)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
+    char* st = NULL;
     const char * delim = "|";
     long long rx_packets, tx_packets = 0;
     long long external_bytes_down, external_bytes_up = 0;
     struct networkdevicetrafficdata *ptr = NULL;
 
-    char* device_mac = strtok(ip_table_line, delim);
+    char* device_mac = strtok_r(ip_table_line, delim, &st);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n", device_mac ));
 
-    rx_packets =  atoll(strtok(NULL, delim));
+    rx_packets =  atoll(strtok_r(NULL, delim, &st));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%lld] \n",rx_packets ));
 
-    external_bytes_down = atoll(strtok(NULL, delim));
+    external_bytes_down = atoll(strtok_r(NULL, delim, &st));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%lld] \n",external_bytes_down ));
 
-    tx_packets =  atoll(strtok(NULL, delim));
+    tx_packets =  atoll(strtok_r(NULL, delim, &st));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%lld] \n", tx_packets ));
 
-    external_bytes_up = atoll(strtok(NULL, delim));
+    external_bytes_up = atoll(strtok_r(NULL, delim, &st));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%lld] \n", external_bytes_up ));
 
     ptr = malloc(sizeof(*ptr));
