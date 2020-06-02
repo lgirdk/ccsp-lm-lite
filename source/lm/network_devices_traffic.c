@@ -387,25 +387,26 @@ void add_to_list_ndt(char* ip_table_line)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
+    char * st = NULL;
     const char * delim = "|";
     long long rx_packets, tx_packets = 0;
     long long external_bytes_down, external_bytes_up = 0;
     char *device_mac = NULL, *rx_packets_str = NULL, *external_bytes_down_str = NULL, *tx_packets_str = NULL, *external_bytes_up_str = NULL;
     struct networkdevicetrafficdata *ptr = NULL;
 
-    device_mac = strtok(ip_table_line, delim);
+    device_mac = strtok_r(ip_table_line, delim, &st);
     if (device_mac)
     {
-	rx_packets_str =  strtok(NULL, delim);
+	rx_packets_str =  strtok_r(NULL, delim, &st);
 	if (rx_packets_str) 
         {
-	   external_bytes_down_str = strtok(NULL, delim);
+	   external_bytes_down_str = strtok_r(NULL, delim, &st);
 	   if (external_bytes_down_str) 
 	   {
-	      tx_packets_str =  strtok(NULL, delim);
+	      tx_packets_str =  strtok_r(NULL, delim, &st);
 	      if (tx_packets_str)
 	      {
-	         external_bytes_up_str = strtok(NULL, delim);
+	         external_bytes_up_str = strtok_r(NULL, delim, &st);
 	      }
            }
         }
