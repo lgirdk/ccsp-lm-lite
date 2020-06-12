@@ -271,6 +271,8 @@ int main(int argc, char* argv[])
     breakpad_ExceptionHandler();
 #endif
 
+    t2_init("ccsp-lm-lite");
+
 #if  defined(_ANSC_WINDOWSNT)
 
     AnscStartupSocketWrapper(NULL);
