@@ -1530,10 +1530,11 @@ void lm_wrapper_get_dhcpv4_reserved()
     {
         return;
     }
-
+  
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
-        /*
+       memset(&dhcpHost,0,sizeof(LM_host_entry_t));
+       /*
         Sample:
         02:10:18:01:00:02,10.0.0.91,*
         */
@@ -1542,7 +1543,8 @@ void lm_wrapper_get_dhcpv4_reserved()
                  dhcpHost.ipAddr,
                  dhcpHost.hostName
               );
-        if(ret != 3)
+
+        if((ret < 2) || (ret > 3))
             continue;
 
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
@@ -1574,8 +1576,23 @@ void lm_wrapper_get_dhcpv4_reserved()
             if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            }else
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+            }
+            else
+            {
+                // copy only if not empty.
+                if (dhcpHost.hostName[0] != '\0')
+                {
+                    LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+                }
+                else
+                {
+                    // Copy Mac address if there is no host name exist already.
+                    if (pHost->pStringParaValue[LM_HOST_HostNameId] == NULL)
+                    {
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+                    }
+                }
+            }
 
 			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
