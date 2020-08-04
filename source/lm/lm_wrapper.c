@@ -1112,6 +1112,8 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
     {
         *pCount = 0;
+        CcspTraceError(("Error reading ARP cache file at %s -  %d\n", __FILE__,__LINE__));
+        pthread_mutex_unlock(&GetARPEntryMutex);
         return -1;
     }
 
@@ -1129,6 +1131,8 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
             fclose(fp);
             unlink(ARP_CACHE_FILE);
             *pCount = 0;
+            CcspTraceError(("unlinking ARP cache file at %s -  %d\n", __FILE__,__LINE__));
+            pthread_mutex_unlock(&GetARPEntryMutex);
             return -1;
         }
 
