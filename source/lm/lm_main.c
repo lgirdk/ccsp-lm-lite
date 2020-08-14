@@ -3320,12 +3320,30 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 									Status));
 
 		LM_moca_cpe_t hosts;
-		strcpy(hosts.AssociatedDevice,AssociatedDevice);
+
+		if(AssociatedDevice)
+		{
+			strncpy(hosts.AssociatedDevice,AssociatedDevice,sizeof(hosts.AssociatedDevice)-1);
+			hosts.AssociatedDevice[sizeof(hosts.AssociatedDevice)-1] = '\0';
+		}
 		strncpy(hosts.phyAddr,phyAddr,17);
 		hosts.phyAddr[17] = '\0';
-		strcpy(hosts.ssid,ssid);
-		strcpy(hosts.parentMac,parentMac);
-		strcpy(hosts.deviceType,deviceType);
+		if(ssid)
+		{
+			strncpy(hosts.ssid,ssid,sizeof(hosts.ssid)-1);
+			hosts.ssid[sizeof(hosts.ssid)-1] = '\0';
+		}
+		if(parentMac)
+		{
+			strncpy(hosts.parentMac,parentMac,sizeof(hosts.parentMac)-1);
+			hosts.parentMac[sizeof(hosts.parentMac)-1] = '\0';
+		}
+		if(deviceType)
+		{
+			strncpy(hosts.deviceType,deviceType,sizeof(hosts.deviceType)-1);
+			hosts.deviceType[sizeof(hosts.deviceType)-1] = '\0';
+		}
+
 		hosts.RSSI = RSSI;
 		hosts.Status = Status;
 		EventQData EventMsg;
