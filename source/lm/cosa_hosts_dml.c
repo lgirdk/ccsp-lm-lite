@@ -70,6 +70,7 @@
 #include "cosa_hosts_dml.h"
 #include "lm_main.h"
 #include "lm_util.h"
+#include "ctype.h"
 
 extern LmObjectHosts lmHosts;
 
@@ -606,6 +607,68 @@ Hosts_GetParamStringValue
     return -1;
 }
 
+int DelimiterCount(char *inputstring) {
+    char string[1024] = {0};
+    char *tmp;
+    int countval = 0;
+    strncpy(string, inputstring,strlen(inputstring));
+    tmp = string;
+    while (tmp[0] != '\0' && ((tmp = strchr(tmp, ',')) != NULL)) {
+        countval++;
+        tmp++;
+    }
+    return countval;
+}
+
+/*returns 1 if the passed string is a number or a negative number otherwise returns 0*/
+int IsNumberString(char *string)
+{
+    int j;
+    if (!string) {
+      return 0;
+    }
+    j = strlen(string);
+    while(j--)
+        {
+            if(string[j] >= '0' && string[j] <= '9')
+            continue;
+            if (j == 0) {
+                if (string[j] == '-')
+                break;
+            }
+            return 0;
+        }
+    return 1;
+}
+
+
+
+int IsProperMac(const char* mac)
+{
+    int i = 0;
+    int s = 0;
+
+    while (*mac)
+    {
+        if (isxdigit(*mac))
+        {
+            i++;
+        }
+        else if (*mac == ':')
+        {
+            if (i == 0 || i / 2 - 1 != s)
+                break;
+            ++s;
+        }
+        else
+        {
+            s = -1;
+        }
+        ++mac;
+    }
+    return (i == 12 && (s == 5 || s == 0));
+}
+
 /**********************************************************************  
 
     caller:     owner of this object 
@@ -670,6 +733,8 @@ Hosts_SetParamStringValue
     /* check the parameter name and set the corresponding value */
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
     {
+        if (!pString)
+            return FALSE;
 #ifdef USE_NOTIFY_COMPONENT
 		char *st,
 			 *ssid, 
@@ -678,8 +743,14 @@ Hosts_SetParamStringValue
 			 *RSSI, 
 			 *Status;
 		int  iRSSI,
-			 iStatus;
+			 iStatus,
+             count_tok;
 			 
+        count_tok = DelimiterCount(pString);
+        if (count_tok != 4) {
+            CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Missing required tokens in ParamString  \n",__FUNCTION__,__LINE__));
+            return FALSE;
+        }
 
         /* save update to backup */
 		phyAddr 		 = strtok_r(pString, ",", &st);
@@ -688,8 +759,35 @@ Hosts_SetParamStringValue
 		RSSI 			 = strtok_r(NULL, ",", &st);
 		Status 			 = strtok_r(NULL, ",", &st);
 
-		iRSSI 			 = atoi(RSSI);
-		iStatus 		 = atoi(Status);
+        if ((phyAddr == NULL) || (AssociatedDevice == NULL) || (ssid == NULL) || (RSSI == NULL) || (Status == NULL)) {
+            CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > One or more tokens are missing in ParamString  \n",__FUNCTION__,__LINE__));
+         return FALSE;
+        }
+
+         if (IsProperMac(phyAddr) == 0)
+          {
+                CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Not a proper phy addr in ParamString  \n",__FUNCTION__,__LINE__));
+          return FALSE;
+          }
+
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > <phyAddr=%s> <AssociatedDevice=%s> <ssid=%s> <RSSI=%s> <Status=%s>\n",__FUNCTION__,__LINE__, phyAddr,AssociatedDevice,ssid,RSSI,Status));
+  if (IsNumberString(RSSI)) {
+         iRSSI = atoi(RSSI);
+     } else {
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Inapproriate RSSI value in ParamString  \n",__FUNCTION__,__LINE__));
+         return FALSE;
+     }
+
+     if (IsNumberString(Status)) {
+         iStatus = atoi(Status);
+     }else {
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Inapproriate STATUS value in ParamString  \n",__FUNCTION__,__LINE__));
+        return FALSE;
+    }
+    if (!(iStatus >= 0 && iStatus <= 1)){
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > STATUS value in ParamString should be 0 or 1 \n",__FUNCTION__,__LINE__));
+        return FALSE;
+    }
 
 		Wifi_Server_Sync_Function( phyAddr, AssociatedDevice, ssid, iRSSI, iStatus );
 #endif /* USE_NOTIFY_COMPONENT */
@@ -699,14 +797,30 @@ Hosts_SetParamStringValue
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_EthHost_Sync", TRUE))
     {
         CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > X_RDKCENTRAL-COM_EthHost_Sync Param received\n",__FUNCTION__,__LINE__));
+        if (!pString)
+            return FALSE;
         printf(" \n Notification : < %s : %d > ParamName = %s \n",__FUNCTION__,__LINE__, pString);
-
         char* st;
-        char *macAddr = strtok_r(pString, ",", &st);
-        char *status = strtok_r(NULL, ",", &st);
+        char *macAddr;
+        char *status;
 		int active;
-		
-
+	    int count_token;
+        count_token = DelimiterCount(pString);
+        if (count_token != 1) {
+            CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Missing required tokens in ParamString  \n",__FUNCTION__,__LINE__));
+            return FALSE;
+        }
+        macAddr = strtok_r(pString, ",", &st);
+        status = strtok_r(NULL, ",", &st);
+        if ((macAddr == NULL) || (status == NULL)) {
+            CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > One or more tokens are missing in ParamString  \n",__FUNCTION__,__LINE__));
+         return FALSE;
+        }
+         if (IsProperMac(macAddr) == 0)
+          {
+                CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Not a proper mac address in ParamString  \n",__FUNCTION__,__LINE__));
+          return FALSE;
+          }
        if(AnscEqualString(status, "true", TRUE))
 	   {
 		   active = 1;
@@ -715,11 +829,15 @@ Hosts_SetParamStringValue
        {
 			active = 0;
        }
+CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > <macAddr=%s> <status=%s>\n",__FUNCTION__,__LINE__, macAddr,status));
         EthClient_AddtoQueue(macAddr,active);
         return TRUE;
     }
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_MoCA", TRUE))
     {
+     
+        if (!pString)
+            return FALSE;
 #ifdef USE_NOTIFY_COMPONENT
         char *st,
              *ssid, 
@@ -730,9 +848,14 @@ Hosts_SetParamStringValue
              *RSSI, 
              *Status;
         int  iRSSI,
-             iStatus;
+             iStatus,
+             count_tok;
              
-
+        count_tok = DelimiterCount(pString);
+        if (count_tok != 6) {
+            CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Missing required tokens in ParamString  \n",__FUNCTION__,__LINE__));
+            return FALSE;
+        }
         /* save update to backup */
         phyAddr             = strtok_r(pString, ",", &st);
         AssociatedDevice    = strtok_r(NULL, ",", &st);
@@ -741,9 +864,41 @@ Hosts_SetParamStringValue
         deviceType          = strtok_r(NULL, ",", &st);
         RSSI                = strtok_r(NULL, ",", &st);
         Status              = strtok_r(NULL, ",", &st);
+        if ((phyAddr == NULL) || (AssociatedDevice == NULL) || (parentMac == NULL) || (deviceType == NULL) || (ssid == NULL) || (RSSI == NULL) || (Status == NULL)) {
+            CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > One or more tokens are missing in ParamString  \n",__FUNCTION__,__LINE__));
+         return FALSE;
+        }
+         if (IsProperMac(phyAddr) == 0)
+          {
+                CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Not a proper phy addr in ParamString  \n",__FUNCTION__,__LINE__));
+          return FALSE;
+          }
+         if (IsProperMac(parentMac) == 0)
+          {
+                CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > parent mac is not proper in ParamString  \n",__FUNCTION__,__LINE__));
+          return FALSE;
+          }
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > <phyAddr=%s> <AssociatedDevice=%s> <ssid=%s> <parentMac=%s> <deviceType=%s> <RSSI=%s> <Status=%s>\n",__FUNCTION__,__LINE__, phyAddr,AssociatedDevice,ssid,parentMac,deviceType,RSSI,Status));
+        
+  if (IsNumberString(RSSI)) {
+         iRSSI = atoi(RSSI);
+     } else {
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Inapproriate RSSI value in ParamString  \n",__FUNCTION__,__LINE__));
+         return FALSE;
+     }
 
-        iRSSI            = atoi(RSSI);
-        iStatus          = atoi(Status);
+     if (IsNumberString(Status)) {
+         iStatus = atoi(Status);
+     }else {
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Inapproriate STATUS value in ParamString  \n",__FUNCTION__,__LINE__));
+        return FALSE;
+    }
+
+    if (!(iStatus >= 0 && iStatus <= 1)){
+        CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > STATUS value in ParamString should be 0 or 1 \n",__FUNCTION__,__LINE__));
+        return FALSE;
+    }
+
 
         MoCA_Server_Sync_Function( phyAddr, AssociatedDevice, ssid, parentMac, deviceType, iRSSI, iStatus );
 #endif /* USE_NOTIFY_COMPONENT */
