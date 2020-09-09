@@ -2039,11 +2039,12 @@ static void *Event_HandlerThread(void *threadid)
     /* create the message queue */
     mq = mq_open(EVENT_QUEUE_NAME, O_CREAT | O_RDONLY, 0644, &attr);
 
-    if (!((mqd_t)-1 != mq)) {
+    if (mq == (mqd_t)-1) {
         CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
-        perror("((mqd_t)-1 != mq)");
+        perror("mq == (mqd_t)-1");
         return NULL;
     }
+
     do
     {
         ssize_t bytes_read;
@@ -2053,12 +2054,11 @@ static void *Event_HandlerThread(void *threadid)
         /* receive the message */
         bytes_read = mq_receive(mq, buffer, MAX_SIZE, NULL);
 
-        if (!(bytes_read >= 0)) {
+        if (bytes_read < 0) {
             CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
-            perror("(bytes_read >= 0)");
+            perror("bytes_read < 0");
             return NULL;
-    }
-
+        }
 
         buffer[bytes_read] = '\0';
 
@@ -2763,9 +2763,9 @@ static void *ValidateHost_Thread (void *arg)
 
     /* create the message queue */
     mq = mq_open(VALIDATE_QUEUE_NAME, O_CREAT | O_RDONLY, 0644, &attr);
-    if(!((mqd_t)-1 != mq)) {
+    if (mq == (mqd_t)-1) {
         CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
-        perror("((mqd_t)-1 != mq)");
+        perror("mq == (mqd_t)-1");
         return NULL;
     }
 
@@ -2777,9 +2777,9 @@ static void *ValidateHost_Thread (void *arg)
 
         /* receive the message */
         bytes_read = mq_receive(mq, (char *)&ValidateHostMsg, MAX_SIZE_VALIDATE_QUEUE, NULL);
-        if (!(bytes_read >= 0)) {
+        if (bytes_read < 0) {
             CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
-            perror("(bytes_read >= 0)");
+            perror("bytes_read < 0");
             return NULL;
         }
 
