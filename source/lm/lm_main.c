@@ -2811,21 +2811,12 @@ void LM_main()
 	syscfg_init();
     Hosts_GetPresenceParamFromSysDb(&lmHosts.param_val); // update presence syscfg param into lmhost object.
 	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
-    if( buf != NULL )
-    	{
-   		    lmHosts.lastActivity = atol(buf);
-			
-   		}
+	lmHosts.lastActivity = atol(buf);
 
 	memset(buf1, 0, sizeof(buf1));
 	if(syscfg_get( NULL, "X_RDKCENTRAL-COM_HostCountPeriod", buf1, sizeof(buf1)) == 0)
 	{
-    if( buf1 != NULL )
-    	{
-   		    g_Client_Poll_interval =  atoi(buf1);
-			
-   		}
-		
+		g_Client_Poll_interval =  atoi(buf1);
 	}
 	else
 		{
@@ -3833,11 +3824,8 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
 
     syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf));
 
-    if( buf != NULL )
-    {
-        if (strcmp(buf, "true") == 0)
-            notify_to_webpa = TRUE;
-    }
+    if (strcmp(buf, "true") == 0)
+        notify_to_webpa = TRUE;
 
     if (notify_to_webpa)
     {
