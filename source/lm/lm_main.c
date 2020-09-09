@@ -295,6 +295,7 @@ pthread_mutex_t XLmHostObjectMutex;
 pthread_mutex_t LmRetryHostListMutex;
 
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
+static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 
 
 #ifdef USE_NOTIFY_COMPONENT
@@ -305,7 +306,6 @@ int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
 /*CID: 71678,69030,67858,64481,55511 Parse warning*/
 void Send_Eth_Host_Sync_Req();
-void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 void Send_MoCA_Host_Sync_Req();
 void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 void Hosts_SyncDHCP();
@@ -1176,7 +1176,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 
 	return NULL;
 }
-void Host_FreeIPAddress(PLmObjectHost pHost, int version)
+static void Host_FreeIPAddress(PLmObjectHost pHost, int version)
 {
     int *num;
     PLmObjectHostIPAddress pIpAddrList, pCur, *ppHeader;
