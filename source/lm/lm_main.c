@@ -2836,13 +2836,13 @@ void LM_main()
 			g_Client_Poll_interval = 60;
 			strcpy(buf1,"60");
 			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
-                     		     return ANSC_STATUS_FAILURE;
+                     		     return /* ANSC_STATUS_FAILURE */;
              } else {
 
                     if (syscfg_commit() != 0)
 						{
                             CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
-							return ANSC_STATUS_FAILURE;
+							return /* ANSC_STATUS_FAILURE */;
 						}
 			 }
 		}
@@ -2925,8 +2925,6 @@ void LM_main()
     }
     //pthread_join(Hosts_StatSyncThread, &status);
     //pthread_join(Hosts_CmdThread, &status);
-    return 0;
-
 }
 
 
