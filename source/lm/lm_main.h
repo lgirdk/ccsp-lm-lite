@@ -286,41 +286,19 @@ LmObjectHosts,  *PLmObjectHosts;
 
     Hosts.
 
-    *  Hosts_FindHostByIPv4Address
-    *  Hosts_Init
-    *  Hosts_SavePsmValueRecord
-
 ***********************************************************************/
-void
-Hosts_SynchronizeHost();
-
-void Hosts_SyncDhcp();
 
 #define Host_AddIPv6Address(x, y) Host_AddIPAddress(x,y,6)
 #define Host_AddIPv4Address(x, y) Host_AddIPAddress(x,y,4)
-PLmObjectHostIPAddress
-Host_AddIPAddress
-    (
-        PLmObjectHost pHost,
-        char * ipAddress,
-        int version
-    );
+PLmObjectHostIPAddress Host_AddIPAddress (PLmObjectHost pHost, char *ipAddress, int version);
 
+void Hosts_PollHost (void);
 
-void
-Hosts_PollHost();
+void LM_main (void);
 
-void 
-Hosts_FreeHost(PLmObjectHost pHost);
-
-PLmObjectHost 
-Hosts_AddHost(int instanceNum);
-
-PLmObjectHost 
-XHosts_AddHost(int instanceNum);
-
-void Hosts_RmHosts();
-void LM_main();
+int LM_get_online_device (void);
+int XLM_get_online_device (void);
+int LMDmlHostsSetHostComment (char *pMac, char *pComment);
 
 char* FindParentIPInExtenderList(char* mac_address);
 char* FindMACByIPAddress(char * ip_address);
@@ -341,11 +319,6 @@ PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, 
 PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress);
 PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress);
 int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
-void Send_MoCA_Host_Sync_Req();
-void Send_Eth_Host_Sync_Req();
-void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
-void Host_FreeIPAddress(PLmObjectHost pHost, int version);
-void Hosts_SyncDHCP();
 int Hosts_stop_scan();
 int Hosts_EnablePresenceDetectionTask();
 int Hosts_DisablePresenceDetectionTask();
