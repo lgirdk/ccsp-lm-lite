@@ -920,7 +920,7 @@ PLmObjectHost XHosts_AddHost(int instanceNum)
     return pHost;
 }
 
-void Clean_Host_Table()
+static void Clean_Host_Table (void)
 {
 
 	if(lmHosts.numHost < HOST_ENTRY_LIMIT)
