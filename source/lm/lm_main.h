@@ -340,7 +340,6 @@ int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
 void Send_MoCA_Host_Sync_Req();
 void Send_Eth_Host_Sync_Req();
 void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
-void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 void Hosts_SyncDHCP();
 int Hosts_stop_scan();
 int Hosts_EnablePresenceDetectionTask();
