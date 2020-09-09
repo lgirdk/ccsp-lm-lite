@@ -129,6 +129,15 @@
         } \
     } while (0) \
 
+#define CHECKANDRETURNRESULT(x,r) \
+    do { \
+        if (!(x)) { \
+            fprintf(stderr, "%s:%d: ", __func__, __LINE__); \
+            perror(#x); \
+            return r; \
+        } \
+    } while (0) \
+
 #define MSG_TYPE_EMPTY  0
 #define MSG_TYPE_ETH    1
 #define MSG_TYPE_WIFI   2
@@ -3875,7 +3884,7 @@ BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
     mqd_t mq;
     char buffer[MAX_SIZE];
     mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
-    CHECK((mqd_t)-1 != mq);
+    CHECKANDRETURNRESULT((mqd_t)-1 != mq, FALSE);
     memset(buffer, 0, MAX_SIZE);
 
     if (isNeedToAdd)
@@ -3909,8 +3918,8 @@ BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
         return FALSE;
     }
     memcpy(buffer,&EventMsg,sizeof(EventMsg));
-    CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
-    CHECK((mqd_t)-1 != mq_close(mq));
+    CHECKANDRETURNRESULT(0 <= mq_send(mq, buffer, MAX_SIZE, 0), FALSE);
+    CHECKANDRETURNRESULT((mqd_t)-1 != mq_close(mq), FALSE);
     return TRUE;
 }
 
