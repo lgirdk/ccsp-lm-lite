@@ -296,6 +296,7 @@ pthread_mutex_t LmRetryHostListMutex;
 
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
+static void Hosts_SyncDHCP(void);
 
 
 #ifdef USE_NOTIFY_COMPONENT
@@ -308,7 +309,6 @@ void Add_IPv6_from_Dibbler();
 void Send_Eth_Host_Sync_Req();
 void Send_MoCA_Host_Sync_Req();
 void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
-void Hosts_SyncDHCP();
 
 void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
 {
@@ -2391,7 +2391,7 @@ void Hosts_SyncArp()
     return;
 }
 
-void Hosts_SyncDHCP()
+static void Hosts_SyncDHCP(void)
 {
     lm_wrapper_get_dhcpv4_client();
     lm_wrapper_get_dhcpv4_reserved();
