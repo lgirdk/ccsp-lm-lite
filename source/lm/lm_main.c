@@ -298,6 +298,7 @@ pthread_mutex_t XLmHostObjectMutex;
 pthread_mutex_t LmRetryHostListMutex;
 
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
+static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 
 
 #ifdef USE_NOTIFY_COMPONENT
@@ -1177,7 +1178,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 
 	return NULL;
 }
-void Host_FreeIPAddress(PLmObjectHost pHost, int version)
+static void Host_FreeIPAddress(PLmObjectHost pHost, int version)
 {
     int *num;
     PLmObjectHostIPAddress pIpAddrList, pCur, *ppHeader;
