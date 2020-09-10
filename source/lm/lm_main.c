@@ -300,6 +300,7 @@ pthread_mutex_t LmRetryHostListMutex;
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 static void Hosts_SyncDHCP(void);
+static void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 
 #if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 static void Send_MoCA_Host_Sync_Req(void);
@@ -3551,7 +3552,7 @@ BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
 
 }
 
-void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
+static void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
 {
         DnsmasqEventQData EventMsg;
         mqd_t mq;
