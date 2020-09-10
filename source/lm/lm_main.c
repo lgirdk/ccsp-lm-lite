@@ -256,7 +256,7 @@ LmObjectHosts lmHosts = {
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
                                         "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
-                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface" },
+                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface", "InterfaceType" },
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
@@ -269,7 +269,7 @@ LmObjectHosts XlmHosts = {
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
                                         "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
-                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface" },
+                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface", "InterfaceType" },
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
@@ -1346,7 +1346,11 @@ void Add_IPv6_from_Dibbler()
 	char line[256]={0},ip[64]={0},mac[18]={0};
 	PLmObjectHost	pHost	= NULL;
 
+       #if defined(_PLATFORM_RASPBERRYPI_)
+       if ((fptr=fopen("/tmp/dibbler/server-cache.xml","r")) != NULL )
+        #else
 	if ((fptr=fopen("/etc/dibbler/server-cache.xml","r")) != NULL )
+        #endif
 	{
 		while ( fgets(line, sizeof(line), fptr) != NULL )
 		{
@@ -2055,6 +2059,7 @@ void *Event_HandlerThread(void *threadid)
             
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+	    LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_InterfaceTypeId]), "Ethernet");
             pthread_mutex_unlock(&LmHostObjectMutex);
 
             if(EthHost.Active && do_dhcpsync)
@@ -2101,6 +2106,7 @@ void *Event_HandlerThread(void *threadid)
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_InterfaceTypeId]), "Wi-Fi");
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
                 pHost->l1unReachableCnt = 1;
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
@@ -2269,6 +2275,26 @@ void Hosts_SyncArp()
 
             pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
 
+           if ( !pHost )
+            {
+
+                pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
+                if ( pHost )
+                {
+                    if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                    {
+                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                    }
+               LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "Static");
+               pIP = Host_AddIPv4Address
+               (
+                pHost,
+                hosts[i].ipAddr
+                );
+                }
+            }
+
             if ( pHost )
             {
                 if ( _isIPv6Addr((char *)hosts[i].ipAddr) )
@@ -2435,7 +2461,8 @@ void Hosts_StatSyncThreadFunc()
     LM_wifi_wsta_t  *wifiHosts = NULL;
     LM_moca_cpe_t   *mocaHosts = NULL;
     PLmObjectHostIPAddress pIP;
-    
+    FILE *fp;
+
     while (1)
     {
         if(Hosts_stop_scan() )
@@ -2468,6 +2495,14 @@ void Hosts_StatSyncThreadFunc()
             Hosts_SyncDHCP();
             Hosts_SyncArp();
             Add_IPv6_from_Dibbler();
+            v_secure_system("rm /tmp/lanClients_new");
+            fp=fopen("/tmp/lanClients_new","a+");
+            for(int i=0; i<lmHosts.numHost; i++){
+            fprintf(fp,"%s %s %s\n",lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId],lmHosts.hostArray[i]->pStringParaValue[LM_HOST_HostNameId],lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId]);
+           }
+            fclose(fp);
+           v_secure_system("[ -f /tmp/lanClients ] || touch /tmp/lanClients");
+           v_secure_system("/etc/utopia/service.d/portmapping.sh &");
         }
     }
 }
