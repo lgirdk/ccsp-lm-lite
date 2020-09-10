@@ -298,6 +298,7 @@ static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssi
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 static void Hosts_SyncDHCP(void);
 static void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
+static void Send_Eth_Host_Sync_Req(void);
 
 #if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 static void Send_MoCA_Host_Sync_Req(void);
@@ -309,8 +310,6 @@ extern ANSC_HANDLE bus_handle;
 void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
 int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
-/*CID: 71678,69030,67858,64481,55511 Parse warning*/
-void Send_Eth_Host_Sync_Req();
 
 void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
 {
@@ -3451,7 +3450,7 @@ static void Send_MoCA_Host_Sync_Req(void)
 }
 #endif
 
-void Send_Eth_Host_Sync_Req()
+static void Send_Eth_Host_Sync_Req(void)
 {
         parameterValStruct_t  value = {"Device.Ethernet.X_RDKCENTRAL-COM_EthHost_Sync", "true", ccsp_boolean};
         char compo[256] = "eRT.com.cisco.spvtg.ccsp.ethagent";
