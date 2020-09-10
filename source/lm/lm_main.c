@@ -297,6 +297,7 @@ pthread_mutex_t LmRetryHostListMutex;
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 static void Hosts_SyncDHCP(void);
+static void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 
 #if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 static void Send_MoCA_Host_Sync_Req(void);
@@ -310,7 +311,6 @@ int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
 /*CID: 71678,69030,67858,64481,55511 Parse warning*/
 void Send_Eth_Host_Sync_Req();
-void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 
 void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
 {
@@ -3571,7 +3571,7 @@ BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
 
 }
 
-void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
+static void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
 {
         DnsmasqEventQData EventMsg;
         mqd_t mq;

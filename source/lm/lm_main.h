@@ -338,7 +338,6 @@ PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress);
 PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress);
 int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
 void Send_Eth_Host_Sync_Req();
-void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 int Hosts_stop_scan();
 int Hosts_EnablePresenceDetectionTask();
 int Hosts_DisablePresenceDetectionTask();
