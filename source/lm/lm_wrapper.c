@@ -334,7 +334,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
         fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
         if (fd < 0)
         {
-            printf(("LM %s create socket erro\nr", __FUNCTION__));
+            printf("LM %s create socket error\n", __FUNCTION__);
             return -1;
         }
     }
@@ -343,12 +343,12 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
 
     /* get interface mac address */
     if(-1 == ioctl(fd, SIOCGIFHWADDR, &ifr)){
-        printf(("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName));
+        printf("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName);
         return -1;
     }
     memcpy(m_mac, ifr.ifr_hwaddr.sa_data, 6);
     if(-1 == ioctl(fd, SIOCGIFADDR, &ifr)){
-        printf(("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName));
+        printf("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName);
         return -1;
     }
     ip_sockaddr = (struct sockaddr_in *)&(ifr.ifr_addr);
@@ -398,7 +398,7 @@ int lm_wrapper_init(){
 */
     fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if(fd < 0){
-        printf(("LM %s create socket erro\nr", __FUNCTION__));
+        printf("LM %s create socket error\n", __FUNCTION__);
         return -1;
     }
 
