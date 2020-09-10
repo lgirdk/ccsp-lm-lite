@@ -337,7 +337,6 @@ PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, 
 PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress);
 PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress);
 int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
-void Send_MoCA_Host_Sync_Req();
 void Send_Eth_Host_Sync_Req();
 void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 int Hosts_stop_scan();

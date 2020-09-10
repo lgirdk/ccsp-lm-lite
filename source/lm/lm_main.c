@@ -298,6 +298,9 @@ static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssi
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
 static void Hosts_SyncDHCP(void);
 
+#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+static void Send_MoCA_Host_Sync_Req(void);
+#endif
 
 #ifdef USE_NOTIFY_COMPONENT
 
@@ -307,7 +310,6 @@ int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
 /*CID: 71678,69030,67858,64481,55511 Parse warning*/
 void Send_Eth_Host_Sync_Req();
-void Send_MoCA_Host_Sync_Req();
 void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 
 void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
@@ -3413,7 +3415,8 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 }
 
 
-void Send_MoCA_Host_Sync_Req()
+#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+static void Send_MoCA_Host_Sync_Req(void)
 {
         parameterValStruct_t  value = {"Device.MoCA.X_RDKCENTRAL-COM_MoCAHost_Sync", "true", ccsp_boolean};
         char compo[256] = "eRT.com.cisco.spvtg.ccsp.moca";
@@ -3446,6 +3449,7 @@ void Send_MoCA_Host_Sync_Req()
 		}
 	}
 }
+#endif
 
 void Send_Eth_Host_Sync_Req()
 {
