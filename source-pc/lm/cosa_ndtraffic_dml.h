@@ -52,7 +52,7 @@ NetworkDevicesTraffic_SetParamUlongValue
        ULONG                      uValue
     );
 
-BOOL
+ULONG
 NetworkDevicesTraffic_GetParamStringValue
     (
         ANSC_HANDLE                 hInsContext,
