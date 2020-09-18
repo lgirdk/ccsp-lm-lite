@@ -191,7 +191,7 @@ NetworkDevicesTraffic_SetParamUlongValue
     return FALSE;
 }
 
-BOOL
+ULONG
 NetworkDevicesTraffic_GetParamStringValue
     (
         ANSC_HANDLE                 hInsContext,
@@ -210,7 +210,7 @@ NetworkDevicesTraffic_GetParamStringValue
         {
             char result[1024] = "Schema Buffer is empty";
             AnscCopyString(pValue, (char*)&result);
-            return FALSE;
+            return 0;
         }
         else
 	{
@@ -220,13 +220,13 @@ NetworkDevicesTraffic_GetParamStringValue
             AnscCopyString(pValue, GetNDTrafficSchemaBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
-            return FALSE;
+            return 0;
         }
         else
         {
             *pUlSize = bufsize + 1;
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
-            return TRUE;
+            return 1;
         }
 	}
     }
@@ -239,7 +239,7 @@ NetworkDevicesTraffic_GetParamStringValue
         {
             char result[1024] = "SchemaID Buffer is empty";
             AnscCopyString(pValue, (char*)&result);
-            return FALSE;
+            return 0;
         }
         else
         {
@@ -250,13 +250,13 @@ NetworkDevicesTraffic_GetParamStringValue
             AnscCopyString(pValue, GetNDTrafficSchemaIDBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
-            return FALSE;
+            return 0;
         }
         else
         {
             *pUlSize = bufsize + 1;
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
-            return TRUE;
+            return 1;
         }
 	}
     }
@@ -264,7 +264,7 @@ NetworkDevicesTraffic_GetParamStringValue
     AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName));
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
 
-    return FALSE;
+    return -1;
 }
 
 

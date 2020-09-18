@@ -52,7 +52,7 @@ NetworkDevicesStatus_SetParamUlongValue
        ULONG                      uValue
     );
 
-BOOL
+ULONG
 NetworkDevicesStatus_GetParamStringValue
     (
         ANSC_HANDLE                 hInsContext,
