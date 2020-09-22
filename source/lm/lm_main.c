@@ -3206,9 +3206,21 @@ void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 	mq = mq_open(VALIDATE_QUEUE_NAME, O_WRONLY);
     CHECK((mqd_t)-1 != mq);
 
-	strcpy(ValidateHostMsg.phyAddr, phyAddr);
-    strcpy(ValidateHostMsg.AssociatedDevice, AssociatedDevice);
-    strcpy(ValidateHostMsg.ssid, ssid);
+    if(phyAddr != NULL)
+    {
+	strncpy(ValidateHostMsg.phyAddr, phyAddr, sizeof(ValidateHostMsg.phyAddr)-1);
+	ValidateHostMsg.phyAddr[sizeof(ValidateHostMsg.phyAddr)-1] = '\0';
+    }
+    if(AssociatedDevice != NULL)
+    {
+	strncpy(ValidateHostMsg.AssociatedDevice, AssociatedDevice, sizeof(ValidateHostMsg.AssociatedDevice)-1);
+	ValidateHostMsg.AssociatedDevice[sizeof(ValidateHostMsg.AssociatedDevice)-1] = '\0';
+    }
+    if(ssid != NULL)
+    {
+	strncpy(ValidateHostMsg.ssid, ssid, sizeof(ValidateHostMsg.ssid)-1);
+	ValidateHostMsg.ssid[sizeof(ValidateHostMsg.ssid)-1] = '\0';
+    }
     ValidateHostMsg.RSSI = RSSI;
     ValidateHostMsg.Status = Status;
 
