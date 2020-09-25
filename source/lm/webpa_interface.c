@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-
+#define _GNU_SOURCE
 #include "ssp_global.h"
 #include "stdlib.h"
 #include "ccsp_dm_api.h"
@@ -26,6 +26,9 @@
 #include <sysevent/sysevent.h>
 #include <libparodus.h>
 #include "webpa_pd.h"
+#include <math.h>
+#include "syscfg/syscfg.h"
+#include "ccsp_memory.h"
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -50,6 +53,7 @@ static void *handle_parodus();
 static void waitForEthAgentComponentReady();
 static void checkComponentHealthStatus(char * compName, char * dbusPath, char *status, int *retStatus);
 static int check_ethernet_wan_status();
+int s_sysevent_connect(token_t *out_se_token);
 
 int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
 {
@@ -203,7 +207,6 @@ static void *handle_parodus()
     int max_retry_sleep;
     //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
     int c =2;
-	int retval=-1;
     char *parodus_url = NULL;
 
     CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ******** Start of handle_parodus ********\n"));
@@ -252,7 +255,7 @@ static void *handle_parodus()
 		        sleep(backoffRetryTime);
 		        c++;
 		    }
-		retval = libparodus_shutdown(client_instance);
+		libparodus_shutdown(client_instance);
 		   
 		}
 	}
@@ -311,13 +314,11 @@ static void checkComponentHealthStatus(char * compName, char * dbusPath, char *s
 	char *parameterNames[1] = {};
 	char tmp[MAX_PARAMETERNAME_LEN];
 	char str[MAX_PARAMETERNAME_LEN/2];     
-	char l_Subsystem[MAX_PARAMETERNAME_LEN/2] = { 0 };
 
 	sprintf(tmp,"%s.%s",compName, "Health");
 	parameterNames[0] = tmp;
 
-	strncpy(l_Subsystem, "eRT.",sizeof(l_Subsystem));
-	snprintf(str, sizeof(str), "%s%s", l_Subsystem, compName);
+	snprintf(str, sizeof(str), "eRT.%s", compName);
 	CcspTraceDebug(("str is:%s\n", str));
 
 	ret = CcspBaseIf_getParameterValues(bus_handle, str, dbusPath,  parameterNames, 1, &val_size, &parameterval);
@@ -411,7 +412,6 @@ char * getDeviceMac()
         char *pcomponentName = NULL, *pcomponentPath = NULL;
         parameterValStruct_t **parameterval = NULL;
         token_t  token;
-        char isEthEnabled[64]={'\0'};
         char deviceMACValue[32] = { '\0' };
 #ifndef _XF3_PRODUCT_REQ_
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};

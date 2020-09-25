@@ -55,11 +55,13 @@ int Hosts_DeInitPresenceDetection()
 int Hosts_StartPresenceDetection()
 {
     PresenceDetection_Start();
+    return 0;
 }
 
 int Hosts_StopPresenceDetection()
 {
     PresenceDetection_Stop();
+    return 0;
 }
 
 void Presence_Detection_callback(void *arg)
@@ -68,7 +70,8 @@ void Presence_Detection_callback(void *arg)
     {
         if (pclbk)
         {
-            LmPresenceNotifyInfo info = { 0 };
+            LmPresenceNotifyInfo info;
+            memset(&info, 0, sizeof(LmPresenceNotifyInfo));
             PLmPresenceDeviceInfo pobj = arg;
             BOOL bNotify = FALSE;
             strncpy (info.physaddress, pobj->mac,MAC_SIZE);
@@ -104,6 +107,7 @@ int Hosts_RegisterPresenceClbk(LMHOSTS_DEVICE_PRESENCE_DETECTION_FUNC clbkfunc)
 {
     pclbk = clbkfunc;
     Register_PresenceClbk(Presence_Detection_callback);
+    return 0;
 }
 
 int Hosts_UpdatePresenceDetectionParam(LmHostPresenceDetectionParam *pParam, HostPresenceParamUpdate flag)
@@ -159,7 +163,8 @@ int Hosts_UpdatePresenceDetectionStatus(LmPresenceDetectionInfo *pStatus)
     {
         if (pStatus->enable)
         {
-            LmPresenceDeviceInfo info = {0};
+            LmPresenceDeviceInfo info;
+            memset(&info, 0, sizeof(LmPresenceDeviceInfo));
             strncpy (info.mac,pStatus->physaddress,MAC_SIZE);
             info.currentActive = pStatus->currentActive;
             info.ipv4Active = pStatus->ipv4Active;

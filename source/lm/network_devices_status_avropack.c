@@ -200,8 +200,6 @@ avro_writer_t prepare_writer_status()
 void network_devices_status_report(struct networkdevicestatusdata *head, BOOL extender, char* parent_mac)
 {
   int i = 0, k = 0;
-  uint8_t* b64buffer =  NULL;
-  size_t decodesize = 0;
   int numElements = 0;
   struct networkdevicestatusdata* ptr = head;
   avro_writer_t writer;
@@ -236,7 +234,6 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
 
   avro_value_t  adrField = {0,0};
   avro_value_t array = {0,0};
-  size_t new_index = 0;
   //Optional value for unions, mac address is an union
   avro_value_t optional = {0,0};
 

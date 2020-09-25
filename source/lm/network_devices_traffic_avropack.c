@@ -196,8 +196,6 @@ avro_writer_t prepare_writer()
 void network_devices_traffic_report(struct networkdevicetrafficdata *head, struct timeval *reset_timestamp)
 {
   int i = 0, k = 0;
-  uint8_t* b64buffer =  NULL;
-  size_t decodesize = 0;
   int numElements = 0;
   struct networkdevicetrafficdata* ptr = head;
   avro_writer_t writer;

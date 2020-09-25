@@ -46,17 +46,17 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						lm_wrapper_priv.c \
 						lm_api_test.c \
 						lm_main.c \
-						lm_wrapper.c \ 
+						lm_wrapper.c \
 						lm_util.c \
 						network_devices_status_avropack.c  \
 						webpa_interface.c \
                                                 webpa_pd_with_seshat.c \
                                                 webpa_pd_without_seshat.c \
-						cosa_ndstatus_dml.c \ 
+						cosa_ndstatus_dml.c \
 						network_devices_status.c \
 						cosa_reports_internal.c \
 						network_devices_traffic_avropack.c  \
-						cosa_ndtraffic_dml.c \ 
+						cosa_ndtraffic_dml.c \
 						network_devices_traffic.c \
 						cosa_xhosts_dml.c \
                         network_devices_interface.c \

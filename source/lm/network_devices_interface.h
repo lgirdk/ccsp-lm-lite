@@ -77,4 +77,8 @@ int Hosts_RegisterPresenceClbk(LMHOSTS_DEVICE_PRESENCE_DETECTION_FUNC clbkfunc);
 
 int Hosts_UpdatePresenceDetectionParam(LmHostPresenceDetectionParam *pParam, HostPresenceParamUpdate flag);
 int Hosts_UpdatePresenceDetectionStatus (LmPresenceDetectionInfo *pStatus);
+int Hosts_InitPresenceDetection();
+int Hosts_StartPresenceDetection();
+int Hosts_StopPresenceDetection();
+int Hosts_DeInitPresenceDetection();
 #endif 

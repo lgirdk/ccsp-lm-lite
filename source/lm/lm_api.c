@@ -40,6 +40,7 @@
 #include <sys/un.h>  
 #include <unistd.h>
 #include "lm_api.h"
+#include "ansc_wrapper_base.h"
 
 #define LM_LOG(x) printf x 
 
@@ -150,16 +151,19 @@ int lm_get_online_device(int *num)
 
 int lm_add_network(char netName[LM_NETWORK_NAME_SIZE])
 {
+    UNREFERENCED_PARAMETER(netName);
     return -1;
 }
 
 int lm_delete_network(char netName[LM_NETWORK_NAME_SIZE])
 {
+    UNREFERENCED_PARAMETER(netName);
     return -1;
 }
 
 int lm_get_network(char netName[LM_NETWORK_NAME_SIZE])
 {
+    UNREFERENCED_PARAMETER(netName);
     return -1;
 }
 

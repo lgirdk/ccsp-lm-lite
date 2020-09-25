@@ -25,6 +25,7 @@
 #include "ccsp_trace.h"
 #include "ccsp_psm_helper.h"
 #include "lm_main.h"
+#include "network_devices_traffic.h"
 
 /*Added for rdkb-4343*/
 #include "ccsp_custom_logs.h"
@@ -97,6 +98,7 @@ CosaDmlNetworkDevicesTrafficInit
         ANSC_HANDLE                 hThisObject
     )
 {
+    UNREFERENCED_PARAMETER(hThisObject);
     ANSC_STATUS                     returnStatus        = ANSC_STATUS_SUCCESS;
     int retPsmGet = CCSP_SUCCESS;
     ULONG psmValue = 0;
@@ -142,19 +144,20 @@ NetworkDevicesTraffic_GetParamUlongValue
     ULONG*                      puLong
 )
 {
+	UNREFERENCED_PARAMETER(hInsContext);
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
         *puLong =  GetNDTPollingPeriod();
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
     {
         *puLong =  GetNDTReportingPeriod();
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
@@ -171,13 +174,14 @@ NetworkDevicesTraffic_SetParamUlongValue
     ULONG                       uValue
 )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
         g_pReports->bNDTPollingPeriodChanged = true;
         g_pReports->uNDTPollingPeriod = uValue;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, uValue ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, uValue ));
         return TRUE;
     }
 
@@ -185,7 +189,7 @@ NetworkDevicesTraffic_SetParamUlongValue
     {
         g_pReports->bNDTReportingPeriodChanged = true;
         g_pReports->uNDTReportingPeriod = uValue;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, uValue ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, uValue ));
         return TRUE;
     }
 
@@ -202,6 +206,7 @@ NetworkDevicesTraffic_GetParamStringValue
         ULONG*                      pUlSize
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if( AnscEqualString(ParamName, "Schema", TRUE))
@@ -216,8 +221,8 @@ NetworkDevicesTraffic_GetParamStringValue
         }
         else
 	{
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%d]\n", bufsize, *pUlSize));
-        if (bufsize < *pUlSize)
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%lu]\n", bufsize, *pUlSize));
+        if (bufsize < (int)*pUlSize)
         {
             AnscCopyString(pValue, GetNDTrafficSchemaBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
@@ -246,8 +251,8 @@ NetworkDevicesTraffic_GetParamStringValue
         else
         {
 
-	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%d]\n", bufsize, *pUlSize));
-        if (bufsize < *pUlSize)
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%lu]\n", bufsize, *pUlSize));
+        if (bufsize < (int)*pUlSize)
         {
             AnscCopyString(pValue, GetNDTrafficSchemaIDBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
@@ -278,6 +283,7 @@ NetworkDevicesTraffic_GetParamBoolValue
     BOOL*                       pBool
 )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     /* check the parameter name and return the corresponding value */
@@ -301,6 +307,7 @@ NetworkDevicesTraffic_SetParamBoolValue
     BOOL                        bValue
 )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
     /* check the parameter name and set the corresponding value */
 
@@ -361,6 +368,7 @@ NetworkDevicesTraffic_Validate
         ULONG*                      puLength
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if(g_pReports->bNDTPollingPeriodChanged)
@@ -368,14 +376,14 @@ NetworkDevicesTraffic_Validate
         BOOL validated = ValidateNDTPeriod(g_pReports->uNDTPollingPeriod);    
         if(!validated)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
         }
         if(GetNDTHarvestingStatus() && g_pReports->uNDTPollingPeriod > GetNDTPollingPeriod())
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod, GetNDTPollingPeriod() ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%lu] > Current Polling Period [%lu] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod, GetNDTPollingPeriod() ));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
@@ -385,7 +393,7 @@ NetworkDevicesTraffic_Validate
 
         if(g_pReports->uNDTPollingPeriod > period )
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod, period ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%lu] > Current Reporting Period [%lu] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriod, period ));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
@@ -397,7 +405,7 @@ NetworkDevicesTraffic_Validate
         BOOL validated = ValidateNDTPeriod(g_pReports->uNDTReportingPeriod);    
         if(!validated)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : NeighboringAPPollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : NeighboringAPPollingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
@@ -407,14 +415,14 @@ NetworkDevicesTraffic_Validate
 
         if(g_pReports->uNDTReportingPeriod < period )
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] < Current Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, period ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%lu] < Current Polling Period [%lu] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, period ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
         }
         if(GetNDTHarvestingStatus() && g_pReports->uNDTReportingPeriod > GetNDTReportingPeriod())
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%d] > Current Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, GetNDTReportingPeriod() ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%lu] > Current Reporting Period [%lu] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriod, GetNDTReportingPeriod() ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
@@ -454,6 +462,7 @@ NetworkDevicesTraffic_Commit
     ANSC_HANDLE                 hInsContext
 )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
     ULONG psmValue = 0;
     ULONG uVal = 0;
@@ -517,6 +526,7 @@ NetworkDevicesTraffic_Rollback
         ANSC_HANDLE                 hInsContext
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if(g_pReports->bNDTEnabledChanged)
@@ -549,26 +559,27 @@ NetworkDevicesTraffic_Default_GetParamUlongValue
                 ULONG*                      puLong
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
         *puLong =  GetNDTPollingPeriodDefault();
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
     {
         *puLong =  GetNDTReportingPeriodDefault();
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
     if ( AnscEqualString(ParamName, "OverrideTTL", TRUE))
     {
         *puLong =  GetNDTOverrideTTLDefault();
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, *puLong ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
@@ -585,13 +596,14 @@ NetworkDevicesTraffic_Default_SetParamUlongValue
     ULONG                       uValue
 )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
     {
         g_pReports->bNDTDefPollingPeriodChanged = true;
         g_pReports->uNDTPollingPeriodDefault = uValue;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, uValue ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, uValue ));
         return TRUE;
     }
 
@@ -599,7 +611,7 @@ NetworkDevicesTraffic_Default_SetParamUlongValue
     {
         g_pReports->bNDTDefReportingPeriodChanged = true;
         g_pReports->uNDTReportingPeriodDefault = uValue;
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%d] \n", __FUNCTION__ , ParamName, uValue ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, uValue ));
         return TRUE;
     }
 
@@ -644,6 +656,7 @@ NetworkDevicesTraffic_Default_Validate
         ULONG*                      puLength
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if(g_pReports->bNDTDefPollingPeriodChanged)
@@ -651,7 +664,7 @@ NetworkDevicesTraffic_Default_Validate
         BOOL validated = ValidateNDTPeriod(g_pReports->uNDTPollingPeriodDefault);
         if(!validated)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default PollingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTPollingPeriodDefault));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default PollingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTPollingPeriodDefault));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
@@ -661,7 +674,7 @@ NetworkDevicesTraffic_Default_Validate
 
         if (g_pReports->uNDTPollingPeriodDefault > period)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default PollingPeriod Validation Failed : New Default Polling Period [%d] > Current Default Reporting Period [%d] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriodDefault, period ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default PollingPeriod Validation Failed : New Default Polling Period [%lu] > Current Default Reporting Period [%lu] \n", __FUNCTION__ , g_pReports->uNDTPollingPeriodDefault, period ));
             AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
@@ -673,7 +686,7 @@ NetworkDevicesTraffic_Default_Validate
         BOOL validated = ValidateNDTPeriod(g_pReports->uNDTReportingPeriodDefault);
         if(!validated)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default ReportingPeriod Validation Failed : [%d] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTReportingPeriodDefault));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default ReportingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDTReportingPeriodDefault));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
@@ -683,7 +696,7 @@ NetworkDevicesTraffic_Default_Validate
 
 	if (g_pReports->uNDTReportingPeriodDefault < period)
         {
-            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default ReportingPeriod Validation Failed : New Default Reporting Period [%d] < Current Default Polling Period [%d] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriodDefault, period ));
+            CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default ReportingPeriod Validation Failed : New Default Reporting Period [%lu] < Current Default Polling Period [%lu] \n", __FUNCTION__ , g_pReports->uNDTReportingPeriodDefault, period ));
             AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
@@ -724,6 +737,7 @@ NetworkDevicesTraffic_Default_Rollback
         ANSC_HANDLE                 hInsContext
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     if(g_pReports->bNDTDefPollingPeriodChanged)
@@ -770,6 +784,7 @@ NetworkDevicesTraffic_Default_Commit
     ANSC_HANDLE                 hInsContext
 )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
     ULONG psmValue = 0;
 
