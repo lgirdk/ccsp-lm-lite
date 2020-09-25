@@ -71,6 +71,7 @@
 #include "lm_main.h"
 #include "lm_util.h"
 #include "ctype.h"
+#include "sysevent/sysevent.h"  /* LG ADD FRIENDLYNAME  */
 
 extern LmObjectHosts lmHosts;
 
@@ -1042,7 +1043,7 @@ Host_IsUpdated
         ANSC_HANDLE                 hInsContext
     )
 {
-    if ( HostsUpdateTime == 0 ) 
+    if ( HostsUpdateTime == 0  || (HostsUpdateTime > AnscGetTickInSeconds()) ) //LG ADD FRIENDLYNAME  
     {
         HostsUpdateTime = AnscGetTickInSeconds();
 
@@ -1060,6 +1061,31 @@ Host_IsUpdated
         return TRUE;
     }
 }
+
+//LG ADD START FRIENDLYNAME
+#define RESP_STR_LEN        128
+#define SE_WELL_KNOWN_IP    "127.0.0.1"
+static BOOL getSysevent(char *event, char *value, char *valueLen)
+{
+    int sysevent_fd = -1;
+    token_t sysevent_token = 0;
+
+    sysevent_fd = sysevent_open(SE_WELL_KNOWN_IP, SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, event, &sysevent_token);
+    if (sysevent_fd < 0)
+    {
+        return FALSE;
+    }
+
+    if (sysevent_get(sysevent_fd, sysevent_token, event, value, valueLen) != 0)
+    {
+        sysevent_close(sysevent_fd, sysevent_token);
+        return FALSE;
+    }
+    sysevent_close(sysevent_fd, sysevent_token);
+
+    return TRUE;
+}
+//LG ADD END FRIENDLYNAME
 
 /**********************************************************************  
 
@@ -1090,10 +1116,25 @@ Host_Synchronize
     )
 {
     ULONG count,i;
-
+    // LG ADD START FRIENDLYNAME
+    char out[RESP_STR_LEN] = {0};
+    BOOL gotEvent = FALSE;
+    // LG ADD END FRIENDLYNAME
     //CosaDmlHostsGetHosts(NULL,&count);
-
-	LM_get_host_info();
+    
+    // LG MODIFY START FRIENDLYNAME
+    /*
+     * We need to tell LMLite that the parameters request comes from PandMSsp,
+     * otherwise LMLite will request parameters back to PandMSsp,
+     * PandMSsp and LMLite will keep to wait the response from each other and it results deadlock.
+     */
+    gotEvent = getSysevent("get_from_manageable_device", out, RESP_STR_LEN);
+    if (((gotEvent == TRUE) && (!AnscEqualString(out, "true", TRUE))) ||
+        (gotEvent == FALSE))
+    {
+        LM_get_host_info();
+    }
+    // LG MODIFY END FRIENDLYNAME
     HostsUpdateTime = AnscGetTickInSeconds();
 
     return 0;
@@ -1265,6 +1306,29 @@ Host_GetParamIntValue
 		pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
+    // LG ADD START 
+    if( AnscEqualString(ParamName, "IPv6LeaseTimeRemaining", TRUE))
+    {
+        PLmObjectHostIPAddress pIpAddrList, pCur;
+        int LeaseTimeV6;
+        time_t currentTime = time(NULL);
+
+        pIpAddrList = pHost->ipv6AddrArray;
+
+        for(pCur = pIpAddrList; pCur != NULL; pCur = pCur->pNext){
+
+        LeaseTimeV6=pCur->LeaseTime;
+        if (LeaseTimeV6)
+        {
+           *pInt = LeaseTimeV6 - currentTime;
+        }else{
+           *pInt = 0;
+        }
+        }
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        return TRUE;
+    }
+    // LG ADD END 
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
 	pthread_mutex_unlock(&LmHostObjectMutex); 
@@ -1432,6 +1496,48 @@ Host_GetParamStringValue
 			pthread_mutex_unlock(&LmHostObjectMutex); 
             return 0;
         }
+        else if( AnscEqualString(ParamName, "X_LGI-COM_FriendlyName", TRUE))
+        {
+            char buf1[64],buf2[64];
+
+            memset(buf1, 0, sizeof(buf1));
+            memset(buf2, 0, sizeof(buf2));
+
+            if(pHost->pStringParaValue[LM_HOST_PhysAddressId]==NULL)
+            {
+              pthread_mutex_unlock(&LmHostObjectMutex);
+              return 0;
+            }
+            else
+            {
+              snprintf(buf1,sizeof(buf1)-1, "host_friendly_name_%s", pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+
+              syscfg_init();
+
+              syscfg_get( NULL, buf1, buf2, sizeof(buf2));
+
+              /* collect value */
+              size_t len = 0;
+
+              if(pHost->pStringParaValue[LM_HOST_PhysAddressId])
+              {
+                len = strlen(buf2);
+              }
+
+              if(*pUlSize <= len)
+              {
+                *pUlSize = len + 1;
+                pthread_mutex_unlock(&LmHostObjectMutex);
+                return 1;
+              }
+
+              AnscCopyString(pValue, buf2);
+              pthread_mutex_unlock(&LmHostObjectMutex);
+
+              return 0;
+            }
+        }
+
     }
 #if 0
     /* check the parameter name and return the corresponding value */
@@ -1756,6 +1862,41 @@ Host_SetParamStringValue
 			AnscTraceWarning(("<%s> Enter Valid AddressSource [%s] is invalid\n",__FUNCTION__,pString));
 		}
 	}
+    else if( AnscEqualString(ParamName, "X_LGI-COM_FriendlyName", TRUE))
+    {
+        char buf1[64],buf2[64];
+
+        memset(buf1, 0, sizeof(buf1));
+        memset(buf2, 0, sizeof(buf2));
+
+        if(pHost->pStringParaValue[LM_HOST_PhysAddressId]==NULL)
+        {
+          pthread_mutex_unlock(&LmHostObjectMutex);
+          return TRUE;
+        }
+        else
+        {
+          snprintf(buf1,sizeof(buf1)-1, "host_friendly_name_%s", pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+          snprintf(buf2,sizeof(buf2)-1, "%s", pString);
+
+          if (syscfg_set(NULL, buf1, buf2) != 0)
+          {
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            return FALSE;
+          }
+          else if(syscfg_commit() != 0)
+          {
+            CcspTraceWarning(("X_LGI-COM_FriendlyName syscfg_commit failed\n"));
+
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            return FALSE;
+          }
+
+          pthread_mutex_unlock(&LmHostObjectMutex);
+          return TRUE;
+        }
+    }
+
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;

@@ -213,6 +213,12 @@
               <notify>off</notify>
             </parameter>
             <parameter>
+              <name>IPv6LeaseTimeRemaining</name>
+              <type>int[-1:]</type>
+              <syntax>int</syntax>
+              <notify>off</notify>
+            </parameter>
+            <parameter>
               <name>X_CISCO_COM_ActiveTime</name>
               <type>int</type>
               <syntax>int</syntax>
@@ -260,7 +266,16 @@
               <type>string(64)</type>
               <syntax>string</syntax>
               <writable>false</writable>
-            </parameter>                        
+            </parameter>
+            <parameter>
+              <name>X_LGI-COM_FriendlyName</name>
+              <description>
+                The friendly name for the client.
+              </description>
+              <type>string(64)</type>
+              <syntax>string</syntax>
+              <writable>true</writable>
+            </parameter>
             <parameter>
               <name>X_RDKCENTRAL-COM_Layer1Interface</name>
               <type>string</type>
