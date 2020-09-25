@@ -65,10 +65,10 @@
         09/16/2011    initial revision.
 
 **************************************************************************/
-
+#define _GNU_SOURCE
 #include <time.h>
 #include <sys/sysinfo.h>
-
+#include <string.h>
 
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
@@ -79,6 +79,11 @@
 #include "lm_api.h"
 #include "lm_wrapper_priv.h"
 #include "ccsp_lmliteLog_wrapper.h"
+#include "network_devices_interface.h"
+#include "syscfg/syscfg.h"
+#include "ccsp_memory.h"
+#include "cosa_plugin_api.h"
+
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
 #include "cimplog.h"
 #define OnboardLog(...)                     onboarding_log("LM", __VA_ARGS__)
@@ -277,6 +282,7 @@ LmObjectHosts XlmHosts = {
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
 
+ANSC_STATUS COSAGetParamValueByPathName(void* bus_handle, parameterValStruct_t *val, ULONG *parameterValueLength);
 
 /* It may be updated by different threads at the same time? */
 ULONG HostsUpdateTime = 0;
@@ -496,6 +502,7 @@ int logOnlineDevicesCount()
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
+        UNREFERENCED_PARAMETER(line);
 	char interface[32] = {0};
 	int uptime = 0;
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
@@ -810,10 +817,10 @@ void Hosts_FreeHost(PLmObjectHost pHost){
     }
     if(pHost->objectName != NULL)
         LanManager_Free(pHost->objectName);
-	if(pHost->Layer3Interface != NULL)
+    if(pHost->Layer3Interface != NULL)
         LanManager_Free(pHost->Layer3Interface);
 
-	pHost->objectName = NULL;
+    pHost->objectName = NULL;
     pHost->Layer3Interface = NULL;
     Host_FreeIPAddress(pHost, 4);
     Host_FreeIPAddress(pHost, 6);
@@ -910,7 +917,7 @@ PLmObjectHost XHosts_AddHost(int instanceNum)
     return pHost;
 }
 
-Clean_Host_Table()
+void Clean_Host_Table()
 {
 
 	if(lmHosts.numHost < HOST_ENTRY_LIMIT)
@@ -924,7 +931,7 @@ Clean_Host_Table()
 
 		if((pHost->bBoolParaValue[LM_HOST_ActiveId] == FALSE) &&
 			(AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "DHCP", TRUE)) &&
-			((pHost->LeaseTime == 0xFFFFFFFF) || (currentTime >= pHost->LeaseTime)))
+			((pHost->LeaseTime == 0xFFFFFFFF) || (currentTime >= (time_t)pHost->LeaseTime)))
 		{
 			CcspTraceWarning((" Freeing Host %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
 			Hosts_FreeHost(pHost);
@@ -1058,7 +1065,6 @@ BOOL validate_mac(char * physAddress)
 PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
-    char ssid[LM_GEN_STR_SIZE]={0};
 	if(!physAddress || !validate_mac(physAddress))
 	{
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
@@ -1096,7 +1102,6 @@ PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
 PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 {
     char comments[256] = {0};
-    char ssid[LM_GEN_STR_SIZE]={0};
 
     if(!physAddress || \
        0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
@@ -1209,6 +1214,7 @@ Add_Update_IPv4Address
 	pIpAddrList = pHost->ipv4AddrArray;
 	ppHeader = &(pHost->ipv4AddrArray);
 	pHost->ipv4Active = TRUE;
+	pPre = NULL;
 
    for(pCur = pIpAddrList; pCur != NULL; pPre = pCur, pCur = pCur->pNext){
         if(AnscEqualString(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)){
@@ -1298,8 +1304,8 @@ Add_Update_IPv6Address
 
 int extract(char* line, char* mac, char * ip)
 {
-	PLmObjectHost pHost;
-	int i,pivot=0,mac_start=0,flag=-1;
+	int pivot=0,mac_start=0,flag=-1;
+        unsigned int i;
 	mac[0] = 0;
 	if((strstr(line,"<entry") == NULL) || (strstr(line,"</entry>") == NULL))
 	{
@@ -1697,7 +1703,7 @@ static inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
         STRNCPY_NULL_CHK(pDestHost->hostName, pHost->pStringParaValue[LM_HOST_HostNameId], sizeof(pDestHost->hostName)-1);
         STRNCPY_NULL_CHK(pDestHost->l3IfName, pHost->pStringParaValue[LM_HOST_Layer3InterfaceId], sizeof(pDestHost->l3IfName)-1);
         STRNCPY_NULL_CHK(pDestHost->l1IfName, pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], sizeof(pDestHost->l1IfName)-1);
-        STRNCPY_NULL_CHK(pDestHost->comments, pHost->pStringParaValue[LM_HOST_Comments], sizeof(pDestHost->comments)-1);
+        STRNCPY_NULL_CHK((char *)pDestHost->comments, pHost->pStringParaValue[LM_HOST_Comments], sizeof(pDestHost->comments)-1);
         STRNCPY_NULL_CHK(pDestHost->AssociatedDevice, pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], sizeof(pDestHost->AssociatedDevice)-1);
         pDestHost->RSSI = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
         _get_host_ipaddress(pDestHost, pHost); 
@@ -1705,6 +1711,8 @@ static inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
 
 static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
 {
+    UNREFERENCED_PARAMETER(recv_buf);
+    UNREFERENCED_PARAMETER(buf_size);
     int i, len = 0;
     PLmObjectHost pHost = NULL;
     LM_host_t *pDestHost = NULL;
@@ -1739,7 +1747,7 @@ static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
     PLmObjectHost pHost;
     char mac[18];
 
-    if(buf_size < sizeof(LM_cmd_get_host_by_mac_t))
+    if(buf_size < (int)sizeof(LM_cmd_get_host_by_mac_t))
         return;
     memset(&result, 0, sizeof(result));
     snprintf(mac,sizeof(mac)/sizeof(mac[0]), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
@@ -1763,7 +1771,7 @@ static inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
     PLmObjectHost pHost;
     char mac[18];
 
-    if(buf_size < sizeof(LM_cmd_comment_t))
+    if(buf_size < (int)sizeof(LM_cmd_comment_t))
         return;
 
     memset(&result, 0, sizeof(result));
@@ -1789,6 +1797,8 @@ END:
     write(fd, &result, sizeof(result));
 }
 static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
+    UNREFERENCED_PARAMETER(recv_buf);
+    UNREFERENCED_PARAMETER(buf_size);
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
@@ -1815,7 +1825,9 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
 }
 
 static inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
-
+    UNREFERENCED_PARAMETER(fd);
+    UNREFERENCED_PARAMETER(recv_buf);
+    UNREFERENCED_PARAMETER(buf_size);
 }
 
 typedef void (*LM_cfunc_t)(int, void*, int);
@@ -1830,13 +1842,12 @@ LM_cfunc_t cfunc[LM_API_CMD_MAX] = {
     _not_support_cfunc,                 //LM_API_CMD_GET_NETWORK,
 };
 
-void lm_cmd_thread_func()
+void *lm_cmd_thread_func(void *args)
 {
-    socklen_t clt_addr_len;
+    UNREFERENCED_PARAMETER(args);
     int listen_fd;
     int cmd_fd;
     int ret;
-    int i;
     static char recv_buf[1024];
     int len;
     struct sockaddr_un clt_addr;
@@ -1844,7 +1855,7 @@ void lm_cmd_thread_func()
 
     listen_fd=socket(PF_UNIX,SOCK_STREAM,0);
     if(listen_fd<0)
-        return;
+        return NULL;
 
     srv_addr.sun_family=AF_UNIX;
     unlink(LM_SERVER_FILE_NAME);
@@ -1856,7 +1867,7 @@ void lm_cmd_thread_func()
     PRINTD("start listen\n");
     while(1){
 	len = sizeof(clt_addr);
-        cmd_fd = accept(listen_fd,(struct sockaddr *)&clt_addr,&len);
+        cmd_fd = accept(listen_fd,(struct sockaddr *)&clt_addr,(socklen_t *)&len);
         if(cmd_fd < 0 )
            continue;
         PRINTD("accept \n");
@@ -1869,6 +1880,7 @@ void lm_cmd_thread_func()
         }
         close(cmd_fd);
     }
+    return NULL;
 }
 #endif
 
@@ -1892,12 +1904,12 @@ void XHosts_SyncWifi()
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
 
-            pHost = XHosts_FindHostByPhysAddress(hosts[i].phyAddr);
+            pHost = XHosts_FindHostByPhysAddress((char*)hosts[i].phyAddr);
 
             if ( !pHost )
             {
 
-				pHost = XHosts_AddHostByPhysAddress(hosts[i].phyAddr);
+				pHost = XHosts_AddHostByPhysAddress((char*)hosts[i].phyAddr);
 				if ( pHost )
                 {      
                 	CcspTraceWarning(("%s, %d New XHS host added sucessfully\n",__FUNCTION__, __LINE__));
@@ -1905,8 +1917,8 @@ void XHosts_SyncWifi()
 			}
 			Xlm_wrapper_get_info(pHost);
 			Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts[i].ssid);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)hosts[i].AssociatedDevice);
 			pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
 			pHost->l1unReachableCnt = 1;
 			pHost->bBoolParaValue[LM_HOST_ActiveId] = hosts[i].Status;
@@ -1942,7 +1954,7 @@ void Hosts_SyncWifi()
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
 
-            pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
+            pHost = Hosts_FindHostByPhysAddress((char*)hosts[i].phyAddr);
 
             if ( pHost )
             {
@@ -1951,8 +1963,8 @@ void Hosts_SyncWifi()
 			if(hosts[i].Status)
 			{
 #endif
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts[i].ssid);
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts[i].AssociatedDevice);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts[i].ssid);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)hosts[i].AssociatedDevice);
 				pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
 				pHost->l1unReachableCnt = 1;
 
@@ -1985,8 +1997,7 @@ void Hosts_SyncWifi()
 
 void *Event_HandlerThread(void *threadid)
 {
-    long tid;
-    tid = (long)threadid;
+    UNREFERENCED_PARAMETER(threadid);
     LM_wifi_wsta_t hosts;
     LM_moca_cpe_t mhosts;
     PLmObjectHost pHost;
@@ -1995,7 +2006,6 @@ void *Event_HandlerThread(void *threadid)
     struct mq_attr attr;
     char buffer[MAX_SIZE + 1];
 	char radio[32];
-    int must_stop = 0;
     BOOL do_dhcpsync = FALSE;
 
     /* initialize the queue attributes */
@@ -2007,7 +2017,11 @@ void *Event_HandlerThread(void *threadid)
     /* create the message queue */
     mq = mq_open(EVENT_QUEUE_NAME, O_CREAT | O_RDONLY, 0644, &attr);
 
-    CHECK((mqd_t)-1 != mq);
+    if (!((mqd_t)-1 != mq)) {
+        CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+        perror("((mqd_t)-1 != mq)");
+        return NULL;
+    }
     do
     {
         ssize_t bytes_read;
@@ -2017,7 +2031,12 @@ void *Event_HandlerThread(void *threadid)
         /* receive the message */
         bytes_read = mq_receive(mq, buffer, MAX_SIZE, NULL);
 
-        CHECK(bytes_read >= 0);
+        if (!(bytes_read >= 0)) {
+            CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+            perror("(bytes_read >= 0)");
+            return NULL;
+    }
+
 
         buffer[bytes_read] = '\0';
 
@@ -2026,7 +2045,6 @@ void *Event_HandlerThread(void *threadid)
 
         if(EventMsg.MsgType == MSG_TYPE_ETH)
         {
-            char Mac_Id[18];
             memcpy(&EthHost,EventMsg.Msg,sizeof(EthHost));
 
             pthread_mutex_lock(&LmHostObjectMutex);
@@ -2087,10 +2105,10 @@ void *Event_HandlerThread(void *threadid)
         {
             memcpy(&hosts,EventMsg.Msg,sizeof(hosts));
             pthread_mutex_lock(&LmHostObjectMutex);
-            pHost = Hosts_FindHostByPhysAddress(hosts.phyAddr);
+            pHost = Hosts_FindHostByPhysAddress((char*)hosts.phyAddr);
             if ( !pHost )
             {
-                pHost = Hosts_AddHostByPhysAddress(hosts.phyAddr);
+                pHost = Hosts_AddHostByPhysAddress((char*)hosts.phyAddr);
                 if ( pHost )
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
@@ -2110,10 +2128,10 @@ void *Event_HandlerThread(void *threadid)
             if(hosts.Status)
             {
 				memset(radio,0,sizeof(radio));	
-                convert_ssid_to_radio(hosts.ssid, radio);				
+                convert_ssid_to_radio((char *)hosts.ssid, radio);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)hosts.AssociatedDevice);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
                 pHost->l1unReachableCnt = 1;
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
@@ -2129,13 +2147,13 @@ void *Event_HandlerThread(void *threadid)
 
                 if( (hosts.ssid != NULL) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
                 {
-                    if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],hosts.ssid))
+                    if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], (const char *)hosts.ssid))
                     {
                         memset(radio,0,sizeof(radio));
-                        convert_ssid_to_radio(hosts.ssid, radio);
+                        convert_ssid_to_radio((char *)hosts.ssid, radio);
                         DelAndShuffleAssoDevIndx(pHost);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), hosts.ssid);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts.ssid);
                         //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                         LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
@@ -2151,7 +2169,7 @@ void *Event_HandlerThread(void *threadid)
             {
                 Hosts_SyncDHCP();
                 pthread_mutex_lock(&LmHostObjectMutex);
-                pHost = Hosts_FindHostByPhysAddress(hosts.phyAddr);
+                pHost = Hosts_FindHostByPhysAddress((char *)hosts.phyAddr);
                 if (pHost && pHost->pStringParaValue[LM_HOST_PhysAddressId] && pHost->pStringParaValue[LM_HOST_IPAddressId])
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId])); 
@@ -2164,10 +2182,10 @@ void *Event_HandlerThread(void *threadid)
         {
             memcpy(&mhosts,EventMsg.Msg,sizeof(mhosts));
             pthread_mutex_lock(&LmHostObjectMutex);
-            pHost = Hosts_FindHostByPhysAddress(mhosts.phyAddr);
+            pHost = Hosts_FindHostByPhysAddress((char *)mhosts.phyAddr);
             if ( !pHost )
             {
-                pHost = Hosts_AddHostByPhysAddress(mhosts.phyAddr);
+                pHost = Hosts_AddHostByPhysAddress((char *)mhosts.phyAddr);
 
                 if ( pHost )
                 {
@@ -2186,10 +2204,10 @@ void *Event_HandlerThread(void *threadid)
 
             if(mhosts.Status)
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), mhosts.ssid);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), mhosts.AssociatedDevice);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), mhosts.parentMac);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), mhosts.deviceType);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)mhosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)mhosts.AssociatedDevice);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), (const char *)mhosts.parentMac);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), (const char *)mhosts.deviceType);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = mhosts.RSSI;
                 pHost->l1unReachableCnt = 1;
 
@@ -2204,18 +2222,18 @@ void *Event_HandlerThread(void *threadid)
             }
             else
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), mhosts.ssid);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), mhosts.AssociatedDevice);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)mhosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)mhosts.AssociatedDevice);
 
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }       
             pthread_mutex_unlock(&LmHostObjectMutex);
 
-            if(mhosts.Status && do_dhcpsync)
+           if(mhosts.Status && do_dhcpsync)
             {
                 Hosts_SyncDHCP();
                 pthread_mutex_lock(&LmHostObjectMutex);
-                pHost = Hosts_FindHostByPhysAddress(mhosts.phyAddr);
+                pHost = Hosts_FindHostByPhysAddress((char *)mhosts.phyAddr);
                 if (pHost && pHost->pStringParaValue[LM_HOST_PhysAddressId] && pHost->pStringParaValue[LM_HOST_IPAddressId])
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is MoCA, MacAddress is %s IP from DNSMASQ is %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_IPAddressId]));
@@ -2246,7 +2264,8 @@ void *Event_HandlerThread(void *threadid)
         }
         else if (MSG_TYPE_PRESENCE_NOTIFICATION == EventMsg.MsgType)
         {
-            LmPresenceNotifyInfo info = {0};
+            LmPresenceNotifyInfo info;
+            memset(&info, 0, sizeof(LmPresenceNotifyInfo));
             memcpy(&info,EventMsg.Msg,sizeof(LmPresenceNotifyInfo));
             pHost = Hosts_FindHostByPhysAddress(info.physaddress);
             if (pHost)
@@ -2280,13 +2299,13 @@ void Hosts_SyncArp()
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
 
-            pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
+            pHost = Hosts_FindHostByPhysAddress((char *)hosts[i].phyAddr);
 
             if ( pHost )
             {
                 if ( _isIPv6Addr((char *)hosts[i].ipAddr) )
                 {
-                    pIP = Host_AddIPv6Address(pHost, hosts[i].ipAddr);
+                    pIP = Host_AddIPv6Address(pHost, (char *)hosts[i].ipAddr);
                     if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
                     {
                         Host_SetIPAddress(pIP, 0, "NONE"); 
@@ -2304,11 +2323,11 @@ void Hosts_SyncArp()
 						  * We need to maintain recent reachable IP in "Device.Hosts.Host.1.IPAddress" host. so 
 						  * that we are doing swap here.
 						  */
-						pIP = Host_AddIPv4Address(pHost, hosts[i].ipAddr);
+						pIP = Host_AddIPv4Address(pHost, (char *)hosts[i].ipAddr);
 
                         Host_SetIPAddress(pIP, 0, "NONE");
 
-                        _getLanHostComments(hosts[i].phyAddr, comments);
+                        _getLanHostComments((char *)hosts[i].phyAddr, comments);
                         if ( comments[0] != 0 )
                         {
                             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]), comments);
@@ -2319,7 +2338,7 @@ void Hosts_SyncArp()
 						/*
 						  * We need to update non-reachable IP in host details. No need to swap.
 						  */
-						pIP = LM_FindIPv4BaseFromLink( pHost, hosts[i].ipAddr );
+						pIP = LM_FindIPv4BaseFromLink( pHost, (char *)hosts[i].ipAddr );
 
 						if( NULL != pIP )
 						{
@@ -2328,7 +2347,7 @@ void Hosts_SyncArp()
                     }
                 }
 
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), hosts[i].ifName );
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]), (const char *)hosts[i].ifName );
             }
         }
 
@@ -2350,8 +2369,9 @@ void Hosts_SyncDHCP()
     lm_wrapper_get_dhcpv4_reserved();
 }
 
-void Hosts_LoggingThread()
+void *Hosts_LoggingThread(void *args)
 {
+    UNREFERENCED_PARAMETER(args);
     int i;
     PLmObjectHost pHost;
 	int TotalDevCount = 0;
@@ -2444,17 +2464,10 @@ void Hosts_LoggingThread()
 
 
 
-void Hosts_StatSyncThreadFunc()
+void *Hosts_StatSyncThreadFunc(void *args)
 {
-    int i,count;
-    char cmd[64] = {0};
-    int ret;
+    UNREFERENCED_PARAMETER(args);
     static BOOL bridgemode = FALSE;
-    PLmObjectHost   pHost      = NULL;
-    LM_host_entry_t *hosts     = NULL;
-    LM_wifi_wsta_t  *wifiHosts = NULL;
-    LM_moca_cpe_t   *mocaHosts = NULL;
-    PLmObjectHostIPAddress pIP;
     
     while (1)
     {
@@ -2664,6 +2677,7 @@ static void RemoveHostRetryValidateList(RetryHostList *pPrevNode, RetryHostList 
 
 void *ValidateHostRetry_Thread(void *arg)
 {
+    UNREFERENCED_PARAMETER(arg);
     RetryHostList *retryList;
     RetryHostList *prevNode = NULL;
     CcspTraceWarning(("%s started\n", __FUNCTION__));
@@ -2708,6 +2722,7 @@ void *ValidateHostRetry_Thread(void *arg)
 
 void *ValidateHost_Thread(void *arg)
 {
+    UNREFERENCED_PARAMETER(arg);
     mqd_t mq;
     struct mq_attr attr;
 
@@ -2720,16 +2735,25 @@ void *ValidateHost_Thread(void *arg)
 
     /* create the message queue */
     mq = mq_open(VALIDATE_QUEUE_NAME, O_CREAT | O_RDONLY, 0644, &attr);
-    CHECK((mqd_t)-1 != mq);
+    if(!((mqd_t)-1 != mq)) {
+        CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+        perror("((mqd_t)-1 != mq)");
+        return NULL;
+    }
 
     do
     {
         ssize_t bytes_read;
-        ValidateHostQData ValidateHostMsg = {0};
+        ValidateHostQData ValidateHostMsg;
+        memset(&ValidateHostMsg, 0, sizeof(ValidateHostQData));
 
         /* receive the message */
         bytes_read = mq_receive(mq, (char *)&ValidateHostMsg, MAX_SIZE_VALIDATE_QUEUE, NULL);
-        CHECK(bytes_read >= 0);
+        if (!(bytes_read >= 0)) {
+            CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+            perror("(bytes_read >= 0)");
+            return NULL;
+        }
 
         if (TRUE == ValidateHost(ValidateHostMsg.phyAddr))
         {
@@ -2754,7 +2778,6 @@ const char compName[25]="LOG.RDK.LM";
 void LM_main()
 {
     int res;
-    void *status;
     char buf[12]; // this value is reading a ULONG
 	char buf1[8]; // this is reading an int
     pthread_mutex_init(&PollHostMutex, 0);
@@ -2776,7 +2799,7 @@ void LM_main()
 	XlmHosts.lastActivity = 0;
     XlmHosts.availableInstanceNum = 1;
 	
-    pComponentName = compName;
+    pComponentName = (char*)compName;
 	syscfg_init();
     Hosts_GetPresenceParamFromSysDb(&lmHosts.param_val); // update presence syscfg param into lmhost object.
 	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
@@ -2801,13 +2824,13 @@ void LM_main()
 			g_Client_Poll_interval = 60;
 			strcpy(buf1,"60");
 			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
-                     		     return ANSC_STATUS_FAILURE;
+				return;
              } else {
 
                     if (syscfg_commit() != 0)
 						{
                             CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
-							return ANSC_STATUS_FAILURE;
+							return;
 						}
 			 }
 		}
@@ -2890,7 +2913,7 @@ void LM_main()
     }
     //pthread_join(Hosts_StatSyncThread, &status);
     //pthread_join(Hosts_CmdThread, &status);
-    return 0;
+    return;
 
 }
 
@@ -2918,10 +2941,8 @@ char * _CloneString
 void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 {
     int i;
-    char dm[200];
     char (*dmnames)[CDM_PATH_SZ]=NULL;
     int nname = 0;
-    int dmlen;
     
     if(*pList != NULL){
         AnscFreeMemory(*pList);
@@ -2941,8 +2962,8 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 			
 			sprintf((*pList)[i].dm ,"%s", dmnames[i]);
 			(*pList)[i].dm[strlen((*pList)[i].dm) - 1 ] = '\0';
-			sprintf(ucEntryParamName ,"%s%s", dmnames[i], name);
-			varStruct.parameterName = ucEntryParamName;
+			sprintf((char *)ucEntryParamName ,"%s%s", dmnames[i], name);
+			varStruct.parameterName = (char *)ucEntryParamName;
    			varStruct.parameterValue = (*pList)[i].name;
 			COSAGetParamValueByPathName(bus_handle,&varStruct,&ulEntryNameLen);
 
@@ -2970,7 +2991,7 @@ void _get_dmbyname(int num, Name_DM_t *list, char** dm, char* name)
 		return;
 	
     for(i = 0; i < num; i++){
-        if(NULL != strcasestr(list[i].name, name)){
+        if(strcasestr(list[i].name, name)){
             STRNCPY_NULL_CHK1((*dm), list[i].dm);
             break;
         }
@@ -3065,10 +3086,8 @@ int XLM_get_host_info()
 
 void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status)
 {
-	char 	*pos2			= NULL,
-			*pos5			= NULL,
-			*Xpos2			= NULL,
-			*Xpos5			= NULL;
+	char *Xpos2 = NULL;
+	char *Xpos5 = NULL;
 	char radio[32] 			= {0};
 
 	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
@@ -3080,8 +3099,6 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 									Status));
 	Xpos2	= strstr( ssid,".3" );
 	Xpos5	= strstr( ssid,".4" );
-	pos2	= strstr( ssid,".1" );
-	pos5	= strstr( ssid,".2" );
 
 	char telemetryBuff[TELEMETRY_MAX_BUFFER] = { '\0' };
 
@@ -3165,15 +3182,15 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 		LM_wifi_wsta_t hosts;
 		memset(&hosts, 0, sizeof(hosts));
 		if (AssociatedDevice) {
-		    strncpy(hosts.AssociatedDevice, AssociatedDevice,
+		    strncpy((char *)hosts.AssociatedDevice, AssociatedDevice,
 			sizeof(hosts.AssociatedDevice));
 		}
 		if (phyAddr) {
-		    strncpy(hosts.phyAddr, phyAddr, sizeof(hosts.phyAddr));
+		    strncpy((char *)hosts.phyAddr, phyAddr, sizeof(hosts.phyAddr));
 		}
 		hosts.phyAddr[17] = '\0';
 		if (ssid) {
-		    strncpy(hosts.ssid, ssid, sizeof(hosts.ssid));
+		    strncpy((char *)hosts.ssid, ssid, sizeof(hosts.ssid));
 		}
 		hosts.RSSI = RSSI;
 		hosts.Status = Status;
@@ -3195,7 +3212,8 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 
 void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status )
 {
-	ValidateHostQData ValidateHostMsg = {0};
+	ValidateHostQData ValidateHostMsg;
+	memset(&ValidateHostMsg, 0, sizeof(ValidateHostQData));
 	mqd_t mq;
 
 	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
@@ -3271,7 +3289,7 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
 			{
 				if(strcmp(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId],"empty"))
 				{
-					tmp = --tmp;
+					tmp = tmp-1;
 					memset(str, 0, sizeof(str));
 					sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
 					LanManager_CheckCloneCopy(&(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
@@ -3282,7 +3300,7 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
 	LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), "empty");
 	x++;
 // modify lower indexes from token index
-	for(x;x<lmHosts.numHost;x++)
+	for(;x<lmHosts.numHost;x++)
 	{
 		tmp = 0; tAP = 0;
 
@@ -3299,7 +3317,7 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
 			{
 				if(token < tmp)
 				{
-					tmp = --tmp;
+					tmp = tmp-1;
 					memset(str, 0, sizeof(str));
 					sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
 					LanManager_CheckCloneCopy(&(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
@@ -3325,24 +3343,24 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 
 		if(AssociatedDevice)
 		{
-			strncpy(hosts.AssociatedDevice,AssociatedDevice,sizeof(hosts.AssociatedDevice)-1);
+			strncpy((char *)hosts.AssociatedDevice,AssociatedDevice,sizeof(hosts.AssociatedDevice)-1);
 			hosts.AssociatedDevice[sizeof(hosts.AssociatedDevice)-1] = '\0';
 		}
-		strncpy(hosts.phyAddr,phyAddr,17);
+		strncpy((char *)hosts.phyAddr,phyAddr,17);
 		hosts.phyAddr[17] = '\0';
 		if(ssid)
 		{
-			strncpy(hosts.ssid,ssid,sizeof(hosts.ssid)-1);
+			strncpy((char *)hosts.ssid,ssid,sizeof(hosts.ssid)-1);
 			hosts.ssid[sizeof(hosts.ssid)-1] = '\0';
 		}
 		if(parentMac)
 		{
-			strncpy(hosts.parentMac,parentMac,sizeof(hosts.parentMac)-1);
+			strncpy((char *)hosts.parentMac,parentMac,sizeof(hosts.parentMac)-1);
 			hosts.parentMac[sizeof(hosts.parentMac)-1] = '\0';
 		}
 		if(deviceType)
 		{
-			strncpy(hosts.deviceType,deviceType,sizeof(hosts.deviceType)-1);
+			strncpy((char *)hosts.deviceType,deviceType,sizeof(hosts.deviceType)-1);
 			hosts.deviceType[sizeof(hosts.deviceType)-1] = '\0';
 		}
 
@@ -3501,7 +3519,7 @@ BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
 {
     char buf1[16];
     memset(buf1, 0, sizeof(buf1));
-    snprintf(buf1,sizeof(buf1),"%d",uValue);
+    snprintf(buf1,sizeof(buf1),"%d", (int)uValue);
     if (syscfg_set(NULL, paramName , buf1) != 0) {
         return FALSE;
     } else {
@@ -3567,7 +3585,7 @@ int Hosts_EnablePresenceDetectionTask()
         Sendmsg_dnsmasq(TRUE);
         CcspTraceWarning(("RDKB_PRESENCE: Presence Detection enabled Successfully\n"));
     }
-    
+    return ret_val;
 }
 
 int Hosts_DisablePresenceDetectionTask()
@@ -3576,7 +3594,6 @@ int Hosts_DisablePresenceDetectionTask()
     LmHostPresenceDetectionParam param = {0};
     char tmpmac[64];
     char dbParam[128];
-    int ret = 0;
     int i = 0;
     if (!lmHosts.enablePresence)
     {
@@ -3603,7 +3620,7 @@ int Hosts_DisablePresenceDetectionTask()
                     snprintf(tmpmac,sizeof(tmpmac),"%s",pHost->pStringParaValue[LM_HOST_PhysAddressId]);
                     LanManager_StringToLower(tmpmac);
                     snprintf(dbParam,sizeof(dbParam), "PDE_%s",tmpmac);
-                    ret = syscfg_unset(NULL, dbParam);
+                    syscfg_unset(NULL, dbParam);
                 }
                 else
                 {
@@ -3669,7 +3686,8 @@ int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut)
 
 int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddressUpdate)
 {
-    LmPresenceDetectionInfo status = { 0 };
+    LmPresenceDetectionInfo status;
+    memset(&status, 0, sizeof(LmPresenceDetectionInfo));
     PLmObjectHostIPAddress pIpAddrList;
 
     if (!pHost || !lmHosts.enablePresence) 
@@ -3867,6 +3885,7 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
                 status,
                 pHost->pStringParaValue[LM_HOST_HostNameId]);
     }
+    return 0;
 }
 
 BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
@@ -3875,7 +3894,12 @@ BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
     mqd_t mq;
     char buffer[MAX_SIZE];
     mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
-    CHECK((mqd_t)-1 != mq);
+    if (!((mqd_t)-1 != mq)) {
+        CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+        perror("((mqd_t)-1 != mq");
+        return FALSE;
+    }
+
     memset(buffer, 0, MAX_SIZE);
 
     if (isNeedToAdd)
@@ -3909,8 +3933,17 @@ BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
         return FALSE;
     }
     memcpy(buffer,&EventMsg,sizeof(EventMsg));
-    CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
-    CHECK((mqd_t)-1 != mq_close(mq));
+    if (!(0 <= mq_send(mq, buffer, MAX_SIZE, 0))) {
+        CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+        perror("(0 <= mq_send(mq, buffer, MAX_SIZE, 0))");
+        return FALSE;
+    }
+    if (!((mqd_t)-1 != mq_close(mq))) {
+        CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
+        perror("((mqd_t)-1 != mq_close(mq))");
+        return FALSE;
+    }
+
     return TRUE;
 }
 

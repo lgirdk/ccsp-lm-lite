@@ -114,5 +114,5 @@ ULONG GetNDTOverrideTTLDefault();
  * @return status 0 for success and 1 for failure
  */
 BOOL ValidateNDTPeriod(ULONG period);
-
+int SetNDTOverrideTTL(ULONG ttl);
 #endif 

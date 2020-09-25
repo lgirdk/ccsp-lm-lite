@@ -32,7 +32,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 **********************************************************************/
- 
+#define _GNU_SOURCE
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -44,12 +44,14 @@
 #include <netpacket/packet.h>
 #include <sys/un.h>
 #include "secure_wrapper.h"
+#include <string.h>
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_wrapper.h"
-
+#include "syscfg/syscfg.h"
 #include "lm_util.h"
 #include "ccsp_lmliteLog_wrapper.h"
+#include "lm_main.h"
 
 // TELEMETRY 2.0 //RDKB-25996
 #include <telemetry_busmessage_sender.h>
@@ -96,7 +98,7 @@ LM_wifi_hosts_t Xhosts;
 pthread_mutex_t Wifi_Hosts_mutex;
 #endif
 
-typedef struct{
+typedef struct mac_band_record{
 int band;
 BOOL active;
 char macAddress[18];
@@ -226,7 +228,7 @@ void remove_Mac_to_band_mapping(char *macstring)
 		if(curr) 
 		{
 			//CcspWifiTrace(("RDK_LOG_WARN,Wifi kb   %d \n",curr->band));
-        		for (;curr!=NULL,prev!=NULL;curr=curr->next,prev=prev->next,next=next->next)
+			for (;curr!=NULL&&prev!=NULL;curr=curr->next,prev=prev->next,next=next->next)
 			{
 				if(curr && !strcmp(curr->macAddress,macstring)) 
 		
@@ -326,7 +328,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
     memset(&arp_req, 0, sizeof(arp_req));
     memset(&reqsa, 0, sizeof(reqsa));
     mac_string_to_array(strMac,phyAddr);
-    ip_string_to_arrary(ip, t_ip);
+    ip_string_to_arrary((char*)ip, t_ip);
 
     reqsa.sll_ifindex = if_nametoindex(netName);
     reqsa.sll_ifindex = if_nametoindex(netName);
@@ -334,7 +336,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
         fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
         if (fd < 0)
         {
-            printf(("LM %s create socket erro\nr", __FUNCTION__));
+            printf("LM %s create socket error\n", __FUNCTION__);
             return -1;
         }
     }
@@ -343,12 +345,12 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
 
     /* get interface mac address */
     if(-1 == ioctl(fd, SIOCGIFHWADDR, &ifr)){
-        printf(("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName));
+        printf("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName);
         return -1;
     }
     memcpy(m_mac, ifr.ifr_hwaddr.sa_data, 6);
     if(-1 == ioctl(fd, SIOCGIFADDR, &ifr)){
-        printf(("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName));
+        printf("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName);
         return -1;
     }
     ip_sockaddr = (struct sockaddr_in *)&(ifr.ifr_addr);
@@ -379,7 +381,6 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
 }
 
 int lm_wrapper_init(){
-    int ret, i = 0;
     pthread_mutex_init(&GetARPEntryMutex, 0);
 /*
     ret = CCSP_Message_Bus_Init(
@@ -398,7 +399,7 @@ int lm_wrapper_init(){
 */
     fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if(fd < 0){
-        printf(("LM %s create socket erro\nr", __FUNCTION__));
+        printf("LM %s create socket error\n", __FUNCTION__);
         return -1;
     }
 
@@ -407,30 +408,6 @@ int lm_wrapper_init(){
     pthread_mutex_init(&Wifi_Hosts_mutex,0);
 #endif
     return 0;
-}
-
-static int _get_field_pos( char *field[], int field_num, int *pos, parameterValStruct_t **val, int val_num){
-    int i, j;
-    for(j = 0; j < field_num; j++){
-        pos[j] = -1;
-    }
-    for(i = 0; i < val_num; i++){
-        for(j = 0; j < field_num; j++){
-            if( NULL != strstr(val[i]->parameterName, field[j])){
-               if(pos[j] != -1){
-                  i -= pos[j];
-                  goto OUT;
-               }else
-                  pos[j] = i;
-            }
-        }
-    }
-OUT:
-    for(j = 0; j < field_num; j++){
-        if(pos[j] == -1)
-            return 0;
-    }
-    return (i);
 }
 
 void SyncWiFi()
@@ -473,14 +450,13 @@ void Wifi_Server_Thread_func()
 
 	int sockfd, newsockfd;
 	socklen_t clilen;
-	int n,i;
+	int i;
 	char *pos2=NULL;
 	char *pos5=NULL;
 	char *Xpos2=NULL;
 	char *Xpos5=NULL;
 #ifdef DUAL_CORE_XB3
 	struct sockaddr_in serv_addr, cli_addr;
-	char name[8]= {0};
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) 
 	{		
@@ -535,16 +511,16 @@ void Wifi_Server_Thread_func()
 			
 			for(i = 0; i < hosts.count ; i++)
 			{
-				Xpos2=strstr(hosts.host[i].ssid,".3");
-				Xpos5=strstr(hosts.host[i].ssid,".4");
+				Xpos2=strstr((const char *)hosts.host[i].ssid,".3");
+				Xpos5=strstr((const char *)hosts.host[i].ssid,".4");
 				if(Xpos2!=NULL || Xpos5!=NULL)
 				{
 					CcspTraceWarning(("%s, %d\n",__FUNCTION__, __LINE__));
 					Xhosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
      				Xhosts.host[i].Status = ntohl(hosts.host[i].Status);
-					strcpy(Xhosts.host[i].phyAddr, hosts.host[i].phyAddr );
+					strcpy((char *)Xhosts.host[i].phyAddr, (char *)hosts.host[i].phyAddr );
 					if(Xhosts.host[i].Status)
-						strcpy(Xhosts.host[i].AssociatedDevice,hosts.host[i].AssociatedDevice);
+						strcpy((char *)Xhosts.host[i].AssociatedDevice, (char *)hosts.host[i].AssociatedDevice);
 					Xhosts.count++;
 					
 				}
@@ -552,8 +528,8 @@ void Wifi_Server_Thread_func()
 				{
 				    hosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
      				hosts.host[i].Status = ntohl(hosts.host[i].Status);
-	    			pos2=strstr(hosts.host[i].ssid,".1");
-		    		pos5=strstr(hosts.host[i].ssid,".2");
+				pos2=strstr((char *)hosts.host[i].ssid,".1");
+				pos5=strstr((char *)hosts.host[i].ssid,".2");
 			    	hosts.host[i].phyAddr[17] = '\0';
                     if(hosts.host[i].Status)
 				    {
@@ -584,9 +560,9 @@ BOOL SearchWiFiClients(char *phyAddr, char *ssid)
 	int i = 0;
 	for(i = 0; i < hosts.count ; i++)
 	{
-		if(!strcasecmp(hosts.host[i].phyAddr,phyAddr))
+		if(!strcasecmp((const char *)hosts.host[i].phyAddr, (const char *)phyAddr))
 		{
-			strcpy(ssid,hosts.host[i].ssid);
+			strcpy((char*)ssid, (char*)hosts.host[i].ssid);
 			return TRUE;
 		}
 	}
@@ -596,10 +572,7 @@ BOOL SearchWiFiClients(char *phyAddr, char *ssid)
 int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
 	LM_wifi_wsta_t *pwifi_wsta = NULL;
-	int i,band=0,retband;
-        char macstring[18]={0};
-        mac_band_record *hash_record=NULL;
-        char *pos;
+	int i;
         
 	
 	/*TODO : Receive Data from WIFI Agent via Socket*/
@@ -618,10 +591,10 @@ int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray)
 
 	for(i=0 ; i < *pCount ; i++)
 	{
-		strcpy(pwifi_wsta[i].AssociatedDevice,Xhosts.host[i].AssociatedDevice);
-		strncpy(pwifi_wsta[i].phyAddr,Xhosts.host[i].phyAddr,17);
+		strcpy((char *)pwifi_wsta[i].AssociatedDevice, (const char *)Xhosts.host[i].AssociatedDevice);
+		strncpy((char *)pwifi_wsta[i].phyAddr, (const char *)Xhosts.host[i].phyAddr,17);
 		pwifi_wsta[i].phyAddr[17] = '\0';
-		strcpy(pwifi_wsta[i].ssid,Xhosts.host[i].ssid);
+		strcpy((char *)pwifi_wsta[i].ssid, (const char *)Xhosts.host[i].ssid);
 		pwifi_wsta[i].RSSI = Xhosts.host[i].RSSI;
 		pwifi_wsta[i].Status = Xhosts.host[i].Status;
                 
@@ -633,6 +606,7 @@ int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray)
 
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
+        UNREFERENCED_PARAMETER(netName);
 	LM_wifi_wsta_t *pwifi_wsta = NULL;
 	int i;
 	
@@ -653,10 +627,10 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
 	for(i=0 ; i < *pCount ; i++)
 	{
-		strcpy(pwifi_wsta[i].AssociatedDevice,hosts.host[i].AssociatedDevice);
-		strncpy(pwifi_wsta[i].phyAddr,hosts.host[i].phyAddr,17);
+		strcpy((char *)pwifi_wsta[i].AssociatedDevice, (const char *)hosts.host[i].AssociatedDevice);
+		strncpy((char *)pwifi_wsta[i].phyAddr, (const char *)hosts.host[i].phyAddr,17);
 		pwifi_wsta[i].phyAddr[17] = '\0';
-		strcpy(pwifi_wsta[i].ssid,hosts.host[i].ssid);
+		strcpy((char *)pwifi_wsta[i].ssid, (const char *)hosts.host[i].ssid);
 		pwifi_wsta[i].RSSI = hosts.host[i].RSSI;
 		pwifi_wsta[i].Status = hosts.host[i].Status;
 		
@@ -667,8 +641,33 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 }
 
 #else
+static int _get_field_pos( char *field[], int field_num, int *pos, parameterValStruct_t **val, int val_num){
+    int i, j;
+    for(j = 0; j < field_num; j++){
+        pos[j] = -1;
+    }
+    for(i = 0; i < val_num; i++){
+        for(j = 0; j < field_num; j++){
+            if( NULL != strstr(val[i]->parameterName, field[j])){
+               if(pos[j] != -1){
+                  i -= pos[j];
+                  goto OUT;
+               }else
+                  pos[j] = i;
+            }
+        }
+    }
+OUT:
+    for(j = 0; j < field_num; j++){
+        if(pos[j] == -1)
+            return 0;
+    }
+    return (i);
+}
+
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
+    UNREFERENCED_PARAMETER(netName);
     char *tblName = DEVICE_WIFI_ACCESS_POINT;
     char *pWiFiComponentName = pERTPAMComponentName;
     char *pComponentPath = pERTPAMComponentPath;
@@ -1066,8 +1065,6 @@ void _get_shell_output(char * cmd, char * out, int len)
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray)
 {
     FILE *fp = NULL;
-	FILE *fptr = NULL;
-	char line[128]={0},result[128]={0};
     char buf[200] = {0};
     int index = 0;
     char stub[64], status[32];;
@@ -1079,12 +1076,11 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     unlink(ARP_CACHE_FILE);
    // snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10 > %s", netName, ARP_CACHE_FILE);
 
-	// This is added to remove atom mac from the connected device list.
-    char            cmd[256]         = {0};
-    char            out[32]         = {0};
-	
 	// XB6/XF3 Do not have this interface. Remove constant warnings.
 #if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
+    // This is added to remove atom mac from the connected device list.
+    char cmd[256] = {0};
+    char out[32] = {0};
      if(pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
 		_ansc_sprintf(cmd, "ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14\n" );
 		_get_shell_output(cmd, out, sizeof(out));
@@ -1210,7 +1206,7 @@ void getAddressSource(char *physAddress, char *pAddressSource)
         if(ret != 4)
             continue;
 
-	if (!strcasecmp(physAddress,dhcpHost.phyAddr))
+	if (!strcasecmp(physAddress, (const char *)dhcpHost.phyAddr))
 	{
 		strcpy(pAddressSource,"DHCP");
 		break;
@@ -1239,7 +1235,7 @@ memset(buf,0,sizeof(buf));
         if(ret != 3)
             continue;
 
-	if (!strcasecmp(physAddress,dhcpHost.phyAddr))
+	if (!strcasecmp(physAddress, (const char *)dhcpHost.phyAddr))
 	{
 		strcpy(pAddressSource,"Static");
 		break;
@@ -1332,7 +1328,6 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
 {
     FILE *fp = NULL;
     char buf[200] = {0};
-    char stub[64];
     int ret;
     LM_host_entry_t dhcpHost;
 
@@ -1357,16 +1352,16 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
         if(ret != 4)
             continue;
 
-		if(strstr(dhcpHost.ipAddr,"172.16.12.") && AnscEqualString(dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
+		if(strstr((const char *)dhcpHost.ipAddr,"172.16.12.") && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
 		{
 			pthread_mutex_lock(&XLmHostObjectMutex);
 
-			if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+			if(dhcpHost.hostName == NULL || AnscEqualString((char *)dhcpHost.hostName, "*", FALSE))
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 			else
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
-			Host_AddIPv4Address ( pHost, dhcpHost.ipAddr);
-			pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
+			Host_AddIPv4Address ( pHost, (char *)dhcpHost.ipAddr);
+			pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
 
 			pthread_mutex_unlock(&XLmHostObjectMutex);
 			break;
@@ -1385,7 +1380,6 @@ void lm_wrapper_get_dhcpv4_client()
     char buf[200] = {0};
     char lan_ip_address[32] = {0};
     char lan_net_mask[32] = {0};
-    char stub[64];
     int ret;
     PLmObjectHostIPAddress pIP;
 
@@ -1419,19 +1413,19 @@ void lm_wrapper_get_dhcpv4_client()
             continue;
 
 
-        if(!AreIPv4AddressesInSameSubnet(lan_ip_address,dhcpHost.ipAddr, lan_net_mask))
+        if(!AreIPv4AddressesInSameSubnet(lan_ip_address, (char *)dhcpHost.ipAddr, lan_net_mask))
         {
             continue;
         }
 
-        pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
+        pHost = Hosts_FindHostByPhysAddress((char *)dhcpHost.phyAddr);
 
         if ( !pHost )
         {
-            if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
+            if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr((const char *)dhcpHost.phyAddr,pAtomBRMac) != NULL ))
             {
                 pthread_mutex_lock(&LmHostObjectMutex);
-                pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
+                pHost = Hosts_AddHostByPhysAddress((char *)dhcpHost.phyAddr);
 
                 if ( pHost )
                 {
@@ -1453,11 +1447,11 @@ void lm_wrapper_get_dhcpv4_client()
             pthread_mutex_lock(&LmHostObjectMutex);
             if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
                 strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
-            if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+            if(dhcpHost.hostName == NULL || AnscEqualString((char *)dhcpHost.hostName, "*", FALSE))
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
 
             pthread_mutex_unlock(&LmHostObjectMutex);
             
@@ -1468,7 +1462,7 @@ void lm_wrapper_get_dhcpv4_client()
                     CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
 		    t2_event_d("SYS_INFO_Hostname_changed", 1);
 		    char buf[8];
-                    snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+                    snprintf(buf,sizeof(buf),"%d", (int)lmHosts.lastActivity);
                     if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
                     {
                         AnscTraceWarning(("syscfg_set failed\n"));
@@ -1488,12 +1482,12 @@ void lm_wrapper_get_dhcpv4_client()
             pIP = Host_AddIPv4Address
             (
                 pHost,
-                dhcpHost.ipAddr
+                (char *)dhcpHost.ipAddr
             );
             if(pIP != NULL)
             {
                 LanManager_CheckCloneCopy(&(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]), "DHCP");
-                pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
+                pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
                 pHost->LeaseTime = pIP->LeaseTime;
                 
             }
@@ -1511,7 +1505,6 @@ void lm_wrapper_get_dhcpv4_reserved()
 
     FILE *fp = NULL;
     char buf[200] = {0};
-    char stub[64];
     int ret;
 
     PLmObjectHostIPAddress pIP;
@@ -1539,12 +1532,12 @@ void lm_wrapper_get_dhcpv4_reserved()
         if((ret < 2) || (ret > 3))
             continue;
 
-        pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
+        pHost = Hosts_FindHostByPhysAddress((char *)dhcpHost.phyAddr);
 
         if ( !pHost )
         {
         pthread_mutex_lock(&LmHostObjectMutex);
-            pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
+            pHost = Hosts_AddHostByPhysAddress((char *)dhcpHost.phyAddr);
 
             if ( pHost )
             {
@@ -1565,7 +1558,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
 				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				
-            if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+            if(dhcpHost.hostName == NULL || AnscEqualString((char *)dhcpHost.hostName, "*", FALSE))
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }
@@ -1574,7 +1567,7 @@ void lm_wrapper_get_dhcpv4_reserved()
                 // copy only if not empty.
                 if (dhcpHost.hostName[0] != '\0')
                 {
-                    LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
+                    LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
                 }
                 else
                 {
@@ -1593,7 +1586,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 					CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
 					t2_event_d("SYS_INFO_Hostname_changed", 1);
 					char buf[8];
-					snprintf(buf,sizeof(buf),"%d",lmHosts.lastActivity);
+					snprintf(buf,sizeof(buf),"%lu",lmHosts.lastActivity);
 					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
 					{
 						AnscTraceWarning(("syscfg_set failed\n"));
@@ -1613,7 +1606,7 @@ void lm_wrapper_get_dhcpv4_reserved()
             pIP = Host_AddIPv4Address
                 (
                     pHost,
-                    dhcpHost.ipAddr
+                    (char *)dhcpHost.ipAddr
                 );
             if(pIP != NULL)
             {

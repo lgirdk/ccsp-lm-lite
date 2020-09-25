@@ -62,10 +62,11 @@
 #include <utctx/utctx_api.h>
 #include <utapi/utapi.h>
 #include <utapi/utapi_util.h>
+#include "ansc_platform.h"
 
 #include "lm_api.h"
 
-
+int Utopia_set_lan_host_comments(UtopiaContext *ctx, unsigned char *pMac, unsigned char *pComments);
 int lm_wrapper_priv_stop_scan()
 {
     UtopiaContext ctx = {0};
@@ -125,7 +126,7 @@ int lm_wrapper_priv_set_lan_host_comments( LM_cmd_comment_t *cmd)
     if(!Utopia_Init(&ctx))
         return 1;
 
-    Utopia_set_lan_host_comments(&ctx, cmd->mac, cmd->comment);
+    Utopia_set_lan_host_comments(&ctx, cmd->mac, (unsigned char *)cmd->comment);
     Utopia_Free(&ctx, 1);
 
     return SUCCESS;
@@ -133,6 +134,7 @@ int lm_wrapper_priv_set_lan_host_comments( LM_cmd_comment_t *cmd)
 
 int lm_wrapper_priv_getEthernetPort(char *mac)
 {
+        UNREFERENCED_PARAMETER(mac);
 #if 0
         int port;
         char tmp[6];

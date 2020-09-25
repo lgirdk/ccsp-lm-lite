@@ -37,7 +37,7 @@ void get_parodus_url(char **url)
         char str[255] = {'\0'};
         while( fscanf(fp,"%s", str) != EOF) {
             char *value = NULL;
-            if( value = strstr(str, "PARODUS_URL=") ) {
+            if( ( value = strstr(str, "PARODUS_URL=") ) ) {
                 value = value + strlen("PARODUS_URL=");
                 *url = strdup(value);
                 CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url is %s\n", *url));

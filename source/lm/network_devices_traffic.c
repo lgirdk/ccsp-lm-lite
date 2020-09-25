@@ -46,9 +46,6 @@ static pthread_cond_t ndtCond = PTHREAD_COND_INITIALIZER;
 #include "mlt_malloc.h"
 #endif
 
-static sem_t mutex;
-
-
 #ifndef UTC_ENABLE
 extern int tm_offset;
 #endif
@@ -105,7 +102,7 @@ static void WaitForPthreadConditionTimeoutNDT()
     clock_gettime(CLOCK_REALTIME, &_now);
     _ts.tv_sec = _now.tv_sec + GetNDTPollingPeriod();
 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %d sec\n",__FUNCTION__,GetNDTPollingPeriod()));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %lu sec\n",__FUNCTION__,GetNDTPollingPeriod()));
 
     n = pthread_cond_timedwait(&ndtCond, &ndtMutex, &_ts);
     if(n == ETIMEDOUT)
@@ -153,7 +150,7 @@ int ResetEBTables()
 #endif
         CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : Executing Syscmd for RXTX STA shell script [%d] \n",__FUNCTION__, ret));
 
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Reset Timestamp[%u] \n", __FUNCTION__, reset_timestamp.tv_sec ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Reset Timestamp[%lu] \n", __FUNCTION__, reset_timestamp.tv_sec ));
 
         return 0;
     }
@@ -214,7 +211,7 @@ BOOL GetNDTHarvestingStatus()
 int SetNDTReportingPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTReportingPeriod, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%lu] New[%lu] \n", __FUNCTION__, NDTReportingPeriod, period ));
     if (NDTReportingPeriod != period)
     {
         NDTReportingPeriod = period;
@@ -230,7 +227,7 @@ int SetNDTReportingPeriod(ULONG period)
 ULONG GetNDTReportingPeriod()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTReportingPeriod ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTReportingPeriod ));
     return NDTReportingPeriod;
 }
 
@@ -238,7 +235,7 @@ int SetNDTPollingPeriod(ULONG period)
 {
     int ret;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Old[%d] New[%d] \n", __FUNCTION__, NDTPollingPeriod, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Old[%lu] New[%lu] \n", __FUNCTION__, NDTPollingPeriod, period ));
     if (NDTPollingPeriod != period)
     {
         NDTPollingPeriod = period;
@@ -274,14 +271,14 @@ BOOL ValidateNDTPeriod(ULONG period)
 ULONG GetNDTPollingPeriod()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTPollingPeriod ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTPollingPeriod ));
     return NDTPollingPeriod;
 }
 
 ULONG SetNDTReportingPeriodDefault(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTReportingPeriodDefault, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%lu] New[%lu] \n", __FUNCTION__, NDTReportingPeriodDefault, period ));
 
     if(NDTReportingPeriodDefault != period)
     {
@@ -297,14 +294,14 @@ ULONG SetNDTReportingPeriodDefault(ULONG period)
 ULONG GetNDTReportingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTReportingPeriodDefault ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTReportingPeriodDefault ));
     return NDTReportingPeriodDefault;
 }
 
 ULONG SetNDTPollingPeriodDefault(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDTPollingPeriodDefault, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%lu] New[%lu] \n", __FUNCTION__, NDTPollingPeriodDefault, period ));
 
    if(NDTPollingPeriodDefault != period)
     {
@@ -320,28 +317,28 @@ ULONG SetNDTPollingPeriodDefault(ULONG period)
 ULONG GetNDTPollingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTPollingPeriodDefault ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTPollingPeriodDefault ));
     return NDTPollingPeriodDefault;
 }
 
 ULONG GetNDTOverrideTTLDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTOverrideTTLDefault ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTOverrideTTLDefault ));
     return NDTOverrideTTLDefault;
 }
 
 ULONG GetNDTOverrideTTL()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTOverrideTTL ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTOverrideTTL ));
     return NDTOverrideTTL;
 }
 
 int SetNDTOverrideTTL(ULONG ttl)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDTOverrideTTL ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDTOverrideTTL ));
     NDTOverrideTTL = ttl;
     return 0;
 }
@@ -390,7 +387,7 @@ void add_to_list_ndt(char* ip_table_line)
     char * st = NULL;
     const char * delim = "|";
     long long rx_packets, tx_packets = 0;
-    long long external_bytes_down, external_bytes_up = 0;
+    long long external_bytes_down = 0, external_bytes_up = 0;
     char *device_mac = NULL, *rx_packets_str = NULL, *external_bytes_down_str = NULL, *tx_packets_str = NULL, *external_bytes_up_str = NULL;
     struct networkdevicetrafficdata *ptr = NULL;
 
@@ -457,7 +454,7 @@ void add_to_list_ndt(char* ip_table_line)
 #ifndef UTC_ENABLE
     ptr->timestamp.tv_sec -= tm_offset;
 #endif
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%lu] \n",ptr->timestamp.tv_sec ));
 
     if (NULL != device_mac)
     {
@@ -549,7 +546,7 @@ void delete_partial_list_ndt()
 
     while (list != NULL)
     {
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s],timestamp[%u] \n",__FUNCTION__, (ulong)list, ( list ?  ( list->device_mac ?  list->device_mac : "NULL" ) : "LIST NULL" ), list->timestamp.tv_sec));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Deleting ND Node Head Ptr [%lx] with SSID[%s],timestamp[%u] \n",__FUNCTION__, (ulong)list, ( list ?  ( list->device_mac ?  list->device_mac : "NULL" ) : "LIST NULL" ), (unsigned int)list->timestamp.tv_sec));
 
         next = list->next;
 	
@@ -592,7 +589,6 @@ void delete_partial_list_ndt()
 void GetIPTableData()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    int i = 0;
     char ip_table_line[256];
     FILE *fp = NULL;
 
@@ -615,7 +611,7 @@ void GetIPTableData()
     while (fgets(ip_table_line, 256, fp) != NULL)
     {
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Read Line from IP Table File is %s \n", ip_table_line));
-        add_to_list_ndt(&ip_table_line);
+        add_to_list_ndt(ip_table_line);
     }
 
     fclose(fp);
@@ -630,6 +626,7 @@ void GetIPTableData()
 
 void* StartNetworkDevicesTrafficHarvesting( void *arg )
 {
+    UNREFERENCED_PARAMETER(arg);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
     ULONG uDefaultVal = 0;

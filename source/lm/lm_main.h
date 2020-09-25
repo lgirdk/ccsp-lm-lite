@@ -84,7 +84,7 @@
 #define LM_HOST_X_CISCO_COM_NetworkInterfaceId  1
 #define LM_HOST_X_CISCO_COM_ConnectionStatusId  2
 #define LM_HOST_X_CISCO_COM_OSType              3
-#define LM_HOST_X_COMCAST-COM_LastChange        4 
+#define LM_HOST_X_COMCAST_COM_LastChange        4
 #define LM_HOST_X_RDK_PresenceActiveLastChange  5
 #define LM_HOST_NumUlongPara                    6
 
@@ -337,4 +337,24 @@ void Hosts_PresenceNotify(PLmPresenceNotifyInfo pinfo);
 void Update_RFC_Presencedetection(BOOL enablePresenceFeature);
 int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencestatus);
 int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost,BOOL val);
+PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, int version);
+PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress);
+PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress);
+int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
+void Send_MoCA_Host_Sync_Req();
+void Send_Eth_Host_Sync_Req();
+void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
+void Host_FreeIPAddress(PLmObjectHost pHost, int version);
+void Hosts_SyncDHCP();
+int Hosts_stop_scan();
+int Hosts_EnablePresenceDetectionTask();
+int Hosts_DisablePresenceDetectionTask();
+void XHosts_SyncWifi();
+void EthClient_AddtoQueue(char *phyAddr,int Status );
+void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, char* parentMac, char* deviceType, int RSSI, int Status );
+int LM_get_online_device();
+int LM_get_host_info();
+int LMDmlHostsSetHostComment(char* pMac, char* pComment);
+int XLM_get_host_info();
+int XLM_get_online_device();
 #endif

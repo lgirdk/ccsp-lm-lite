@@ -147,7 +147,6 @@ ANSC_HANDLE bus_handle;
 #define  CcspWifiTrace(msg)                         \
 {\
 	                char pTempChar1[4096];                                     \
-			char	sfn[32];														 \
                         CcspTraceBaseStr msg;                                                       \
 			WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.WifiLogMsg"); \
 }
@@ -172,6 +171,6 @@ void Wifi_Server_Thread_func();
 #endif
 int getIPAddress(char *physAddress,char *IPAddress);
 int get_HostName(char *physAddress,char *HostName);
-
-
+int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray);
+void SyncWiFi();
 #endif

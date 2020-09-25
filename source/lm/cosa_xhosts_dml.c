@@ -64,6 +64,7 @@
 #include "ansc_platform.h"
 #include "cosa_hosts_dml.h"
 #include "cosa_xhosts_dml.h"
+#include "lm_util.h"
 
 #include "lm_main.h"
 
@@ -158,7 +159,7 @@ XHosts_GetParamUlongValue
         ULONG*                      puLong
     )
 {
-	
+    UNREFERENCED_PARAMETER(hInsContext);
     /* check the parameter name and return the corresponding value */
     if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectedDeviceNumber", TRUE))
     {
@@ -220,6 +221,7 @@ XHost_GetEntryCount
         ANSC_HANDLE                 hInsContext
     )
 {
+	UNREFERENCED_PARAMETER(hInsContext);
 	ULONG host_count = 0;
 
 	pthread_mutex_lock(&XLmHostObjectMutex);   
@@ -267,6 +269,7 @@ XHost_GetEntry
         ULONG*                      pInsNumber
     )
 {
+	UNREFERENCED_PARAMETER(hInsContext);
 	ANSC_HANDLE host = NULL;
 	pthread_mutex_lock(&XLmHostObjectMutex); 
 	*pInsNumber = XlmHosts.hostArray[nIndex]->instanceNum;
@@ -304,7 +307,7 @@ XHost_IsUpdated
         ANSC_HANDLE                 hInsContext
     )
 {
-
+    UNREFERENCED_PARAMETER(hInsContext);
     if ( XHostsUpdateTime == 0 ) 
     {
         XHostsUpdateTime = AnscGetTickInSeconds();
@@ -352,9 +355,7 @@ XHost_Synchronize
         ANSC_HANDLE                 hInsContext
     )
 {
-    ULONG count,i;
-
-    
+	UNREFERENCED_PARAMETER(hInsContext);
 	XLM_get_host_info(); 
     XHostsUpdateTime = AnscGetTickInSeconds();
 
@@ -513,7 +514,7 @@ XHost_GetParamIntValue
         time_t currentTime = time(NULL);
         if(pHost->LeaseTime == 0xffffffff){
             *pInt = -1;
-        }else if(currentTime <  pHost->LeaseTime){
+        }else if(currentTime <  (time_t)pHost->LeaseTime){
             *pInt = pHost->LeaseTime - currentTime;
         }else{
             *pInt = 0;
@@ -766,6 +767,9 @@ XHost_Validate
         ULONG*                      puLength
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pReturnParamName);
+    UNREFERENCED_PARAMETER(puLength);
     return TRUE;
 }
 
@@ -835,9 +839,8 @@ XHost_Rollback
         ANSC_HANDLE                 hInsContext
     )
 {
-
+    UNREFERENCED_PARAMETER(hInsContext);
     pthread_mutex_lock(&XLmHostObjectMutex);     
-    PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     pthread_mutex_unlock(&XLmHostObjectMutex); 
 
     return 0;

@@ -135,4 +135,5 @@ int PresenceDetection_Init();
 int PresenceDetection_DeInit();
 void PresenceDetection_Start();
 void PresenceDetection_Stop();
+int Handle_RecieveArpCache(char *line);
 #endif 

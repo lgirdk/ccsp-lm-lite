@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <unistd.h> 
 #include <stdio.h> 
 #include <stdlib.h> 
@@ -22,6 +23,8 @@
 #include <unistd.h>
 #include <mqueue.h>
 #include "device_presence_detection.h"
+#include "lm_util.h"
+#include "syscfg/syscfg.h"
 
 #define MAX_NUM_OF_DEVICE 200
 #define MAX_SIZE    512
@@ -282,7 +285,7 @@ int PresenceDetection_AddDevice(LmPresenceDeviceInfo *pinfo)
     pobject = GetPresenceDetectionObject();
     if (pobject)
     {
-        if ((pobject->numOfDevice >=0) && (pobject->numOfDevice < MAX_NUM_OF_DEVICE))
+        if (pobject->numOfDevice < MAX_NUM_OF_DEVICE)
         {
             if (pobject->ppdevlist)
             {
@@ -578,10 +581,11 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
 
         }
     }
-
+    return 0;
 }
-void Send_arp_ipv4_thread ()
+void *Send_arp_ipv4_thread (void *args)
 {
+    UNREFERENCED_PARAMETER(args);
     PLmDevicePresenceDetectionInfo pobject = NULL;
     unsigned int ActiveClientsecs = 0;
     unsigned int InActiveClientsecs = 0;
@@ -628,11 +632,12 @@ void Send_arp_ipv4_thread ()
     }
     if (pobject && (pobject->task_count > 0))
     --pobject->task_count;
-
+    return args;
 }
 
-void ReceiveArp_Thread()
+void *ReceiveArp_Thread(void *args)
 {
+    UNREFERENCED_PARAMETER(args);
     PLmDevicePresenceDetectionInfo pobject = NULL;
     pobject = GetPresenceDetectionObject();
     if (pobject)
@@ -653,7 +658,7 @@ void ReceiveArp_Thread()
         if (!arpCache)
         {
             perror("Arp Cache: Failed to open file \"" PRESENCE_ARP_CACHE "\"");
-            return;
+            return NULL;
         }
 
         while(fgets(output, sizeof(output), arpCache)!=NULL)
@@ -667,6 +672,7 @@ void ReceiveArp_Thread()
     }
     if (pobject && (pobject->task_count > 0))
     --pobject->task_count;
+    return args;
 }
 
 int  getipaddressfromarp(char *inputline,char *output, int out_len)
@@ -794,8 +800,9 @@ int CheckandupdatePresence(char *mac, int version, char *ipaddress,DeviceDetecti
     return 0;
 }
 
-void ReceiveIpv4ClientStatus()
+void *ReceiveIpv4ClientStatus(void *args)
 {
+    UNREFERENCED_PARAMETER(args);
     mqd_t mq = -1;
     char buffer[MAX_SIZE + 1];
     PLmDevicePresenceDetectionInfo pobject = NULL;
@@ -846,16 +853,16 @@ void ReceiveIpv4ClientStatus()
         mq_close(mq);
         mq_unlink(DNSMASQ_PRESENCE_QUEUE_NAME);
     }
+    return args;
 }
 
 void RecvHCPv4ClientConnects()
 {
-    int sd, new_socket, valread;
+    int sd, new_socket;
     struct sockaddr_in address; 
     int opt = 1; 
     int addrlen = sizeof(address); 
     char buffer[1024] = {0}; 
-    char *hello = "Hello from server"; 
     PLmDevicePresenceDetectionInfo pobject = NULL;
     pobject = GetPresenceDetectionObject();
     pthread_detach(pthread_self());
@@ -908,7 +915,7 @@ void RecvHCPv4ClientConnects()
     printf ("\n %s waiting to read socket \n",__FUNCTION__);
     while(pobject && (STATE_DETECTION_TASK_STOP != pobject->taskState))
     {
-        valread = read( new_socket , buffer, 1024); 
+        read( new_socket , buffer, 1024); 
         printf("\n %s\n",buffer ); 
         printf("\n Hello message sent\n");
         if(strlen(buffer) != 0)
@@ -916,7 +923,6 @@ void RecvHCPv4ClientConnects()
             char* st = NULL;
             char* token = strtok_r(buffer, " ", &st);
             char* ip = strtok_r(NULL, " ", &st);
-            char found = 0;
             if(token != NULL)
             {
                 pthread_mutex_lock(&PresenceDetectionMutex);
@@ -1038,8 +1044,6 @@ void read_event(int sock)
         char* st = NULL;
         char* token = NULL;
         char *ip = NULL;
-        char found = 0;
-        int i = 0;
 
         CcspTraceDebug(("Received message payload: %s\n", NLMSG_DATA((struct nlmsghdr *) &buffer)));
         memset(buffer1,0,sizeof(buffer1));
@@ -1057,15 +1061,16 @@ void read_event(int sock)
     }
 }
 
-int RecvIPv6clientNotifications()
+void *RecvIPv6clientNotifications(void *args)
 {
+    UNREFERENCED_PARAMETER(args);
     int nls;
     PLmDevicePresenceDetectionInfo pobject = NULL;
     pobject = GetPresenceDetectionObject();
     pthread_detach(pthread_self());
     nls = open_netlink();
     if (nls < 0)
-        return nls;
+        return NULL;
 
     if (pobject)
     ++pobject->task_count;
@@ -1078,7 +1083,7 @@ int RecvIPv6clientNotifications()
     --pobject->task_count;
 
     close(nls);
-    return 0;
+    return args;
 }
 
 int Send_ipv6_neighbourdiscovery(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient)
@@ -1135,8 +1140,9 @@ int Send_ipv6_neighbourdiscovery(PLmDevicePresenceDetectionInfo pobject,BOOL bac
 
 }
 
-void SendNS_Thread()
+void *SendNS_Thread(void *args)
 {
+    UNREFERENCED_PARAMETER(args);
     PLmDevicePresenceDetectionInfo pobject = NULL;
     unsigned int ActiveClientsecs = 0;
     unsigned int InActiveClientsecs = 0;
@@ -1183,6 +1189,7 @@ void SendNS_Thread()
     }
     if (pobject && (pobject->task_count > 0))
     --pobject->task_count;
+    return args;
 }
 
 void PresenceDetection_Stop()
