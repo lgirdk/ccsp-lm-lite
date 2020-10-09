@@ -675,6 +675,46 @@
                 </objects>                    
             </object>                                                                        
         </objects>
+    </object>
+    <object>
+        <name>ManagementServer</name>
+        <objectType>object</objectType>
+        <objects>
+            <object>
+                <name>ManageableDevice</name>
+                <objectType>dynamicTable</objectType>
+                <maxInstance>255</maxInstance>
+                <functions>
+                    <func_GetEntryCount>ManageableDevice_GetEntryCount</func_GetEntryCount>
+                    <func_IsUpdated>ManageableDevice_IsUpdated</func_IsUpdated>
+                    <func_Synchronize>ManageableDevice_Synchronize</func_Synchronize>
+                    <func_GetParamStringValue>ManageableDevice_GetParamStringValue</func_GetParamStringValue>
+                    <func_GetEntry>ManageableDevice_GetEntry</func_GetEntry>
+                </functions>
+                <parameters>
+                    <parameter>
+                        <name>ManufacturerOUI</name>
+                        <type>string(6)</type>
+                        <syntax>string</syntax>
+                    </parameter>
+                    <parameter>
+                        <name>SerialNumber</name>
+                        <type>string(64)</type>
+                        <syntax>string</syntax>
+                    </parameter>
+                    <parameter>
+                        <name>ProductClass</name>
+                        <type>string(64)</type>
+                        <syntax>string</syntax>
+                    </parameter>
+                    <parameter>
+                        <name>Host</name>
+                        <type>string(1024)</type>
+                        <syntax>string</syntax>
+                    </parameter>
+                </parameters>
+            </object>
+        </objects>
     </object>    
  </objects>
 </dataModelInfo>
