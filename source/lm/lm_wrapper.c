@@ -1097,7 +1097,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName,pAtomBRMac);
         v_secure_system("ip -6 nei show | grep %s | grep -i -v %s >> "ARP_CACHE_FILE, netName, pAtomBRMac);
     } else {
-	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10 > "ARP_CACHE_FILE, netName);
+	v_secure_system("ip -4 nei show | grep %s > "ARP_CACHE_FILE, netName);
 #ifdef _HUB4_PRODUCT_REQ_
 	v_secure_system("ip -6 nei show | grep %s | grep -v fd | grep -v fc >> "ARP_CACHE_FILE, netName);
 #else
@@ -1418,14 +1418,14 @@ void lm_wrapper_get_dhcpv4_client()
         if(ret != 4)
             continue;
 
-
+        /* This will fail for guest network and the HostName will not updated
         if(!AreIPv4AddressesInSameSubnet(lan_ip_address,dhcpHost.ipAddr, lan_net_mask))
         {
             continue;
         }
-
+        */
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
-
+ 
         if ( !pHost )
         {
             if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
