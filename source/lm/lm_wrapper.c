@@ -107,6 +107,7 @@ typedef struct mac_band_record {
 static mac_band_record *Mac_to_band_mapping[HASHSIZE] = { NULL };
 #endif
 
+#if 0
 static int AreIPv4AddressesInSameSubnet(char* ipaddress, char* ipaddres2, char* subnetmask)
 {
     struct in_addr addr, addr2, mask;    
@@ -132,6 +133,7 @@ static int AreIPv4AddressesInSameSubnet(char* ipaddress, char* ipaddres2, char* 
 
     return ret;
 }
+#endif
 
 #ifndef USE_NOTIFY_COMPONENT
 static unsigned long hash (char *s)
@@ -1134,7 +1136,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName,pAtomBRMac);
         v_secure_system("ip -6 nei show | grep %s | grep -i -v %s >> "ARP_CACHE_FILE, netName, pAtomBRMac);
     } else {
-	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10 > "ARP_CACHE_FILE, netName);
+	v_secure_system("ip -4 nei show | grep %s > "ARP_CACHE_FILE, netName);
 #ifdef _HUB4_PRODUCT_REQ_
 	v_secure_system("ip -6 nei show | grep %s | grep -v fd | grep -v fc >> "ARP_CACHE_FILE, netName);
 #else
@@ -1434,8 +1436,6 @@ void lm_wrapper_get_dhcpv4_client()
 {
     FILE *fp = NULL;
     char buf[200] = {0};
-    char lan_ip_address[32] = {0};
-    char lan_net_mask[32] = {0};
     int ret;
     PLmObjectHostIPAddress pIP;
 
@@ -1456,11 +1456,6 @@ void lm_wrapper_get_dhcpv4_client()
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
         6487 02:10:18:01:00:02 10.0.0.91 * * 6367 *
         */
-        syscfg_get( NULL, "lan_ipaddr", lan_ip_address, sizeof(lan_ip_address));
-
-        syscfg_get( NULL, "lan_netmask", lan_net_mask, sizeof(lan_net_mask));
-
-
         ret = sscanf(buf, LM_DHCP_CLIENT_FORMAT,
                  &(dhcpHost.LeaseTime),
                  dhcpHost.phyAddr,
@@ -1470,11 +1465,11 @@ void lm_wrapper_get_dhcpv4_client()
         if(ret != 4)
             continue;
 
-
-        if(!AreIPv4AddressesInSameSubnet(lan_ip_address, (char *)dhcpHost.ipAddr, lan_net_mask))
-        {
-            continue;
-        }
+        /*
+           Don't try to check that dhcpHost.ipAddr is in the same subnet as
+           lan_ipaddr - it will fail for guest network and the HostName will
+           not be updated.
+        */
 
         pthread_mutex_lock(&LmHostObjectMutex);
         pHost = Hosts_FindHostByPhysAddress((char *)dhcpHost.phyAddr);
