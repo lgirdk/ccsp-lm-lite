@@ -2475,15 +2475,24 @@ static void Hosts_SyncArp (void)
 {
     char comments[256] = {0};
     int count = 0;
-    int i;
+    int i,cntVal;
 
     PLmObjectHost pHost = NULL;
     LM_host_entry_t *hosts = NULL;
     PLmObjectHostIPAddress pIP;
 
-    lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
-    if (count > 0)
+    for(cntVal = 0; cntVal < 2; cntVal++)
     {
+      if(cntVal == 0)
+      {
+          lm_wrapper_get_arp_entries("brlan7", &count, &hosts);
+      }
+      else
+      {
+           lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
+      }
+      if (count > 0)
+      {
         pthread_mutex_lock(&LmHostObjectMutex);
 
         for (i = 0; i < count; i++)
@@ -2551,6 +2560,7 @@ static void Hosts_SyncArp (void)
         hosts=NULL;
     }
 
+    }
     return;
 }
 
@@ -3727,10 +3737,10 @@ void convert_ssid_to_radio(char *ssid, char *radio)
         if(strstr(ssid,".17")) {
                AnscCopyString(radio,"Device.WiFi.Radio.3");
         }
-        else if(strstr(ssid,".1") || strstr(ssid,".3")){
+        else if(strstr(ssid,".1") || strstr(ssid,".3")|| strstr(ssid,".7")){
                AnscCopyString(radio,"Device.WiFi.Radio.1");
         }
-        else if(strstr(ssid,".2") || strstr(ssid,".4")){
+        else if(strstr(ssid,".2") || strstr(ssid,".4")|| strstr(ssid,".8")){
                AnscCopyString(radio,"Device.WiFi.Radio.2");
         }
         else{
