@@ -464,11 +464,17 @@ XHost_GetParamIntValue
     {
         /* collect dynamic value */
         if(pHost->bBoolParaValue[LM_HOST_ActiveId]){
-            ANSC_UNIVERSAL_TIME currentTime = {0};
-            AnscGetLocalTime(&currentTime);
-            pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = 
-                (int)(AnscCalendarToSecond(&currentTime) - pHost->activityChangeTime);
+	    time_t currentTime = time(NULL);
+            if(currentTime > pHost->activityChangeTime){
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = currentTime - pHost->activityChangeTime;
+            }else{
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = 0;
+            }
         }
+	else
+	{
+		pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = 0;
+	}
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId];
 		pthread_mutex_unlock(&XLmHostObjectMutex); 
         return TRUE;
@@ -478,10 +484,16 @@ XHost_GetParamIntValue
     {
         /* collect dynamic value */
         if(!pHost->bBoolParaValue[LM_HOST_ActiveId]){
-            ANSC_UNIVERSAL_TIME currentTime = {0};
-            AnscGetLocalTime(&currentTime);
-            pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId] = 
-                (int)(AnscCalendarToSecond(&currentTime) - pHost->activityChangeTime);
+            time_t currentTime = time(NULL);
+            if(currentTime > pHost->activityChangeTime){
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId] = currentTime - pHost->activityChangeTime;
+            }else{
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId] = 0;
+            }
+        }
+        else
+        {
+                pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId] = 0;
         }
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId];
 		pthread_mutex_unlock(&XLmHostObjectMutex); 
