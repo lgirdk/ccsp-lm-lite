@@ -3114,7 +3114,9 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 				if( pHost->ipv4Active == TRUE )
 				{
 					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: WiFi XHS client online:%s,%s\n", ( pHost->pStringParaValue[LM_HOST_HostNameId] ) ? ( pHost->pStringParaValue[LM_HOST_HostNameId] ) : "NULL", pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-			
+					CcspTraceInfo(("XHS_CONNECTED_CLIENTS: IP Address is  %s , address source is %s and HostName is %s \n",(pHost->pStringParaValue[LM_HOST_IPAddressId]) ? (pHost->pStringParaValue[LM_HOST_IPAddressId]) : "NULL",
+																	       (pHost->pStringParaValue[LM_HOST_AddressSource]) ? (pHost->pStringParaValue[LM_HOST_AddressSource]) : "NULL",
+																	       (pHost->pStringParaValue[LM_HOST_HostNameId]) ? (pHost->pStringParaValue[LM_HOST_HostNameId]) : "NULL"));	
 					memset(telemetryBuff, 0, TELEMETRY_MAX_BUFFER);
 					snprintf(telemetryBuff,16,"%s",pHost->pStringParaValue[LM_HOST_HostNameId]);
 					if(strncmp(telemetryBuff,"SC",strlen("SC")) == 0)
