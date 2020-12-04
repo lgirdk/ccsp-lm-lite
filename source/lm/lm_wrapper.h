@@ -137,7 +137,7 @@ typedef struct{
     int LeaseTime;
 }LM_host_entry_t;
 
-ANSC_HANDLE bus_handle;
+extern ANSC_HANDLE bus_handle;
 
 #define  CcspTraceBaseStr(arg ...)                                                             \
             do {                                                                            \
