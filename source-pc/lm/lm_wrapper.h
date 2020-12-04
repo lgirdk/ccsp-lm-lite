@@ -179,7 +179,7 @@ typedef struct{
 
 
 
-ANSC_HANDLE bus_handle;
+extern ANSC_HANDLE bus_handle;
 
 #define  CcspTraceBaseStr(arg ...)                                                             \
             do {                                                                            \
