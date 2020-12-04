@@ -48,7 +48,7 @@
 #define IP6_ONLY 2
 #define IP4_IP6  3
 
-enum {
+typedef enum {
     IPV4 = 0,
     IPV6 
 }Ipversion;
