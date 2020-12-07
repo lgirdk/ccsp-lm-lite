@@ -248,11 +248,10 @@ static void *handle_parodus()
 		    else
 		    {
 		        CcspTraceError(("LMLite: Init for parodus (url %s) failed: '%s'\n", parodus_url, libparodus_strerror(ret)));
-		        if( NULL == parodus_url ) {
-		            get_parodus_url(&parodus_url);
-		            cfg1.parodus_url = parodus_url;
-		        }
-		        sleep(backoffRetryTime);
+                        /*REVIST CID:67436 Logically dead code- parodus_url cant be NULL*/
+			get_parodus_url(&parodus_url);
+			cfg1.parodus_url = parodus_url;
+			sleep(backoffRetryTime);
 		        c++;
 		    }
 		libparodus_shutdown(client_instance);

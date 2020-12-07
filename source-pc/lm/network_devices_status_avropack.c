@@ -137,7 +137,6 @@ avro_writer_t prepare_writer_status()
   if ( schema_file_parsed == FALSE )
   {
     FILE *fp;
-
     /* open schema file */
     fp = fopen ( NETWORK_DEVICE_STATUS_AVRO_FILENAME , "rb" );
     if ( !fp ) perror( NETWORK_DEVICE_STATUS_AVRO_FILENAME " doesn't exist."), exit(1);
@@ -145,6 +144,8 @@ avro_writer_t prepare_writer_status()
     /* seek through file and get file size*/
     fseek( fp , 0L , SEEK_END);
     lSize = ftell( fp );
+    if (lSize < 0) 
+        fclose(fp), fputs("lSize is negative value", stderr), exit(1);
 
     /*back to the start of the file*/
     rewind( fp );
@@ -159,6 +160,8 @@ avro_writer_t prepare_writer_status()
       fclose(fp), free(ndsschemabuffer), ndsschemabuffer=NULL,  fputs("entire read fails", stderr), exit(1);
 
     fclose(fp);
+    /*CID:135525 String not null terminated*/
+    ndsschemabuffer[lSize] = '\0';
 
     avro_schema_error_t  error = NULL;
 

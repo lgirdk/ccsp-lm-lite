@@ -391,8 +391,9 @@ void add_to_list_ndt(char* ip_table_line)
 
     char* st = NULL;
     const char * delim = "|";
-    long long rx_packets, tx_packets = 0;
-    long long external_bytes_down, external_bytes_up = 0;
+    long long rx_packets = 0, tx_packets = 0;
+    /*CID: 61764 Uninitialized scalar variable*/
+    long long external_bytes_down = 0, external_bytes_up = 0;
     struct networkdevicetrafficdata *ptr = NULL;
 
     char* device_mac = strtok_r(ip_table_line, delim, &st);

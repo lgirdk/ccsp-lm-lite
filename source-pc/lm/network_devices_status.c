@@ -559,7 +559,8 @@ void GetLMHostData()
 
             if (lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent] != NULL)
                 {
-                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent [%x] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]));
+                    /*CID: 125016 Invalid type in argument to printf format specifier*/
+                    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Parent [%s] \n", lmHosts.hostArray[i]->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]));
                 }
             else
                 {

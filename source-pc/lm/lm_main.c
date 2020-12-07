@@ -178,6 +178,9 @@ pthread_mutex_t LmHostObjectMutex;
 pthread_mutex_t LmHostObjectMutex;
 pthread_mutex_t XLmHostObjectMutex;
 
+/*CID:69030 Parse warning*/
+void Host_FreeIPAddress(PLmObjectHost pHost, int version);
+
 int logOnlineDevicesCount()
 {
 	PLmObjectHost   pHost      = NULL;
@@ -704,26 +707,31 @@ static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
     int i, len = 0;
     PLmObjectHost pHost = NULL;
     LM_host_t *pDestHost = NULL;
-    LM_hosts_t hosts;
+    /*CID: 135565, 135577  Large stack use*/
+    LM_hosts_t *hosts = NULL;
 
-    memset(&hosts, 0, sizeof(hosts));
+    hosts = (LM_hosts_t *) malloc(sizeof(LM_hosts_t));
+    if (!hosts)
+        return;
+
     if(0 == Hosts_stop_scan()){
         PRINTD("bridge mode return 0\n");
         Hosts_PollHost();
     }
 
     pthread_mutex_lock(&LmHostObjectMutex);
-    hosts.count = lmHosts.numHost;
+    hosts->count = lmHosts.numHost;
 
-    for(i = 0; i < hosts.count; i++){
+    for(i = 0; i < hosts->count; i++){
         pHost = lmHosts.hostArray[i];
-        pDestHost = &(hosts.hosts[i]);
+        pDestHost = &(hosts->hosts[i]);
         _get_host_info(pDestHost, pHost);
     }
     pthread_mutex_unlock(&LmHostObjectMutex);
 
-    len = (hosts.count)*sizeof(LM_host_t) + sizeof(int);
-    write(fd, &hosts, len);
+    len = (hosts->count)*sizeof(LM_host_t) + sizeof(int);
+    write(fd, hosts, len);
+    free(hosts);
 }
 
 static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
@@ -786,6 +794,8 @@ END:
     write(fd, &result, sizeof(result));
 }
 static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
+#if 0
+/* Dead code, commented out the api */
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
@@ -795,13 +805,14 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
     for(i = 0; i < lmHosts.numHost; i++){
         if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
             /* Do NOT count TrueStaticIP client */
+            /* TODO CID: 74169 Structurally dead code */
             for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
                      0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) ||
                      0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4)
                    )
                 num++;
-                break;
+                break; /*logic error due to break in loop, could be under if or else*/
             }
         }
     }
@@ -809,8 +820,8 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
     result.result = LM_CMD_RESULT_OK;
     result.data.online_num = num;
     write(fd, &result, sizeof(result));
+#endif
 }
-
 static inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
 
 }
@@ -826,9 +837,10 @@ LM_cfunc_t cfunc[LM_API_CMD_MAX] = {
     _not_support_cfunc,                 //LM_API_CMD_DELETE_NETWORK,
     _not_support_cfunc,                 //LM_API_CMD_GET_NETWORK,
 };
-
 void lm_cmd_thread_func()
 {
+#if 0
+/*Dead code - comment out the api lm_cmd_thread_func() */
     socklen_t clt_addr_len;
     int listen_fd;
     int cmd_fd;
@@ -846,9 +858,20 @@ void lm_cmd_thread_func()
     srv_addr.sun_family=AF_UNIX;
     unlink(LM_SERVER_FILE_NAME);
     strcpy(srv_addr.sun_path,LM_SERVER_FILE_NAME);
-    bind(listen_fd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
-
-    listen(listen_fd, 10);
+    /*CID: 53112 Unchecked return value from library*/
+    if(bind(listen_fd, (struct sockaddr*)&srv_addr, sizeof(srv_addr)) < 0)
+    {
+	    perror("bind failed");
+            close(listen_fd);
+	    return;
+    }
+    /*CID: 55938 Unchecked return value*/
+    if(listen(listen_fd, 10) < 0)
+    {
+	    perror("listen");
+            close(listen_fd);
+	    return;
+    }
 
     PRINTD("start listen\n");
     while(1){
@@ -865,6 +888,7 @@ void lm_cmd_thread_func()
         }
         close(cmd_fd);
     }
+#endif
 }
 #endif
 
@@ -1462,10 +1486,11 @@ int XLM_get_online_device()
         for(i = 0; i < XlmHosts.numHost; i++){
         if(TRUE == XlmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
             /* Do NOT count TrueStaticIP client */
+            /*TODO CID: 70272 Structurally dead code - logic error due to loop in break*/
             for(pIP4 = XlmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if (0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4))
                         num++;
-                break;
+                  break; 
             }
         }
     }
@@ -1530,7 +1555,8 @@ void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), "empty");
         x++;
 // modify lower indexes from token index
-        for(x;x<lmHosts.numHost;x++)
+        /* CID: 108139 Expression with no effect*/
+        for( ;x<lmHosts.numHost;x++)
         {
                 tmp = 0; tAP = 0;
 

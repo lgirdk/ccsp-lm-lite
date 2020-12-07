@@ -121,6 +121,9 @@ char * LanManager_GetMACAddrFromIPv6Addr
     if(colonNum < 7){
         doubleColon = strstr(ipv6AddrOrg, "::");
         if(!doubleColon) return NULL;
+    } else {
+         /*CID: 74063 Explicit null dereferenced*/
+         return NULL;
     }
     char ipv6Addr[200] = {0};
     /* Copy to new string ipv6Addr and fill in all missed ':' to "::" */
@@ -330,6 +333,8 @@ BOOL LanManager_CheckNoneEmpty
     return TRUE;
 }
 
+/* CID: 60172 Parse warning -missing_decl_specifiers*/
+int 
 LanManager_CheckCloneCopy(char ** dest , const char * src)
 {
         size_t len_src = 0 , len_dest = 0;
