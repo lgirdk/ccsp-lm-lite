@@ -175,31 +175,29 @@ Hosts_GetParamBoolValue
     if( AnscEqualString(ParamName, "X_RDK_WebPA_PresenceNotificationEnable", TRUE))
     {
         /* collect value */
-        syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf));
-
-        if( buf != NULL )
+        /*CID:60375 Array compared against 0*/
+        if(!syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf)))
         {
             if (strcmp(buf, "true") == 0)
                 *pBool = TRUE;
             else
                 *pBool = FALSE;
+            return TRUE;
         }
-        return TRUE;
     }
 
     if( AnscEqualString(ParamName, "X_RDK_PresenceDetectEnable", TRUE))
     {
         /* collect value */
-        syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
-
-        if( buf != NULL )
+        /*CID:60375 Array compared against 0*/
+        if(!syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf)))
         {
             if (strcmp(buf, "true") == 0)
                 *pBool = TRUE;
             else
                 *pBool = FALSE;
+            return TRUE;
         }
-        return TRUE;
     }
 
 

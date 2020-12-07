@@ -35,20 +35,22 @@ void get_parodus_url(char **url)
 
     if( NULL != fp ) {
         char str[255] = {'\0'};
-        while( fscanf(fp,"%s", str) != EOF) {
+        /*CID: 135653 Calling risky function*/
+        while( fscanf(fp,"%254s", str) != EOF) {
             char *value = NULL;
             if( ( value = strstr(str, "PARODUS_URL=") ) ) {
                 value = value + strlen("PARODUS_URL=");
                 *url = strdup(value);
-                CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url is %s\n", *url));
-            }
-        }
+		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, parodus url is %s\n", *url));
+	    }
+	}
+	/*CID:59956 Dereference after null check*/
+	fclose(fp);
     } else {
-        CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to open device.properties file:%s\n", DEVICE_PROPS_FILE));
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Adding default value for parodus_url\n"));
-		*url = strdup(PARODUS_URL_DEFAULT);
+	    CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, Failed to open device.properties file:%s\n", DEVICE_PROPS_FILE));
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Adding default value for parodus_url\n"));
+	    *url = strdup(PARODUS_URL_DEFAULT);
     }
-    fclose(fp);
 
     if( NULL == *url ) {
         CcspLMLiteConsoleTrace(("RDK_LOG_ERROR, parodus url is not present in device.properties file, adding default parodus_url\n"));

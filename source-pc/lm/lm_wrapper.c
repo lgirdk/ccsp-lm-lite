@@ -43,6 +43,9 @@
 #include <linux/if_ether.h>
 #include <netpacket/packet.h>
 #include "secure_wrapper.h"
+/*usage of printf*/
+#include <stdio.h>
+
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_wrapper.h"
@@ -166,20 +169,24 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
         fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
         if (fd < 0)
         {
+            /*CID: 61675: Expression with no effect - added header file*/
             printf(("LM %s create socket erro\nr", __FUNCTION__));
             return -1;
         }
     }
-
-    strncpy(ifr.ifr_name, netName, IFNAMSIZ);
+    /*CID: 135499 Buffer overflow and not null terminated*/
+    strncpy(ifr.ifr_name, netName, IFNAMSIZ-1);
+    ifr.ifr_name[IFNAMSIZ-1] = '\0';
 
     /* get interface mac address */
     if(-1 == ioctl(fd, SIOCGIFHWADDR, &ifr)){
+       /*CID: 59688 Expression with no effect - added header file*/
         printf(("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName));
         return -1;
     }
     memcpy(m_mac, ifr.ifr_hwaddr.sa_data, 6);
     if(-1 == ioctl(fd, SIOCGIFADDR, &ifr)){
+        /* CID:65508 Expression with no effect - added header file*/
         printf(("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName));
         return -1;
     }
@@ -229,6 +236,7 @@ int lm_wrapper_init(){
 
     fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if(fd < 0){
+        /*CID: 55379 Expression with no effect - added header file*/
         printf(("LM %s create socket erro\nr", __FUNCTION__));
         return -1;
     }
@@ -1022,8 +1030,8 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
                 if(strstr(dhcpHost.ipAddr,"172.16.12.") && AnscEqualString(dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
                 {
                         pthread_mutex_lock(&XLmHostObjectMutex);
-
-                        if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+                        /*CID: 68185 Array compared against 0*/
+                        if(AnscEqualString(dhcpHost.hostName, "*", FALSE))
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
                         else
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);

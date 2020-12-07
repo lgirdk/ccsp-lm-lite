@@ -45,6 +45,9 @@
 #include <sys/un.h>
 #include "secure_wrapper.h"
 #include <string.h>
+/*usage of printf -CID:55379, 59688, 61675, 65508*/ 
+#include <stdio.h>
+
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
 #include "lm_wrapper.h"
@@ -340,8 +343,9 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
             return -1;
         }
     }
-
-    strncpy(ifr.ifr_name, netName, IFNAMSIZ);
+    /*CID: 135499 Buffer overflow and not null terminated*/
+    strncpy(ifr.ifr_name, netName, IFNAMSIZ-1);
+    ifr.ifr_name[IFNAMSIZ-1] = '\0';
 
     /* get interface mac address */
     if(-1 == ioctl(fd, SIOCGIFHWADDR, &ifr)){
@@ -484,10 +488,15 @@ void Wifi_Server_Thread_func()
 	if (bind(sockfd, (struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
 	{		
 		CcspTraceWarning(("WIFI-CLIENT <%s> <%d> : ERROR on binding  \n",__FUNCTION__, __LINE__));
+                return;
 	}
 
-	
-	listen(sockfd,10);
+	/*CID:64728 Unchecked return value*/
+	if(listen(sockfd,10) < 0)
+	{
+		CcspTraceWarning(("WIFI-CLIENT <%s> <%d> : ERROR on listen  \n",__FUNCTION__, __LINE__));
+                return;
+	}
 	clilen = sizeof(cli_addr);
 
 	SyncWiFi();
@@ -1355,8 +1364,8 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
 		if(strstr((const char *)dhcpHost.ipAddr,"172.16.12.") && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
 		{
 			pthread_mutex_lock(&XLmHostObjectMutex);
-
-			if(dhcpHost.hostName == NULL || AnscEqualString((char *)dhcpHost.hostName, "*", FALSE))
+                        /*CID: 68185 Array compared against 0*/
+			if( AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 			else
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
@@ -1447,7 +1456,8 @@ void lm_wrapper_get_dhcpv4_client()
             pthread_mutex_lock(&LmHostObjectMutex);
             if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
                 strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
-            if(dhcpHost.hostName == NULL || AnscEqualString((char *)dhcpHost.hostName, "*", FALSE))
+            /*CID: 54682 Array compared against 0*/
+            if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
@@ -1557,8 +1567,8 @@ void lm_wrapper_get_dhcpv4_reserved()
             PRINTD("%s: %s %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.ipAddr, dhcpHost.hostName);
 			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
 				strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
-				
-            if(dhcpHost.hostName == NULL || AnscEqualString((char *)dhcpHost.hostName, "*", FALSE))
+            /*CID: 71041 Array compared against 0*/				
+            if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }

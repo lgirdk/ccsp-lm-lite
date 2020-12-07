@@ -75,10 +75,22 @@ int Neighbourdiscovery_Update(BOOL enable)
     }
     syscfg_get( NULL, "lan_ifname", buf, sizeof(buf));        
     strcpy (input.interface,buf);
-    ioctl(fd, WR_VALUE, (NDSNotifyInfo*) &input); 
+    /*CID: 68224 Unchecked return value*/
+    if (-1 == ioctl(fd, WR_VALUE, (NDSNotifyInfo*) &input))
+    {
+	    printf("%s ioctl write error\n", __FUNCTION__);
+            close(fd);
+	    return -1;
+    }
 
     printf("Reading Value from Driver\n");
-    ioctl(fd, RD_VALUE, (NDSNotifyInfo*) &output);
+    /*CID: 68224 Unchecked return value*/
+    if (-1 == ioctl(fd, RD_VALUE, (NDSNotifyInfo*) &output))
+    {
+	    printf("%s ioctl read error\n", __FUNCTION__);
+            close(fd);
+	    return -1;
+    }
     printf("Value is %d\n", output.enable);
 
     printf("Closing Driver\n");
@@ -320,8 +332,11 @@ int PresenceDetection_RemoveDevice(char *mac)
         return ret_val;
     pthread_mutex_lock(&PresenceDetectionMutex);
     pobject = GetPresenceDetectionObject();
-    if (!pobject)       
+    if (!pobject) {      
+        /*CID: 135540 Missing unlock*/ 
+        pthread_mutex_unlock(&PresenceDetectionMutex);
         return ret_val;
+    }
     for(i = 0; i<pobject->numOfDevice; i++)
     {
         if (pobject->ppdevlist && pobject->ppdevlist[i])
@@ -488,8 +503,9 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
                 hints.ai_flags = hints.ai_flags | AI_CANONNAME;
 
                 // Source IP address
+                /*CID:67299 Argument cannot be negative*/
                 if ((status = inet_pton (AF_INET, src_ip, &arphdr.sender_ip)) != 1) {
-                    fprintf (stderr, "inet_pton() failed for source IP address.\nError message: %s", strerror (status));
+                    fprintf (stderr, "inet_pton() failed for source IP address.\nError message: %d - %s", status, strerror(errno));
                     exit (EXIT_FAILURE);
                 }
 
@@ -590,13 +606,14 @@ void *Send_arp_ipv4_thread (void *args)
     unsigned int ActiveClientsecs = 0;
     unsigned int InActiveClientsecs = 0;
     pobject = GetPresenceDetectionObject();
-    if (pobject)
+    /*CID: 68372 Dereference after null check*/
+    /*CID: 65919 Dereference before null check*/
+    if (!pobject)
+         return NULL;
     ++pobject->task_count;
     pthread_detach(pthread_self());
     while (pobject->taskState != STATE_DETECTION_TASK_STOP)
     {
-        if (pobject)
-        {
             pthread_mutex_lock(&PresenceDetectionMutex);
             if (pobject->ipv4_leave_detection_interval)
             {
@@ -624,13 +641,12 @@ void *Send_arp_ipv4_thread (void *args)
                 InActiveClientsecs = 0;
             }            
             pthread_mutex_unlock(&PresenceDetectionMutex);
-        }
         
         sleep(1);        
         ++ActiveClientsecs;
         ++InActiveClientsecs;
     }
-    if (pobject && (pobject->task_count > 0))
+    if (pobject->task_count > 0)
     --pobject->task_count;
     return args;
 }
@@ -725,7 +741,9 @@ int Handle_RecieveArpCache(char *line)
                     if (0 == retval)
                     {
                         if (strlen(buf) > 0)
-                        strncpy(pobj->ipv4,buf,sizeof(pobj->ipv4));
+                        /*CID:135467 Buffer not null terminated*/
+                        strncpy(pobj->ipv4,buf,sizeof(pobj->ipv4)-1);
+                        pobj->ipv4[sizeof(pobj->ipv4)-1] = '\0';
                     }
                     // trigger join callback            
                     if (pobject->clbk)
@@ -768,7 +786,9 @@ int CheckandupdatePresence(char *mac, int version, char *ipaddress,DeviceDetecti
                             pobj->ipv4_state = state;
                             if (ipaddress)
                             {
-                                strncpy(pobj->ipv4,ipaddress,sizeof(pobj->ipv4));
+                                /*CID: 135267 Buffer not null terminated*/
+                                strncpy(pobj->ipv4,ipaddress,sizeof(pobj->ipv4)-1);
+                                pobj->ipv4[sizeof(pobj->ipv4)-1] = '\0';
                             }
                         }
                         break;
@@ -780,7 +800,9 @@ int CheckandupdatePresence(char *mac, int version, char *ipaddress,DeviceDetecti
                             pobj->ipv6_state = state;
                             if (ipaddress)
                             {
-                                strncpy(pobj->ipv6,ipaddress,sizeof(pobj->ipv6));
+                                 /*CID: 135267 Buffer not null terminated*/
+                                strncpy(pobj->ipv6,ipaddress,sizeof(pobj->ipv6)-1);
+                                pobj->ipv6[sizeof(pobj->ipv6)-1] = '\0';
                             }
                         }
                         break;
@@ -858,7 +880,7 @@ void *ReceiveIpv4ClientStatus(void *args)
 
 void RecvHCPv4ClientConnects()
 {
-    int sd, new_socket;
+    int sd, new_socket, valread;
     struct sockaddr_in address; 
     int opt = 1; 
     int addrlen = sizeof(address); 
@@ -885,6 +907,8 @@ void RecvHCPv4ClientConnects()
     address.sin_family = AF_INET; 
     address.sin_addr.s_addr = INADDR_ANY; 
     address.sin_port = htons( PORT ); 
+    /*CID: 73139 Uninitialized scalar variable*/
+    memset(&address.sin_zero, 0, sizeof(address.sin_zero));
 
     // bind the socket
     if (bind(sd, (struct sockaddr *)&address,  
@@ -910,12 +934,20 @@ void RecvHCPv4ClientConnects()
         return; 
     } 
     if (pobject)
-    ++pobject->task_count;
+	    ++pobject->task_count;
 
     printf ("\n %s waiting to read socket \n",__FUNCTION__);
     while(pobject && (STATE_DETECTION_TASK_STOP != pobject->taskState))
     {
-        read( new_socket , buffer, 1024); 
+	valread = read( new_socket , buffer, 1024); 
+	if (valread < 0){
+		printf("\n %s Can not read the socket %d\n",__FUNCTION__, new_socket); 
+		close(new_socket);
+		close(sd);
+		return;
+	}
+	/* CID: 135473 String not null terminated*/
+	buffer[valread] = '\0';
         printf("\n %s\n",buffer ); 
         printf("\n Hello message sent\n");
         if(strlen(buffer) != 0)
@@ -933,7 +965,7 @@ void RecvHCPv4ClientConnects()
     }
     close(sd);
     if (pobject && (pobject->task_count > 0))
-    --pobject->task_count;
+	    --pobject->task_count;
 
 }
 
@@ -1011,6 +1043,8 @@ int open_netlink(void)
      */
     if (setsockopt(sock, 270, NETLINK_ADD_MEMBERSHIP, &group, sizeof(group)) < 0) {
         printf("setsockopt < 0\n");
+        /*CID:73081 Resource leak*/
+        close(sock);
         return -1;
     }
 
@@ -1023,16 +1057,33 @@ void read_event(int sock)
     struct sockaddr_nl nladdr;
     struct msghdr msg;
     struct iovec iov;
-    char buffer[65536];
-    char buffer1[65536];
     int ret;
+    int size = 65536;
+    char *buffer = NULL;
+    char *buffer1 = NULL;
 
+    /*CID: 135612 Large stack use*/
+    buffer = (char *) malloc(sizeof(char) * size);
+    if(!buffer)
+        return;
+
+    buffer1 = (char *) malloc(sizeof(char) * size);
+
+    if(!buffer1) {
+       free(buffer);
+       return;
+    }    
+ 
     iov.iov_base = (void *) buffer;
-    iov.iov_len = sizeof(buffer);
+    iov.iov_len = size;
     msg.msg_name = (void *) &(nladdr);
     msg.msg_namelen = sizeof(nladdr);
     msg.msg_iov = &iov;
     msg.msg_iovlen = 1;
+    /* CID: 54845 Uninitialized scalar variable*/
+    msg.msg_control         = NULL;
+    msg.msg_controllen      = 0;
+    msg.msg_flags           = 0;
 
     ret = recvmsg(sock, &msg, MSG_DONTWAIT);
     if (ret < 0)
@@ -1045,9 +1096,8 @@ void read_event(int sock)
         char* token = NULL;
         char *ip = NULL;
 
-        CcspTraceDebug(("Received message payload: %s\n", NLMSG_DATA((struct nlmsghdr *) &buffer)));
-        memset(buffer1,0,sizeof(buffer1));
-        strcpy(buffer1,NLMSG_DATA((struct nlmsghdr *) &buffer));
+        CcspTraceDebug(("Received message payload: %s\n", NLMSG_DATA((struct nlmsghdr *) buffer)));
+        strcpy(buffer1,NLMSG_DATA((struct nlmsghdr *) buffer));
         CcspTraceDebug(("buffer1: %s\n", buffer1));
         token = strtok_r(buffer1, ",", &st);
         if(token != NULL)
@@ -1056,9 +1106,11 @@ void read_event(int sock)
             ip = strtok_r(NULL, ",", &st); // ipv6 address
             pthread_mutex_lock(&PresenceDetectionMutex);
             CheckandupdatePresence(token,IPV6,ip,STATE_JOIN_DETECTED_ND);	
-            pthread_mutex_unlock(&PresenceDetectionMutex);
-        } 
+	    pthread_mutex_unlock(&PresenceDetectionMutex);
+	} 
     }
+    free(buffer);
+    free(buffer1);
 }
 
 void *RecvIPv6clientNotifications(void *args)
@@ -1147,7 +1199,10 @@ void *SendNS_Thread(void *args)
     unsigned int ActiveClientsecs = 0;
     unsigned int InActiveClientsecs = 0;
     pobject = GetPresenceDetectionObject();
-    if (pobject)
+    /*CID: 71755 Dereference after null check*/
+    /*CID: 57809 Dereference before null check*/
+    if (!pobject)
+        return NULL;
     ++pobject->task_count;
     pthread_detach(pthread_self());
 	while(pobject->taskState != STATE_DETECTION_TASK_STOP)

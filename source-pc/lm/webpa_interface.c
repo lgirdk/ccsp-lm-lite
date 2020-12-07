@@ -336,15 +336,13 @@ char * getDeviceMac()
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before WebpaInterface_DiscoverComponent ret: %d\n",ret));
 
-        if(pcomponentPath == NULL || pcomponentName == NULL)
-        {
-            if(-1 == WebpaInterface_DiscoverComponent(&pcomponentName, &pcomponentPath)){
-                CcspTraceError(("%s ComponentPath or pcomponentName is NULL\n", __FUNCTION__));
-        		pthread_mutex_unlock(&device_mac_mutex);
-                return NULL;
-            }
-            CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, WebpaInterface_DiscoverComponent ret: %d  ComponentPath %s ComponentName %s \n",ret, pcomponentPath, pcomponentName));
-        }
+        /*CID: 67711 Logically dead code - pcomponentPath and pcomponentName always NULL*/
+	if(-1 == WebpaInterface_DiscoverComponent(&pcomponentName, &pcomponentPath)){
+		CcspTraceError(("%s ComponentPath or pcomponentName is NULL\n", __FUNCTION__));
+		pthread_mutex_unlock(&device_mac_mutex);
+		return NULL;
+	}
+	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, WebpaInterface_DiscoverComponent ret: %d  ComponentPath %s ComponentName %s \n",ret, pcomponentPath, pcomponentName));
 
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before GPV ret: %d\n",ret));
         ret = CcspBaseIf_getParameterValues(bus_handle,

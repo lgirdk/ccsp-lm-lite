@@ -303,7 +303,12 @@ extern ANSC_HANDLE bus_handle;
 void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
 int extract(char* line, char* mac, char * ip);
 void Add_IPv6_from_Dibbler();
-
+/*CID: 71678,69030,67858,64481,55511 Parse warning*/
+void Send_Eth_Host_Sync_Req();
+void Host_FreeIPAddress(PLmObjectHost pHost, int version);
+void Send_MoCA_Host_Sync_Req();
+void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
+void Hosts_SyncDHCP();
 
 void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
 {
@@ -329,51 +334,50 @@ void Send_PresenceNotification(char* interface,char*mac , ClientConnectState sta
    default:
         break;
 	}
-	
-	if(mac && strlen(mac))
+
+	if(!mac || !strlen(mac))
 	{
-		
-	snprintf(str,sizeof(str)/sizeof(str[0]),"PresenceNotification,%s,%s,%s,%s",
-										interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
-										mac!=NULL ? (strlen(mac)>0 ? mac:"NULL") : "NULL",
-										status_str!=NULL ? (strlen(status_str)>0 ? status_str:"NULL") : "NULL",
-										hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
+		CcspTraceWarning(("RDKB_PRESENCE: MacAddress is NULL, hence Presence notifications are not sent\n"));
+		return;
+	}	
+	/*CID: 66850 Logically dead code -mac must be not NULL and strlen(mac) should not be 0*/
+	/*CID: 61679 Logically dead code -status_str cant be NULL as its array name*/
+	/*CID: 53803 Array compared against 0*/
+	snprintf(str,sizeof(str),"PresenceNotification,%s,%s,%s,%s",
+			interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
+			mac,
+			strlen(status_str)>0 ? status_str:"NULL",
+			hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
 
 	notif_val[0].parameterName =  param_name ;
 	notif_val[0].parameterValue = str;
 	notif_val[0].type = ccsp_string;
 
 	ret = CcspBaseIf_setParameterValues(
-		  bus_handle,
-		  compo,
-		  bus,
-		  0,
-		  0,
-		  notif_val,
-		  1,
-		  TRUE,
-		  &faultParam
-		  );
+			bus_handle,
+			compo,
+			bus,
+			0,
+			0,
+			notif_val,
+			1,
+			TRUE,
+			&faultParam
+			);
 
 	if(ret != CCSP_SUCCESS)
 	{
 		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));		
-        if(faultParam)
-        {
-            bus_info->freefunc(faultParam);
-        }
+		if(faultParam)
+		{
+			bus_info->freefunc(faultParam);
+		}
 
-	}
-    else
-    {
-		CcspTraceWarning(("RDKB_PRESENCE: Mac %s status %s Notification sent successfully\n",mac,status_str));
-
-    }
 	}
 	else
 	{
-		CcspTraceWarning(("RDKB_PRESENCE: MacAddress is NULL, hence Presence notifications are not sent\n"));
-		//printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
+		CcspTraceWarning(("RDKB_PRESENCE: Mac %s status %s Notification sent successfully\n",mac,status_str));
+
 	}
 
 }
@@ -409,45 +413,44 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
         break;
 	}
 	
-	if(mac && strlen(mac))
+	if(!mac || !strlen(mac))
 	{
-		
-	snprintf(str,sizeof(str)/sizeof(str[0]),"Connected-Client,%s,%s,%s,%s",
-										interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
-										mac!=NULL ? (strlen(mac)>0 ? mac:"NULL") : "NULL",
-										status_str!=NULL ? (strlen(status_str)>0 ? status_str:"NULL") : "NULL",
-										hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
+		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));
+		return;
+	}
+	/*CID: 64703 Logically dead code - here mac must not be NULL and strlen(mac) cant be 0*/	
+	/*CID: 55408 Logically dead code - status_str cant be null as its array name*/
+	/*CID: 55520 Array compared against 0*/
+	snprintf(str,sizeof(str),"Connected-Client,%s,%s,%s,%s",
+			interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
+			mac,
+			strlen(status_str)>0 ? status_str:"NULL",
+			hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
 
 	notif_val[0].parameterName =  param_name ;
 	notif_val[0].parameterValue = str;
 	notif_val[0].type = ccsp_string;
 
 	ret = CcspBaseIf_setParameterValues(
-		  bus_handle,
-		  compo,
-		  bus,
-		  0,
-		  0,
-		  notif_val,
-		  1,
-		  TRUE,
-		  &faultParam
-		  );
+			bus_handle,
+			compo,
+			bus,
+			0,
+			0,
+			notif_val,
+			1,
+			TRUE,
+			&faultParam
+			);
 
 	if(ret != CCSP_SUCCESS)
-        {
-		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
-                if(faultParam)
-                {
-                        bus_info->freefunc(faultParam);
-                }
-        } 	
-        }
-	else
 	{
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));
-		//printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
-	}
+		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
+		if(faultParam)
+		{
+			bus_info->freefunc(faultParam);
+		}
+	} 	
 
 }
 int FindHostInLeases(char *Temp, char *FileName)
@@ -1552,10 +1555,11 @@ int XLM_get_online_device()
 	for(i = 0; i < XlmHosts.numHost; i++){
         if(TRUE == XlmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
             /* Do NOT count TrueStaticIP client */
+            /*TODO CID: 70272 Structurally dead code - logic error due to loop in break*/
             for(pIP4 = XlmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if (0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4))
                 	num++;
-                break;
+                   break;
             }
         }
     }
@@ -1716,9 +1720,12 @@ static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
     int i, len = 0;
     PLmObjectHost pHost = NULL;
     LM_host_t *pDestHost = NULL;
-    LM_hosts_t hosts;
+    /*CID: 135585, 135577 Large stack use*/
+    LM_hosts_t *hosts = NULL;
 
-    memset(&hosts, 0, sizeof(hosts));
+    hosts = (LM_hosts_t *) malloc(sizeof(LM_hosts_t));
+    if (!hosts)
+        return;
 /*
     if(0 == Hosts_stop_scan()){
         PRINTD("bridge mode return 0\n");
@@ -1727,17 +1734,18 @@ static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
 */
 
     pthread_mutex_lock(&LmHostObjectMutex);
-    hosts.count = lmHosts.numHost;
+    hosts->count = lmHosts.numHost;
 
-    for(i = 0; i < hosts.count; i++){
+    for(i = 0; i < hosts->count; i++){
         pHost = lmHosts.hostArray[i];
-        pDestHost = &(hosts.hosts[i]);
+        pDestHost = &(hosts->hosts[i]);
         _get_host_info(pDestHost, pHost);
     }
     pthread_mutex_unlock(&LmHostObjectMutex);
 
-    len = (hosts.count)*sizeof(LM_host_t) + sizeof(int);
-    write(fd, &hosts, len);
+    len = (hosts->count)*sizeof(LM_host_t) + sizeof(int);
+    write(fd, hosts, len);
+    free(hosts);
 }
 
 static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
@@ -1797,8 +1805,11 @@ END:
     write(fd, &result, sizeof(result));
 }
 static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
+    UNREFERENCED_PARAMETER(fd);
     UNREFERENCED_PARAMETER(recv_buf);
     UNREFERENCED_PARAMETER(buf_size);
+#if 0
+/* Dead code, commented out the api */
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
@@ -1808,13 +1819,14 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
     for(i = 0; i < lmHosts.numHost; i++){
         if(TRUE == lmHosts.hostArray[i]->bBoolParaValue[LM_HOST_ActiveId]){
             /* Do NOT count TrueStaticIP client */
+            /* TODO CID: 74169 Structurally dead code - logic error*/
             for(pIP4 = lmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if ( 0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "192.168", 7) ||
                      0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) ||
                      0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4)
                    )
                 num++;
-                break;
+               break;  /*REVIST: break need to comes under ifor else part*/
             }
         }
     }
@@ -1822,8 +1834,8 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
     result.result = LM_CMD_RESULT_OK;
     result.data.online_num = num;
     write(fd, &result, sizeof(result));
+#endif
 }
-
 static inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
     UNREFERENCED_PARAMETER(fd);
     UNREFERENCED_PARAMETER(recv_buf);
@@ -1844,7 +1856,11 @@ LM_cfunc_t cfunc[LM_API_CMD_MAX] = {
 
 void *lm_cmd_thread_func(void *args)
 {
-    UNREFERENCED_PARAMETER(args);
+  UNREFERENCED_PARAMETER(args);
+  return NULL;
+#if 0
+/*Deadcode - commented out the api lm_cmd_thread_func() */
+    socklen_t clt_addr_len;
     int listen_fd;
     int cmd_fd;
     int ret;
@@ -1860,9 +1876,20 @@ void *lm_cmd_thread_func(void *args)
     srv_addr.sun_family=AF_UNIX;
     unlink(LM_SERVER_FILE_NAME);
     strcpy(srv_addr.sun_path,LM_SERVER_FILE_NAME);
-    bind(listen_fd, (struct sockaddr*)&srv_addr, sizeof(srv_addr));
-
-    listen(listen_fd, 10);
+    /*CID: 53112 Unchecked return value from library*/
+    if(bind(listen_fd, (struct sockaddr*)&srv_addr, sizeof(srv_addr)) < 0)
+    {
+	    perror("bind failed");
+            close(listen_fd);
+            return;
+    }
+    /*CID: 55938 Unchecked return value*/
+    if(listen(listen_fd, 10) < 0)
+    {
+	    perror("listen");
+            close(listen_fd);
+            return;
+    }
 
     PRINTD("start listen\n");
     while(1){
@@ -1880,7 +1907,7 @@ void *lm_cmd_thread_func(void *args)
         }
         close(cmd_fd);
     }
-    return NULL;
+#endif
 }
 #endif
 
@@ -1906,15 +1933,21 @@ void XHosts_SyncWifi()
 
             pHost = XHosts_FindHostByPhysAddress((char*)hosts[i].phyAddr);
 
-            if ( !pHost )
-            {
+	    if ( !pHost )
+	    {
 
-				pHost = XHosts_AddHostByPhysAddress((char*)hosts[i].phyAddr);
-				if ( pHost )
-                {      
-                	CcspTraceWarning(("%s, %d New XHS host added sucessfully\n",__FUNCTION__, __LINE__));
-			    }
-			}
+		    pHost = XHosts_AddHostByPhysAddress((char*)hosts[i].phyAddr);
+		    if ( pHost )
+		    {      
+			    CcspTraceWarning(("%s, %d New XHS host added sucessfully\n",__FUNCTION__, __LINE__));
+		    } else {
+			    CcspTraceError(("%s, %d New XHS host *NOT* added\n",__FUNCTION__, __LINE__));
+                            if (hosts)
+                               free(hosts);
+			    /*CID: 60384 Dereference after null check*/
+			    return;
+		    }
+	    }
 			Xlm_wrapper_get_info(pHost);
 			Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts[i].ssid);
@@ -2144,8 +2177,8 @@ void *Event_HandlerThread(void *threadid)
             }
             else
             {
-
-                if( (hosts.ssid != NULL) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
+                /*CID:63986 Array compared against 0*/
+                if( (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
                 {
                     if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], (const char *)hosts.ssid))
                     {
@@ -2802,22 +2835,17 @@ void LM_main()
     pComponentName = (char*)compName;
 	syscfg_init();
     Hosts_GetPresenceParamFromSysDb(&lmHosts.param_val); // update presence syscfg param into lmhost object.
-	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
-    if( buf != NULL )
-    	{
-   		    lmHosts.lastActivity = atol(buf);
-			
-   		}
+    /*CID: 59596 Array compared against 0*/
+    if(!syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf)))
+    {
+	    lmHosts.lastActivity = atol(buf);
+    }
 
 	memset(buf1, 0, sizeof(buf1));
 	if(syscfg_get( NULL, "X_RDKCENTRAL-COM_HostCountPeriod", buf1, sizeof(buf1)) == 0)
 	{
-    if( buf1 != NULL )
-    	{
    		    g_Client_Poll_interval =  atoi(buf1);
 			
-   		}
-		
 	}
 	else
 		{
@@ -2965,7 +2993,9 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 			sprintf((char *)ucEntryParamName ,"%s%s", dmnames[i], name);
 			varStruct.parameterName = (char *)ucEntryParamName;
    			varStruct.parameterValue = (*pList)[i].name;
-			COSAGetParamValueByPathName(bus_handle,&varStruct,&ulEntryNameLen);
+			/*CID: 73391 Unchecked return value*/
+			if(COSAGetParamValueByPathName(bus_handle,&varStruct,&ulEntryNameLen))
+				CcspTraceError(("%s Failed to get param\n",__FUNCTION__));
 
             }
         }
@@ -3097,6 +3127,10 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 									(NULL != ssid) ? ssid : "NULL",
 									RSSI,
 									Status));
+        /*CID: 71084 Dereference before null check*/
+        if(!ssid)
+           return;
+
 	Xpos2	= strstr( ssid,".3" );
 	Xpos5	= strstr( ssid,".4" );
 
@@ -3182,8 +3216,10 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 		LM_wifi_wsta_t hosts;
 		memset(&hosts, 0, sizeof(hosts));
 		if (AssociatedDevice) {
+                    /*CID:135530 Buffer not null terminated*/
 		    strncpy((char *)hosts.AssociatedDevice, AssociatedDevice,
-			sizeof(hosts.AssociatedDevice));
+			sizeof(hosts.AssociatedDevice)-1);
+                   hosts.AssociatedDevice[sizeof(hosts.AssociatedDevice)-1] = '\0';
 		}
 		if (phyAddr) {
 		    strncpy((char *)hosts.phyAddr, phyAddr, sizeof(hosts.phyAddr));
@@ -3340,7 +3376,9 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 									Status));
 
 		LM_moca_cpe_t hosts;
-
+                
+                /*CID:62979 Uninitialized scalar variable*/
+                memset (&hosts.parentMac, 0, sizeof(hosts.parentMac));
 		if(AssociatedDevice)
 		{
 			strncpy((char *)hosts.AssociatedDevice,AssociatedDevice,sizeof(hosts.AssociatedDevice)-1);
@@ -3375,7 +3413,7 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
         CHECK((mqd_t)-1 != mq);
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_MOCA;
-
+                /*CID: 62979 Uninitialized scalar variable for Field hosts.parentMac*/
 		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
@@ -3556,6 +3594,8 @@ void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
         }
         syscfg_get( NULL, "lan_ipaddr", buf_ip, sizeof(buf_ip)); 
         strcpy (EventMsg.ip,buf_ip);
+        /*CID: 70724 Uninitialized scalar variable*/
+        memset (&EventMsg.mac, 0, sizeof(EventMsg.mac));
         memcpy(buffer,&EventMsg,sizeof(EventMsg));
         CHECK(0 <= mq_send(mq, buffer, MAX_SIZE_DNSMASQ_Q, 0));
         CHECK((mqd_t)-1 != mq_close(mq));
@@ -3850,12 +3890,13 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
     if (!pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId])
         return -1;
 
-    syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf));
-
-    if( buf != NULL )
+    /*CID: 63335 Array compared against 0*/
+    if(!syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf)))
     {
         if (strcmp(buf, "true") == 0)
             notify_to_webpa = TRUE;
+    } else {
+         CcspTraceError(("Error in syscfg_get for notify_presence_webpa"));
     }
 
     if (notify_to_webpa)

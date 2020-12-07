@@ -74,8 +74,9 @@ void Presence_Detection_callback(void *arg)
             memset(&info, 0, sizeof(LmPresenceNotifyInfo));
             PLmPresenceDeviceInfo pobj = arg;
             BOOL bNotify = FALSE;
-            strncpy (info.physaddress, pobj->mac,MAC_SIZE);
-
+            /*CID:135550 Buffer not null terminated*/
+            strncpy (info.physaddress, pobj->mac,MAC_SIZE-1);
+            info.physaddress[MAC_SIZE-1] = '\0';
             if (pobj->currentActive)
             {
                 info.status = HOST_PRESENCE_JOIN;
@@ -165,12 +166,17 @@ int Hosts_UpdatePresenceDetectionStatus(LmPresenceDetectionInfo *pStatus)
         {
             LmPresenceDeviceInfo info;
             memset(&info, 0, sizeof(LmPresenceDeviceInfo));
-            strncpy (info.mac,pStatus->physaddress,MAC_SIZE);
+            /*CID: 135559 Buffer not null terminated*/
+            strncpy (info.mac,pStatus->physaddress,MAC_SIZE-1);
+            info.mac[MAC_SIZE-1] = '\0';
             info.currentActive = pStatus->currentActive;
             info.ipv4Active = pStatus->ipv4Active;
             info.ipv6Active = pStatus->ipv6Active;
-            strncpy (info.ipv4,pStatus->ipv4,IPV4_SIZE);
-            strncpy(info.ipv6, pStatus->ipv6,IPV6_SIZE);
+            /*CID: 135559 Buffer not null terminated*/
+            strncpy (info.ipv4,pStatus->ipv4,IPV4_SIZE-1);
+            info.ipv4[IPV4_SIZE-1] = '\0';
+            strncpy(info.ipv6, pStatus->ipv6,IPV6_SIZE-1);
+            info.ipv6[IPV6_SIZE-1] = '\0';
             PresenceDetection_AddDevice(&info);
         }
         else

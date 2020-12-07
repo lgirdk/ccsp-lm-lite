@@ -138,9 +138,13 @@ char * LanManager_GetMACAddrFromIPv6Addr
     if(colonNum < 7){
         doubleColon = strstr(ipv6AddrOrg, "::");
         if(!doubleColon) return NULL;
+    } else {
+       /*CID: 74063 Explicit null dereferenced*/
+       return NULL;
     }
     char ipv6Addr[200] = {0};
     /* Copy to new string ipv6Addr and fill in all missed ':' to "::" */
+
     *doubleColon = 0;
     strcpy(ipv6Addr, ipv6AddrOrg);
     for(i=0; i<=(7-colonNum); i++){

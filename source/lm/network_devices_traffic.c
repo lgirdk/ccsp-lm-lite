@@ -386,62 +386,57 @@ void add_to_list_ndt(char* ip_table_line)
 
     char * st = NULL;
     const char * delim = "|";
-    long long rx_packets, tx_packets = 0;
+    long long rx_packets = 0, tx_packets = 0;
+    /*CID: 61764 Uninitialized scalar variable*/
     long long external_bytes_down = 0, external_bytes_up = 0;
     char *device_mac = NULL, *rx_packets_str = NULL, *external_bytes_down_str = NULL, *tx_packets_str = NULL, *external_bytes_up_str = NULL;
     struct networkdevicetrafficdata *ptr = NULL;
 
     device_mac = strtok_r(ip_table_line, delim, &st);
-    if (device_mac)
+    if (!device_mac)
     {
-	rx_packets_str =  strtok_r(NULL, delim, &st);
-	if (rx_packets_str) 
-        {
-	   external_bytes_down_str = strtok_r(NULL, delim, &st);
-	   if (external_bytes_down_str) 
-	   {
-	      tx_packets_str =  strtok_r(NULL, delim, &st);
-	      if (tx_packets_str)
-	      {
-	         external_bytes_up_str = strtok_r(NULL, delim, &st);
-	      }
-           }
-        }
-     }
-     else 
-     {
 	    CcspLMLiteTrace(("RDK_LOG_ERROR, DeviceMAC is NULL \n"));
 	    return;
-     }
+    }
+    rx_packets_str =  strtok_r(NULL, delim, &st);
+    if (rx_packets_str) 
+    {
+	    external_bytes_down_str = strtok_r(NULL, delim, &st);
+	    if (external_bytes_down_str) 
+	    {
+		    tx_packets_str =  strtok_r(NULL, delim, &st);
+		    if (tx_packets_str)
+		    {
+			    external_bytes_up_str = strtok_r(NULL, delim, &st);
+		    }
+	    }
+    }
 
-	if (device_mac)
-	{
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n", device_mac ));
-	}
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, DeviceMAC[%s] \n", device_mac ));
 
-	if(rx_packets_str)
-	{
-		rx_packets = atoll(rx_packets_str);
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%lld] \n",rx_packets ));
-	}
+    if(rx_packets_str)
+    {
+	    rx_packets = atoll(rx_packets_str);
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, rx_packets[%lld] \n",rx_packets ));
+    }
 
-	if(external_bytes_down_str)
-	{
-		external_bytes_down = atoll(external_bytes_down_str);
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%lld] \n",external_bytes_down ));
-	}
-	
-	if(tx_packets_str)
-	{
-		tx_packets = atoll(tx_packets_str);
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%lld] \n", tx_packets ));
-	}
-	
-	if(external_bytes_up_str)
-	{
-		external_bytes_up = atoll(external_bytes_up_str);
-		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%lld] \n", external_bytes_up ));
-	}
+    if(external_bytes_down_str)
+    {
+	    external_bytes_down = atoll(external_bytes_down_str);
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_down[%lld] \n",external_bytes_down ));
+    }
+
+    if(tx_packets_str)
+    {
+	    tx_packets = atoll(tx_packets_str);
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, tx_packets [%lld] \n", tx_packets ));
+    }
+
+    if(external_bytes_up_str)
+    {
+	    external_bytes_up = atoll(external_bytes_up_str);
+	    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, external_bytes_up[%lld] \n", external_bytes_up ));
+    }
 
     ptr = malloc(sizeof(*ptr));
     if (ptr == NULL)
@@ -456,14 +451,8 @@ void add_to_list_ndt(char* ip_table_line)
 #endif
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%lu] \n",ptr->timestamp.tv_sec ));
 
-    if (NULL != device_mac)
-    {
-       ptr->device_mac = strdup(device_mac);
-    }
-    else
-    {
-       ptr->device_mac = NULL;
-    }
+    ptr->device_mac = strdup(device_mac);
+    /*CID: 73300 Logically dead code - returns at LINE NUM 418 if the device_mac ==NULL*/
 
     ptr->external_bytes_down = external_bytes_down;
 
