@@ -1254,14 +1254,23 @@ Host_GetParamIntValue
     if (strcmp(ParamName, "LeaseTimeRemaining") == 0)
     {
         time_t currentTime;
+        time_t LeaseTimeV4 = 0;
 
         pthread_mutex_lock(&LmHostObjectMutex);
         currentTime = time(NULL);
-        if(pHost->LeaseTime == 0xffffffff){
-            *pInt = -1;
-        }else if(currentTime <  (time_t)pHost->LeaseTime){
-            *pInt = pHost->LeaseTime - currentTime;
-        }else{
+
+        // New value is always stored in start node of PLmObjectHostIPAddress
+        if (pHost->ipv4AddrArray != NULL)
+        {
+            LeaseTimeV4 = (time_t) pHost->ipv4AddrArray->LeaseTime;
+        }
+
+        if (currentTime < LeaseTimeV4)
+        {
+            *pInt = (int) (LeaseTimeV4 - currentTime);
+        }
+        else
+        {
             *pInt = 0;
         }
 
