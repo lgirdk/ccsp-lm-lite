@@ -1309,15 +1309,28 @@ Host_GetParamIntValue
 
     if( AnscEqualString(ParamName, "LeaseTimeRemaining", TRUE))
     {
+        PLmObjectHostIPAddress pCur;
         time_t currentTime = time(NULL);
-        if(pHost->LeaseTime == 0xffffffff){
-            *pInt = -1;
-        }else if(currentTime <  (time_t)pHost->LeaseTime){
-            *pInt = pHost->LeaseTime - currentTime;
-        }else{
+        time_t LeaseTimeV4 = 0;
+
+        for (pCur = pHost->ipv4AddrArray; pCur != NULL; pCur = pCur->pNext)
+        {
+            if (LeaseTimeV4 < (time_t) pCur->LeaseTime)
+            {
+                LeaseTimeV4 = (time_t) pCur->LeaseTime;
+            }
+        }
+
+        if (currentTime < LeaseTimeV4)
+        {
+            *pInt = (int) (LeaseTimeV4 - currentTime);
+        }
+        else
+        {
             *pInt = 0;
         }
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+
+        pthread_mutex_unlock(&LmHostObjectMutex);
         return TRUE;
     }
 
