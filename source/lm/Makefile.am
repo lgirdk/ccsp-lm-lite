@@ -31,6 +31,7 @@ AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
 endif
 
 AM_LDFLAGS = -lccsp_common
+AM_LDFLAGS += -lhal_ethsw
 AM_LDFLAGS += -lsysevent
 AM_LDFLAGS += -lutapi
 AM_LDFLAGS += -lutctx
@@ -65,7 +66,7 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
                         cosa_managementserver_dml.c
                         
 
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
+libCcspLM_la_LDFLAGS =  -lccsp_common -lhal_ethsw -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
 if ENABLE_SESHAT
 libCcspLM_la_LDFLAGS +=  -llibseshat
 endif
