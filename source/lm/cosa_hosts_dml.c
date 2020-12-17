@@ -1421,15 +1421,13 @@ Host_GetParamStringValue
     pthread_mutex_lock (&LmHostObjectMutex);
 
     /*
-       Note that there two different ways to get Layer3Interface, ie:
+       Note that there two different ways to get Layer3Interface:
 
          pHost->Layer3Interface
          pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]
 
-       The original code used pHost->Layer3Interface so continue to do the
-       same, although it's not clear that that's correct, e.g.
-       pHost->Layer3Interface seems to be NULL in some (or all?) cases.
-       Fixme: to be reviewed.
+       The first one (ie pHost->Layer3Interface) should be used, so
+       add a special case to do that.
     */
     if (strcmp (ParamName, "Layer3Interface") == 0)
     {
