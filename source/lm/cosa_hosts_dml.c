@@ -128,6 +128,42 @@ extern int g_Client_Poll_interval;
     *  Hosts_SetParamStringValue
 
 ***********************************************************************/
+
+/*
+   Generic exit processing for XXX_GetParamStringValue() functions.
+   If rc is 0 then return value string (or an empty string if value is NULL)
+   with appropriate size limit checks. Otherwise just return the value in rc
+   (which is expected to be -1).
+*/
+static ULONG GetParamStringValue_common (char *pValue, ULONG *pUlSize, char *value, int rc, pthread_mutex_t *mutex)
+{
+    if (rc == 0)
+    {
+        size_t len;
+
+        if (value == NULL)
+        {
+            value = "";
+        }
+
+        len = strlen (value);
+        if (len >= *pUlSize)
+        {
+            *pUlSize = len + 1;
+            rc = 1;
+        }
+        else
+        {
+            memcpy (pValue, value, len + 1);
+        }
+    }
+
+    pthread_mutex_unlock (mutex);
+
+    return (ULONG) rc;
+}
+
+
 /**********************************************************************  
 
     caller:     owner of this object 
@@ -1425,141 +1461,47 @@ Host_GetParamStringValue
         ULONG*                      pUlSize
     )
 {
-    //printf("Host_GetParamStringValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex); 
+    char buf1[64];
+    char buf2[64];
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-    int i = 0;
-    for(; i<LM_HOST_NumStringPara; i++){
-		if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
-	    {
-	        /* collect value */
-			AnscCopyString(pValue, pHost->Layer3Interface);
-			pthread_mutex_unlock(&LmHostObjectMutex);
-	        return 0;
-	    }
-        else if( AnscEqualString(ParamName, lmHosts.pHostStringParaName[i], TRUE))
+    char *value = NULL;
+    int rc = -1;
+    int i;
+
+    //printf("Host_GetParamStringValue %p, %s\n", hInsContext, ParamName);
+
+    pthread_mutex_lock (&LmHostObjectMutex);
+
+    /*
+       Note that there two different ways to get Layer3Interface, ie:
+
+         pHost->Layer3Interface
+         pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]
+
+       The original code used pHost->Layer3Interface so continue to do the
+       same, although it's not clear that that's correct, e.g.
+       pHost->Layer3Interface seems to be NULL in some (or all?) cases.
+       Fixme: to be reviewed.
+    */
+    if (AnscEqualString (ParamName, "Layer3Interface", TRUE))
+    {
+        rc = 0;
+        value = pHost->Layer3Interface;
+    }
+    else
+    {
+        for (i = 0; i < LM_HOST_NumStringPara; i++)
         {
-            /* collect value */
-            size_t len = 0;
-            if(pHost->pStringParaValue[i]) len = strlen(pHost->pStringParaValue[i]);
-            if(*pUlSize <= len){
-                *pUlSize = len + 1;
-				pthread_mutex_unlock(&LmHostObjectMutex); 
-                return 1;
+            if (AnscEqualString (ParamName, lmHosts.pHostStringParaName[i], TRUE))
+            {
+                rc = 0;
+                value = pHost->pStringParaValue[i];
+                break;
             }
-            AnscCopyString(pValue, pHost->pStringParaValue[i]);
-			pthread_mutex_unlock(&LmHostObjectMutex); 
-            return 0;
         }
     }
-#if 0
-    /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "Alias", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
 
-    if( AnscEqualString(ParamName, "PhysAddress", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "IPAddress", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "DHCPClient", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "AssociatedDevice", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "Layer1Interface", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "HostName", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_UPnPDevice", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_HNAPDevice", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_DNSRecords", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_HardwareVendor", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_SoftwareVendor", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_SerialNumbre", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_DefinedDeviceType", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_DefinedHWVendor", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-
-    if( AnscEqualString(ParamName, "X_CISCO_COM_DefinedSWVendor", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-#endif
-
-    /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
-	pthread_mutex_unlock(&LmHostObjectMutex); 
-    return -1;
+    return GetParamStringValue_common (pValue, pUlSize, value, rc, &LmHostObjectMutex);
 }
 
 /**********************************************************************  
@@ -2194,38 +2136,26 @@ Host_IPv4Address_GetParamStringValue
         ULONG*                      pUlSize
     )
 {
-    //printf("IPv4Address_GetParamStringValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHostIPAddress pIPv4Address = (PLmObjectHostIPAddress) hInsContext;
-    int i = 0;
-    for(; i<LM_HOST_IPv4Address_NumStringPara; i++){
-        if( AnscEqualString(ParamName, lmHosts.pIPv4AddressStringParaName[i], TRUE))
+    char *value = NULL;
+    int rc = -1;
+    int i;
+
+    //printf("IPv4Address_GetParamStringValue %p, %s\n", hInsContext, ParamName);
+
+    pthread_mutex_lock(&LmHostObjectMutex);
+
+    for (i = 0; i < LM_HOST_IPv4Address_NumStringPara; i++)
+    {
+        if (AnscEqualString (ParamName, lmHosts.pIPv4AddressStringParaName[i], TRUE))
         {
-            /* collect value */
-            size_t len = 0;
-            if(pIPv4Address->pStringParaValue[i]) len = strlen(pIPv4Address->pStringParaValue[i]);
-            if(*pUlSize <= len){
-                *pUlSize = len + 1;
-				pthread_mutex_unlock(&LmHostObjectMutex);
-                return 1;
-            }
-            AnscCopyString(pValue, pIPv4Address->pStringParaValue[i]);
-			pthread_mutex_unlock(&LmHostObjectMutex);
-            return 0;
+            rc = 0;
+            value = pIPv4Address->pStringParaValue[i];
+            break;
         }
     }
-#if 0
-    /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "IPAddress", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-#endif
 
-    /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
-	pthread_mutex_unlock(&LmHostObjectMutex);
-    return -1;
+    return GetParamStringValue_common (pValue, pUlSize, value, rc, &LmHostObjectMutex);
 }
 
 /***********************************************************************
@@ -2516,37 +2446,25 @@ Host_IPv6Address_GetParamStringValue
         ULONG*                      pUlSize
     )
 {
-    //printf("IPv6Address_GetParamStringValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHostIPAddress pIPv6Address = (PLmObjectHostIPAddress) hInsContext;
-    int i = 0;
-    for(; i<LM_HOST_IPv6Address_NumStringPara; i++){
-        if( AnscEqualString(ParamName, lmHosts.pIPv6AddressStringParaName[i], TRUE))
+    char *value = NULL;
+    int rc = -1;
+    int i;
+
+    //printf("IPv6Address_GetParamStringValue %p, %s\n", hInsContext, ParamName);
+
+    pthread_mutex_lock(&LmHostObjectMutex);
+
+    for (i = 0; i < LM_HOST_IPv6Address_NumStringPara; i++)
+    {
+        if (AnscEqualString (ParamName, lmHosts.pIPv6AddressStringParaName[i], TRUE))
         {
-            /* collect value */
-            size_t len = 0;
-            if(pIPv6Address->pStringParaValue[i]) len = strlen(pIPv6Address->pStringParaValue[i]);
-            if(*pUlSize <= len){
-                *pUlSize = len + 1;
-				pthread_mutex_unlock(&LmHostObjectMutex);
-                return 1;
-            }
-            AnscCopyString(pValue, pIPv6Address->pStringParaValue[i]);
-			pthread_mutex_unlock(&LmHostObjectMutex);
-            return 0;
+            rc = 0;
+            value = pIPv6Address->pStringParaValue[i];
+            break;
         }
     }
-#if 0
-    /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "IPAddress", TRUE))
-    {
-        /* collect value */
-        return 0;
-    }
-#endif
 
-    /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
-	pthread_mutex_unlock(&LmHostObjectMutex);
-    return -1;
+    return GetParamStringValue_common (pValue, pUlSize, value, rc, &LmHostObjectMutex);
 }
 
