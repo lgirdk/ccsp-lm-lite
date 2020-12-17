@@ -1448,15 +1448,19 @@ Host_GetParamStringValue
     pthread_mutex_lock (&LmHostObjectMutex);
 
     /*
-       Note that there two different ways to get Layer3Interface, ie:
+       Note that there two different ways to get Layer3Interface:
 
          pHost->Layer3Interface
          pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]
 
-       The original code used pHost->Layer3Interface so continue to do the
-       same, although it's not clear that that's correct, e.g.
-       pHost->Layer3Interface seems to be NULL in some (or all?) cases.
-       Fixme: to be reviewed.
+       Originally the upstream code checked pHost->Layer3Interface first
+       but that was changed by Comcast during a Safe C cleanup (with no
+       comments etc explaining why):
+
+         bd9d457 RDKB-35627 : CLONE - [SEC_UPLIFT] Replacing SDL banned C
+
+       That Comcast change turned out to be wrong. Switch back to checking
+       pHost->Layer3Interface first.
     */
     if (strcmp (ParamName, "Layer3Interface") == 0)
     {
