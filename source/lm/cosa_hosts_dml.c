@@ -607,21 +607,21 @@ Hosts_GetParamStringValue
     return -1;
 }
 
-int DelimiterCount(char *inputstring) {
-    char string[1024] = {0};
-    char *tmp;
-    int countval = 0;
-    strncpy(string, inputstring,strlen(inputstring));
-    tmp = string;
-    while (tmp[0] != '\0' && ((tmp = strchr(tmp, ',')) != NULL)) {
-        countval++;
-        tmp++;
+static int DelimiterCount (char *inputstring)
+{
+    int c;
+    int count = 0;
+
+    while ((c = *inputstring++) != 0) {
+        if (c == ',')
+            count++;
     }
-    return countval;
+
+    return count;
 }
 
 /*returns 1 if the passed string is a number or a negative number otherwise returns 0*/
-int IsNumberString(char *string)
+static int IsNumberString(char *string)
 {
     int j;
     if (!string) {
@@ -641,9 +641,7 @@ int IsNumberString(char *string)
     return 1;
 }
 
-
-
-int IsProperMac(const char* mac)
+static int IsProperMac(const char* mac)
 {
     int i = 0;
     int s = 0;
