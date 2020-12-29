@@ -311,148 +311,143 @@ static char *_CloneString (const char *src);
 extern ANSC_HANDLE bus_handle;
 static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost);
 
-void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
+static void Send_PresenceNotification (char *interface, char *mac, ClientConnectState status, char *hostname)
 {
+    char str[500];
+    parameterValStruct_t notif_val[1];
+    char *param_name = "Device.NotifyComponent.SetNotifi_ParamName";
+    char *compo = "eRT.com.cisco.spvtg.ccsp.notifycomponent";
+    char *bus = "/com/cisco/spvtg/ccsp/notifycomponent";
+    char *faultParam = NULL;
+    char *status_str;
+    int ret;
 
-	char  str[500] = {0};
-	parameterValStruct_t notif_val[1];
-	char param_name[256] = "Device.NotifyComponent.SetNotifi_ParamName";
-	char compo[256] = "eRT.com.cisco.spvtg.ccsp.notifycomponent";
-	char bus[256] = "/com/cisco/spvtg/ccsp/notifycomponent";
-	char* faultParam = NULL;
-	int ret = 0;
-	char status_str[256]={0};
-	
+    CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *) bus_handle;
 
-	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
-	switch (status) {
-	case CLIENT_STATE_OFFLINE:
-	    strcpy(status_str,"Presence Leave Detected");
-	    break;
-   case CLIENT_STATE_ONLINE:
-        strcpy(status_str,"Presence Join Detected");
-        break;
-   default:
-        break;
-	}
+    if (mac && strlen(mac))
+    {
+        switch (status) {
+            case CLIENT_STATE_OFFLINE:
+                status_str = "Presence Leave Detected";
+                break;
+            case CLIENT_STATE_ONLINE:
+                status_str = "Presence Join Detected";
+                break;
+            default:
+                status_str = "NULL";
+                break;
+        }
 
-	if(!mac || !strlen(mac))
-	{
-		CcspTraceWarning(("RDKB_PRESENCE: MacAddress is NULL, hence Presence notifications are not sent\n"));
-		return;
-	}	
-	/*CID: 66850 Logically dead code -mac must be not NULL and strlen(mac) should not be 0*/
-	/*CID: 61679 Logically dead code -status_str cant be NULL as its array name*/
-	/*CID: 53803 Array compared against 0*/
-	snprintf(str,sizeof(str),"PresenceNotification,%s,%s,%s,%s",
-			interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
-			mac,
-			strlen(status_str)>0 ? status_str:"NULL",
-			hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
+        snprintf (str, sizeof(str), "PresenceNotification,%s,%s,%s,%s",
+                                    interface != NULL ? (strlen(interface) > 0 ? interface : "NULL") : "NULL",
+                                    mac,
+                                    status_str,
+                                    hostname != NULL ? (strlen(hostname) > 0 ? hostname : "NULL") : "NULL");
 
-	notif_val[0].parameterName =  param_name ;
-	notif_val[0].parameterValue = str;
-	notif_val[0].type = ccsp_string;
+        notif_val[0].parameterName = param_name;
+        notif_val[0].parameterValue = str;
+        notif_val[0].type = ccsp_string;
 
-	ret = CcspBaseIf_setParameterValues(
-			bus_handle,
-			compo,
-			bus,
-			0,
-			0,
-			notif_val,
-			1,
-			TRUE,
-			&faultParam
-			);
+        ret = CcspBaseIf_setParameterValues (
+                bus_handle,
+                compo,
+                bus,
+                0,
+                0,
+                notif_val,
+                1,
+                TRUE,
+                &faultParam);
 
-	if(ret != CCSP_SUCCESS)
-	{
-		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));		
-		if(faultParam)
-		{
-			bus_info->freefunc(faultParam);
-		}
-
-	}
-	else
-	{
-		CcspTraceWarning(("RDKB_PRESENCE: Mac %s status %s Notification sent successfully\n",mac,status_str));
-
-	}
-
+        if (ret != CCSP_SUCCESS)
+        {
+            CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
+            if (faultParam)
+            {
+                bus_info->freefunc(faultParam);
+            }
+        }
+        else
+        {
+            CcspTraceWarning(("RDKB_PRESENCE: Mac %s status %s Notification sent successfully\n",mac,status_str));
+        }
+    }
+    else
+    {
+        CcspTraceWarning(("RDKB_PRESENCE: MacAddress is NULL, hence Presence notifications are not sent\n"));
+        //printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
+    }
 }
 
-void Send_Notification(char* interface, char*mac , ClientConnectState status, char *hostname)
+static void Send_Notification (char *interface, char *mac, ClientConnectState status, char *hostname)
 {
+    char str[500];
+    parameterValStruct_t notif_val[1];
+    char *param_name = "Device.NotifyComponent.SetNotifi_ParamName";
+    char *compo = "eRT.com.cisco.spvtg.ccsp.notifycomponent";
+    char *bus = "/com/cisco/spvtg/ccsp/notifycomponent";
+    char *faultParam = NULL;
+    char *status_str;
+    int ret;
 
-	char  str[500] = {0};
-	parameterValStruct_t notif_val[1];
-	char param_name[256] = "Device.NotifyComponent.SetNotifi_ParamName";
-	char compo[256] = "eRT.com.cisco.spvtg.ccsp.notifycomponent";
-	char bus[256] = "/com/cisco/spvtg/ccsp/notifycomponent";
-	char* faultParam = NULL;
-	int ret = 0;
-	char status_str[16]={0};
-	
+    CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *) bus_handle;
 
-	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
-	switch (status) {
-	case CLIENT_STATE_OFFLINE:
-	    strcpy(status_str,"Offline");
-	    break;
-    case CLIENT_STATE_DISCONNECT:
-        strcpy(status_str,"Disconnected");
-        break;
-    case CLIENT_STATE_ONLINE:
-        strcpy(status_str,"Online");
-        break;
-    case CLIENT_STATE_CONNECT:
-        strcpy(status_str,"Connected");
-        break;
-    default:
-        break;
-	}
-	
-	if(!mac || !strlen(mac))
-	{
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));
-		return;
-	}
-	/*CID: 64703 Logically dead code - here mac must not be NULL and strlen(mac) cant be 0*/	
-	/*CID: 55408 Logically dead code - status_str cant be null as its array name*/
-	/*CID: 55520 Array compared against 0*/
-	snprintf(str,sizeof(str),"Connected-Client,%s,%s,%s,%s",
-			interface!=NULL ? (strlen(interface)>0 ? interface:"NULL" ): "NULL",
-			mac,
-			strlen(status_str)>0 ? status_str:"NULL",
-			hostname!=NULL ? (strlen(hostname)>0 ?hostname:"NULL"):"NULL");
+    if (mac && strlen(mac))
+    {
 
-	notif_val[0].parameterName =  param_name ;
-	notif_val[0].parameterValue = str;
-	notif_val[0].type = ccsp_string;
+        switch (status) {
+            case CLIENT_STATE_OFFLINE:
+                status_str = "Offline";
+                break;
+            case CLIENT_STATE_DISCONNECT:
+                status_str = "Disconnected";
+                break;
+            case CLIENT_STATE_ONLINE:
+                status_str = "Online";
+                break;
+            case CLIENT_STATE_CONNECT:
+                status_str = "Connected";
+                break;
+            default:
+                status_str = "NULL";
+                break;
+        }
 
-	ret = CcspBaseIf_setParameterValues(
-			bus_handle,
-			compo,
-			bus,
-			0,
-			0,
-			notif_val,
-			1,
-			TRUE,
-			&faultParam
-			);
+        snprintf (str, sizeof(str), "Connected-Client,%s,%s,%s,%s",
+                                    interface != NULL ? (strlen(interface) > 0 ? interface : "NULL") : "NULL",
+                                    mac,
+                                    status_str,
+                                    hostname != NULL ? (strlen(hostname) > 0 ? hostname : "NULL") : "NULL");
 
-	if(ret != CCSP_SUCCESS)
-	{
-		CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
-		if(faultParam)
-		{
-			bus_info->freefunc(faultParam);
-		}
-	} 	
+        notif_val[0].parameterName = param_name;
+        notif_val[0].parameterValue = str;
+        notif_val[0].type = ccsp_string;
 
+        ret = CcspBaseIf_setParameterValues (
+                bus_handle,
+                compo,
+                bus,
+                0,
+                0,
+                notif_val,
+                1,
+                TRUE,
+                &faultParam);
+
+        if (ret != CCSP_SUCCESS)
+        {
+            CcspTraceWarning(("\n LMLite <%s> <%d >  Notification Failure %d \n",__FUNCTION__,__LINE__, ret));
+            if (faultParam)
+            {
+                bus_info->freefunc(faultParam);
+            }
+        }
+    }
+    else
+    {
+        CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n"));
+        //printf("RDKB_CONNECTED_CLIENTS: MacAddress is NULL, hence Connected-Client notifications are not sent\n");
+    }
 }
 
 #if 0
