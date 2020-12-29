@@ -108,6 +108,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -458,34 +459,27 @@ static void Send_Notification (char *interface, char *mac, ClientConnectState st
 #if 0
 static int FindHostInLeases (char *Temp, char *FileName)
 {
-	FILE *fp = NULL;
-	char buf[200] = {0};
-	int ret = 0;
-	
-	if ( (fp=fopen(FileName, "r")) == NULL )
-	{
-		return 1;
-	}
+    char buf[200];
+    FILE *fp;
+    int ret = 1;
 
-	while ( fgets(buf, sizeof(buf), fp)!= NULL )
-	{
-	
-		if(strstr(buf,Temp))
-		{
-			
-			ret = 0;
-			
-			break;
-		}
-		else
-		{
-			ret = 1;
-		}
+    if ((fp = fopen (FileName, "r")) == NULL)
+    {
+        return 1;
+    }
 
+    while (fgets (buf, sizeof(buf), fp) != NULL)
+    {
+        if (strstr (buf, Temp))
+        {
+            ret = 0;
+            break;
+        }
+    }
 
-	}
-	fclose(fp);
-	return ret; 
+    fclose (fp);
+
+    return ret;
 }
 #endif
 
@@ -493,20 +487,23 @@ static int FindHostInLeases (char *Temp, char *FileName)
 
 static int logOnlineDevicesCount (void)
 {
-	PLmObjectHost   pHost      = NULL;
-	int NumOfOnlineDevices = 0;
-	int i;
-	for ( i = 0; i < lmHosts.numHost; i++ )
-	{               
-		pHost = lmHosts.hostArray[i];
+    PLmObjectHost pHost;
+    int NumOfOnlineDevices = 0;
+    int i;
 
-		if(pHost->bBoolParaValue[LM_HOST_ActiveId])
-		{
-			NumOfOnlineDevices ++;
-		}
-	}
-	CcspTraceWarning(("CONNECTED_CLIENTS_COUNT : %d \n",NumOfOnlineDevices));
-	return NumOfOnlineDevices;
+    for (i = 0; i < lmHosts.numHost; i++)
+    {
+        pHost = lmHosts.hostArray[i];
+
+        if (pHost->bBoolParaValue[LM_HOST_ActiveId])
+        {
+            NumOfOnlineDevices++;
+        }
+    }
+
+    CcspTraceWarning(("CONNECTED_CLIENTS_COUNT : %d \n",NumOfOnlineDevices));
+
+    return NumOfOnlineDevices;
 }
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
@@ -757,7 +754,6 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 static void _getLanHostComments(char *physAddress, char *pComments)
 {
     lm_wrapper_priv_getLanHostComments(physAddress, pComments);
-    return;
 }
 
 static inline BOOL _isIPv6Addr(const char* ipAddr)
@@ -1055,135 +1051,163 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
     return NULL;
 }
 
-#define MACADDR_SZ          18
-#define ATOM_MAC "00:00:ca:01:02:03"
-#define ATOM_MAC_CSC "00:05:04:03:02:01"
+#define MACADDR_SZ      18
+#define ATOM_MAC        "00:00:ca:01:02:03"
+#define ATOM_MAC_CSC    "00:05:04:03:02:01"
 
-static BOOL validate_mac(char *physAddress)
+static int validate_mac (char *physAddress)
 {
-	if (physAddress && physAddress[0]) {
-	    if(physAddress[2] == ':')
-		if(physAddress[5] == ':')
-			if(physAddress[8] == ':')
-				if(physAddress[11] == ':')
-					if(physAddress[14] == ':')
-					  return TRUE;
-	}
+    int i;
 
-	return FALSE;
+    for (i = 0; i < 6; i++)
+    {
+        if ((isxdigit(physAddress[0])) &&
+            (isxdigit(physAddress[1])) &&
+            (physAddress[2] == ((i == 5) ? 0 : ':')))
+        {
+            physAddress += 3;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
 {
-    char comments[256] = {0};
-    char ssid[LM_GEN_STR_SIZE]={0};
-	if(!physAddress || !validate_mac(physAddress))
-	{
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
-		return NULL;
-	}
-		
-    if(!physAddress || \
-       0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
+    char comments[256];
 
-    if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
+    if (!physAddress || (validate_mac(physAddress) != 0))
+    {
+        CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
+        return NULL;
+    }
+
+    if ((strlen(physAddress) != (MACADDR_SZ - 1)) ||
+        (memcmp(physAddress, "00:00:00:00:00:00", MACADDR_SZ) == 0))
+    {
+        return NULL;
+    }
+
     PLmObjectHost pHost = XHosts_FindHostByPhysAddress(physAddress);
-    if(pHost) return pHost;
-	
+    if (pHost)
+        return pHost;
+
     pHost = XHosts_AddHost(XlmHosts.availableInstanceNum);
-    if(pHost){
+
+    if (pHost)
+    {
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
         pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
+
+        comments[0] = 0;
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
         {
             pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
         }
-		
-		pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Device.WiFi.SSID.3");
-   		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
-		pHost->bClientReady = FALSE;
-		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
-		XlmHosts.availableInstanceNum++;
+
+        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Device.WiFi.SSID.3");
+        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
+        pHost->bClientReady = FALSE;
+        //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
+        XlmHosts.availableInstanceNum++;
     }
+
     CcspTraceWarning(("New XHS host added sucessfully\n"));
+
     return pHost;
 }
 
 PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 {
-    char comments[256] = {0};
-    char ssid[LM_GEN_STR_SIZE]={0};
+    char comments[256];
 
-    if(!physAddress || \
-       0 == strcmp(physAddress, "00:00:00:00:00:00")) return NULL;
+    if (!physAddress || (validate_mac(physAddress) != 0))
+    {
+        CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
+        return NULL;
+    }
 
-    if(strlen(physAddress) != MACADDR_SZ-1) return NULL;
+    if ((strlen(physAddress) != (MACADDR_SZ - 1)) ||
+        (memcmp(physAddress, "00:00:00:00:00:00", MACADDR_SZ) == 0))
+    {
+        return NULL;
+    }
 
-	if(!validate_mac(physAddress))
-	{
-		CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
-		return NULL;
-	}
-		
     PLmObjectHost pHost = Hosts_FindHostByPhysAddress(physAddress);
-    if(pHost) return pHost;
-	
-	if((!strcmp(ATOM_MAC,physAddress))||(!strcmp(ATOM_MAC_CSC,physAddress)))
-	{
-		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
-		return NULL;
-	}
+    if (pHost)
+        return pHost;
+
+    if ((strcasecmp(physAddress, ATOM_MAC) == 0) ||
+        (strcasecmp(physAddress, ATOM_MAC_CSC) == 0))
+    {
+        //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
+        return NULL;
+    }
+
     pHost = Hosts_AddHost(lmHosts.availableInstanceNum);
-    if(pHost){
+
+    if (pHost)
+    {
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
         pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
+
+        comments[0] = 0;
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
         {
             pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
         }
+
         pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId] = Hosts_GetPresenceNotificationEnableStatus(physAddress);
+
 /* #ifdef USE_NOTIFY_COMPONENT
         if(bWifiHost)
         {
-			if(SearchWiFiClients(physAddress,ssid))
-			{
-				pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(ssid);
-				bWifiHost = FALSE;
-			}
-			else
-			{
-				pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
-			}
+            char ssid[LM_GEN_STR_SIZE] = {0};
+
+            if(SearchWiFiClients(physAddress,ssid))
+            {
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(ssid);
+                bWifiHost = FALSE;
+            }
+            else
+            {
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+            }
 
         }
         else
 #endif
 */
-		if( physAddress &&
-		        (strncasecmp(physAddress,"60:b4:f7:", 9)==0 ||
-                 strncasecmp(physAddress,"58:90:43:", 9)==0 ||
-	             strncasecmp(physAddress,"b8:ee:0e:", 9)==0 ||
-	             strncasecmp(physAddress,"b8:d9:4d:", 9)==0))
-			pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Mesh");
-		else
-			pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
-        
-		pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
-		pHost->bClientReady = FALSE;
-		//CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
-		lmHosts.availableInstanceNum++;
+        if ((strncasecmp (physAddress, "60:b4:f7:", 9) == 0) ||
+            (strncasecmp (physAddress, "58:90:43:", 9) == 0) ||
+            (strncasecmp (physAddress, "b8:ee:0e:", 9) == 0) ||
+            (strncasecmp (physAddress, "b8:d9:4d:", 9) == 0))
+        {
+            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Mesh");
+        }
+        else
+        {
+            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+        }
+
+        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
+        pHost->bClientReady = FALSE;
+        //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
+        lmHosts.availableInstanceNum++;
 
 #ifdef USE_NOTIFY_COMPONENT
-	
-	CcspTraceWarning(("LMlite-CLIENT <%s> <%d> : Connected Mac = %s \n",__FUNCTION__,__LINE__ ,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-	pHost->bNotify = FALSE;
+        CcspTraceWarning(("LMlite-CLIENT <%s> <%d> : Connected Mac = %s \n",__FUNCTION__,__LINE__ ,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+        pHost->bNotify = FALSE;
 #endif
-    return pHost;
-	}
+    }
 
-	return NULL;
+    return pHost;
 }
 
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version)
@@ -1413,7 +1437,7 @@ static void _set_comment_ (LM_cmd_comment_t *cmd)
     PLmObjectHost pHost;
     char mac[18];
 	
-    snprintf(mac,sizeof(mac)/sizeof(mac[0]), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
+    snprintf (mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x", cmd->mac[0], cmd->mac[1], cmd->mac[2], cmd->mac[3], cmd->mac[4], cmd->mac[5]);
 
     /* set comment value into syscfg */
     /* we don't check whether this device is in our LmObject list */
@@ -1435,7 +1459,7 @@ static void _set_comment_ (LM_cmd_comment_t *cmd)
 
 char *FindMACByIPAddress (char *ip_address)
 {
-	if(ip_address)
+	if (ip_address)
 	{
 	    int i = 0;
 	    for(; i<lmHosts.numHost; i++){
@@ -2456,10 +2480,10 @@ static void Hosts_LoggingThread (void)
 
 static void Hosts_StatSyncThreadFunc (void)
 {
-    int i,count;
-    char cmd[64] = {0};
-    int ret;
     static BOOL bridgemode = FALSE;
+
+    int i,count;
+    int ret;
     PLmObjectHost   pHost      = NULL;
     LM_host_entry_t *hosts     = NULL;
     LM_wifi_wsta_t  *wifiHosts = NULL;
@@ -2512,46 +2536,46 @@ void Hosts_PollHost (void)
 
 static BOOL ValidateHost (char *mac)
 {
-    char buf[200] = {0};
-    FILE *fp = NULL;
+    char buf[200];
+    FILE *fp;
 
     snprintf(buf, sizeof(buf), "ip nei show | grep -i %s > %s", mac, ARP_CACHE);
     system(buf);
-    if (NULL == (fp = fopen(ARP_CACHE, "r")))
+
+    if ((fp = fopen(ARP_CACHE, "r")) == NULL)
     {
         return FALSE;
     }
-    memset(buf, 0, sizeof(buf));
-    if(fgets(buf, sizeof(buf), fp)!= NULL)
+
+    if (fgets (buf, sizeof(buf), fp) != NULL)
     {
         fclose(fp);
         unlink(ARP_CACHE);
         return TRUE;
     }
-    else
+
+    fclose(fp);
+    fp = NULL;
+    unlink(ARP_CACHE);
+
+    snprintf(buf, sizeof(buf), "cat %s | grep -i %s > %s", DNSMASQ_FILE, mac, DNSMASQ_CACHE);
+    system(buf);
+
+    if ((fp = fopen(DNSMASQ_CACHE, "r")) == NULL)
+    {
+        CcspTraceWarning(("%s not able to open dnsmasq cache file\n", __FUNCTION__));
+        return FALSE;
+    }
+
+    if (fgets (buf, sizeof(buf), fp) != NULL)
     {
         fclose(fp);
-        fp = NULL;
-        unlink(ARP_CACHE);
-
-        memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf), "cat %s | grep -i %s > %s", DNSMASQ_FILE, mac, DNSMASQ_CACHE);
-        system(buf);
-        if (NULL == (fp = fopen(DNSMASQ_CACHE, "r")))
-        {
-            CcspTraceWarning(("%s not able to open dnsmasq cache file\n", __FUNCTION__));
-            return FALSE;
-        }
-        memset(buf, 0, sizeof(buf));
-        if(NULL != fgets(buf, sizeof(buf), fp))
-        {
-            fclose(fp);
-            unlink(DNSMASQ_CACHE);
-            return TRUE;
-        }
-        fclose(fp);
         unlink(DNSMASQ_CACHE);
+        return TRUE;
     }
+
+    fclose(fp);
+    unlink(DNSMASQ_CACHE);
 
     return FALSE;
 }
@@ -2713,7 +2737,9 @@ static void *ValidateHostRetry_Thread (void *arg)
             }
         }
         pthread_mutex_unlock(&LmRetryHostListMutex);
-    } while (1);
+    }
+    while (1);
+
     pthread_exit(NULL);
 }
 
@@ -2771,14 +2797,15 @@ static void *ValidateHost_Thread (void *arg)
     pthread_exit(NULL);
 }
 
-const char compName[25]="LOG.RDK.LM";
+static const char *compName = "LOG.RDK.LM";
 
 void LM_main (void)
 {
     int res;
     void *status;
     char buf[12]; // this value is reading a ULONG
-	char buf1[8]; // this is reading an int
+	char buf1[12]; // this is reading an int
+
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
 	pthread_mutex_init(&XLmHostObjectMutex,0);
@@ -2804,10 +2831,9 @@ void LM_main (void)
 	syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf));
 	lmHosts.lastActivity = atol(buf);
 
-	memset(buf1, 0, sizeof(buf1));
 	if(syscfg_get( NULL, "X_RDKCENTRAL-COM_HostCountPeriod", buf1, sizeof(buf1)) == 0)
 	{
-		g_Client_Poll_interval =  atoi(buf1);
+		g_Client_Poll_interval = atoi(buf1);
 	}
 	else
 		{
@@ -3509,7 +3535,7 @@ PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAd
 BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
 {
     char buf1[16];
-    memset(buf1, 0, sizeof(buf1));
+
     snprintf(buf1,sizeof(buf1),"%d",uValue);
     if (syscfg_set(NULL, paramName , buf1) != 0) {
         return FALSE;
@@ -3557,6 +3583,7 @@ int Hosts_EnablePresenceDetectionTask()
 {
     int ret_val = 0;
     char buf[12];
+
     syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
     if ((!strcmp(buf,"true")) && (!lmHosts.enablePresence))
     {
@@ -3653,7 +3680,7 @@ BOOL Hosts_GetPresenceNotificationEnableStatus(char *Mac)
 
 int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut)
 {
-    char result[16] = {0};
+    char result[16];
 
     if (!paramOut)
         return -1;
