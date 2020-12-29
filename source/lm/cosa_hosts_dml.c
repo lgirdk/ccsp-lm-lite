@@ -72,6 +72,7 @@
 #include "lm_util.h"
 #include "ctype.h"
 #include <syscfg/syscfg.h>
+#include <sysevent/sysevent.h>
 #include "safec_lib_common.h"
 
 extern LmObjectHosts lmHosts;
@@ -1076,7 +1077,8 @@ Host_IsUpdated
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if ( HostsUpdateTime == 0 ) 
+
+    if ( HostsUpdateTime == 0  || (HostsUpdateTime > AnscGetTickInSeconds()) )
     {
         HostsUpdateTime = AnscGetTickInSeconds();
 
@@ -1093,6 +1095,32 @@ Host_IsUpdated
 
         return TRUE;
     }
+}
+
+#define RESP_STR_LEN        128
+#define SE_WELL_KNOWN_IP    "127.0.0.1"
+
+static BOOL getSysevent(char *event, char *value, int valueLen)
+{
+    int sysevent_fd;
+    token_t sysevent_token = 0;
+
+    value[0] = 0;
+
+    sysevent_fd = sysevent_open(SE_WELL_KNOWN_IP, SE_SERVER_WELL_KNOWN_PORT, SE_VERSION, event, &sysevent_token);
+    if (sysevent_fd < 0)
+    {
+        return FALSE;
+    }
+
+    if (sysevent_get(sysevent_fd, sysevent_token, event, value, valueLen) != 0)
+    {
+        sysevent_close(sysevent_fd, sysevent_token);
+        return FALSE;
+    }
+    sysevent_close(sysevent_fd, sysevent_token);
+
+    return TRUE;
 }
 
 /**********************************************************************  
@@ -1123,10 +1151,26 @@ Host_Synchronize
         ANSC_HANDLE                 hInsContext
     )
 {
+    ULONG count,i;
+    char out[RESP_STR_LEN];
+    BOOL gotEvent = FALSE;
+
     UNREFERENCED_PARAMETER(hInsContext);
+
     //CosaDmlHostsGetHosts(NULL,&count);
 
-	LM_get_host_info();
+    /*
+     * We need to tell LMLite that the parameters request comes from PandMSsp,
+     * otherwise LMLite will request parameters back to PandMSsp,
+     * PandMSsp and LMLite will keep to wait the response from each other and it results deadlock.
+     */
+    gotEvent = getSysevent("get_from_manageable_device", out, sizeof(out));
+    if (((gotEvent == TRUE) && (!AnscEqualString(out, "true", TRUE))) ||
+        (gotEvent == FALSE))
+    {
+        LM_get_host_info();
+    }
+
     HostsUpdateTime = AnscGetTickInSeconds();
 
     return 0;
@@ -1488,6 +1532,7 @@ Host_GetParamStringValue
         ULONG*                      pUlSize
     )
 {
+    char buf[64];
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     char *value = NULL;
     int rc = -1;
@@ -1528,6 +1573,23 @@ Host_GetParamStringValue
     {
         rc = 0;
         value = pHost->Layer3Interface;
+    }
+
+    /*
+       Almost all parameters should be found within lmHosts.pHostStringParaName[]
+       Handle any special cases which are not.
+    */
+    if ((rc != 0) && (strcmp (ParamName, "X_LGI-COM_FriendlyName") == 0))
+    {
+        rc = 0;
+        if (pHost->pStringParaValue[LM_HOST_PhysAddressId])
+        {
+            char buf1[64];
+
+            snprintf (buf1, sizeof(buf1), "host_friendly_name_%s", pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+            syscfg_get (NULL, buf1, buf, sizeof(buf));
+            value = buf;
+        }
     }
 
     return GetParamStringValue_common (pValue, pUlSize, value, rc, &LmHostObjectMutex);
@@ -1755,6 +1817,36 @@ Host_SetParamStringValue
 			AnscTraceWarning(("<%s> Enter Valid AddressSource [%s] is invalid\n",__FUNCTION__,pString));
 		}
 	}
+	else if (strcmp(ParamName, "X_LGI-COM_FriendlyName") == 0)
+	{
+		char buf1[64];
+
+		if (pHost->pStringParaValue[LM_HOST_PhysAddressId] == NULL)
+		{
+			pthread_mutex_unlock(&LmHostObjectMutex);
+			return TRUE;
+		}
+
+		snprintf(buf1, sizeof(buf1), "host_friendly_name_%s", pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+
+		if (syscfg_set(NULL, buf1, pString) != 0)
+		{
+			pthread_mutex_unlock(&LmHostObjectMutex);
+			return FALSE;
+		}
+
+		if (syscfg_commit() != 0)
+		{
+			CcspTraceWarning(("X_LGI-COM_FriendlyName syscfg_commit failed\n"));
+
+			pthread_mutex_unlock(&LmHostObjectMutex);
+			return FALSE;
+		}
+
+		pthread_mutex_unlock(&LmHostObjectMutex);
+		return TRUE;
+	}
+
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
