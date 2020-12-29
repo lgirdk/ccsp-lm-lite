@@ -1321,6 +1321,30 @@ Host_GetParamIntValue
         return TRUE;
     }
 
+    if (strcmp(ParamName, "IPv6LeaseTimeRemaining") == 0)
+    {
+        PLmObjectHostIPAddress pCur;
+        time_t currentTime = time(NULL);
+        time_t LeaseTimeV6;
+        int result = 0;
+
+        for (pCur = pHost->ipv6AddrArray; pCur != NULL; pCur = pCur->pNext)
+        {
+            LeaseTimeV6 = (time_t) pCur->LeaseTime;
+            if (LeaseTimeV6)
+            {
+                result = (int) (LeaseTimeV6 - currentTime);
+
+                /* Fixme: why no break here? */
+            }
+        }
+
+        *pInt = result;
+
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        return TRUE;
+    }
+
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     return FALSE;
