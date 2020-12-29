@@ -2626,7 +2626,6 @@ static BOOL ValidateHost (char *mac)
         return FALSE;
     }
 
-    memset(buf, 0, sizeof(buf));
     if (fgets (buf, sizeof(buf), fp) != NULL)
     {
         fclose(fp);
@@ -2638,7 +2637,6 @@ static BOOL ValidateHost (char *mac)
     fp = NULL;
     unlink(ARP_CACHE);
 
-    memset(buf, 0, sizeof(buf));
     snprintf(buf, sizeof(buf), "cat %s | grep -i %s > %s", DNSMASQ_FILE, mac, DNSMASQ_CACHE);
     system(buf);
 
@@ -2648,7 +2646,6 @@ static BOOL ValidateHost (char *mac)
         return FALSE;
     }
 
-    memset(buf, 0, sizeof(buf));
     if (fgets (buf, sizeof(buf), fp) != NULL)
     {
         fclose(fp);
