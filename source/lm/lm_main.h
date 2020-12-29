@@ -291,10 +291,6 @@ LmObjectHosts,  *PLmObjectHosts;
     *  Hosts_SavePsmValueRecord
 
 ***********************************************************************/
-void
-Hosts_SynchronizeHost();
-
-void Hosts_SyncDhcp();
 
 #define Host_AddIPv6Address(x, y) Host_AddIPAddress(x,y,6)
 #define Host_AddIPv4Address(x, y) Host_AddIPAddress(x,y,4)
