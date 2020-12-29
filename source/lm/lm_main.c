@@ -307,12 +307,13 @@ static void Send_Eth_Host_Sync_Req(void);
 static void Send_MoCA_Host_Sync_Req(void);
 #endif
 
+static char *_CloneString (const char *src);
+
 #ifdef USE_NOTIFY_COMPONENT
 
 extern ANSC_HANDLE bus_handle;
-void DelAndShuffleAssoDevIndx(PLmObjectHost pHost);
-int extract(char* line, char* mac, char * ip);
-void Add_IPv6_from_Dibbler();
+static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost);
+
 
 
 void Send_PresenceNotification(char* interface,char*mac , ClientConnectState status, char *hostname)
@@ -460,7 +461,9 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
 	}
 
 }
-int FindHostInLeases(char *Temp, char *FileName)
+
+#if 0
+static int FindHostInLeases (char *Temp, char *FileName)
 {
 	FILE *fp = NULL;
 	char buf[200] = {0};
@@ -492,7 +495,10 @@ int FindHostInLeases(char *Temp, char *FileName)
 	return ret; 
 }
 #endif
-int logOnlineDevicesCount()
+
+#endif
+
+static int logOnlineDevicesCount (void)
 {
 	PLmObjectHost   pHost      = NULL;
 	int NumOfOnlineDevices = 0;
@@ -761,7 +767,6 @@ static void _getLanHostComments(char *physAddress, char *pComments)
     return;
 }
 
-
 static inline BOOL _isIPv6Addr(const char* ipAddr)
 {
     if(strchr(ipAddr, ':') != NULL)
@@ -773,9 +778,9 @@ static inline BOOL _isIPv6Addr(const char* ipAddr)
         return FALSE;
     }
 }
+
 #if 0
-void
-Hosts_FindHostByIPv4Address
+static void Hosts_FindHostByIPv4Address
 (
     const char *ipv4Addr,
     char hostList[],
@@ -808,7 +813,9 @@ Hosts_FindHostByIPv4Address
     }
 }
 #endif
-void Hosts_FreeHost(PLmObjectHost pHost){
+
+static void Hosts_FreeHost (PLmObjectHost pHost)
+{
     int i;
     if(pHost == NULL)
         return;
@@ -840,7 +847,8 @@ void Hosts_FreeHost(PLmObjectHost pHost){
 	lmHosts.numHost--;
 }
 
-void Hosts_RmHosts(){
+static void Hosts_RmHosts (void)
+{
     int i;
 
     if(lmHosts.numHost == 0)
@@ -873,9 +881,9 @@ void Hosts_RmHosts(){
     return;
 }
 
-PLmObjectHost XHosts_AddHost(int instanceNum)
+static PLmObjectHost XHosts_AddHost (int instanceNum)
 {
-    //printf("in Hosts_AddHost %d \n", instanceNum);
+    //printf("in XHosts_AddHost %d \n", instanceNum);
     PLmObjectHost pHost = LanManager_Allocate(sizeof(LmObjectHost));
     if(pHost == NULL)
     {
@@ -926,7 +934,7 @@ PLmObjectHost XHosts_AddHost(int instanceNum)
     return pHost;
 }
 
-static void Clean_Host_Table(void)
+static void Clean_Host_Table (void)
 {
 
 	if(lmHosts.numHost < HOST_ENTRY_LIMIT)
@@ -962,7 +970,7 @@ static void Clean_Host_Table(void)
 
 }
 
-PLmObjectHost Hosts_AddHost(int instanceNum)
+static PLmObjectHost Hosts_AddHost (int instanceNum)
 {
 	Clean_Host_Table();
 
@@ -1027,13 +1035,13 @@ PLmObjectHost Hosts_AddHost(int instanceNum)
 	return NULL;
 }
 
-void Host_SetIPAddress(PLmObjectHostIPAddress pIP, int l3unReachableCnt, char *source)
+static void Host_SetIPAddress (PLmObjectHostIPAddress pIP, int l3unReachableCnt, char *source)
 {
     pIP->l3unReachableCnt = l3unReachableCnt;
     LM_SET_PSTRINGPARAVALUE(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId], source); 
 }
 
-PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress)
+PLmObjectHost Hosts_FindHostByPhysAddress (char * physAddress)
 {
     int i = 0;
     for(; i<lmHosts.numHost; i++){
@@ -1043,7 +1051,7 @@ PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress)
     }
     return NULL;
 }
-PLmObjectHost XHosts_FindHostByPhysAddress(char * physAddress)
+PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 {
     int i = 0;
     for(; i<XlmHosts.numHost; i++){
@@ -1057,7 +1065,8 @@ PLmObjectHost XHosts_FindHostByPhysAddress(char * physAddress)
 #define MACADDR_SZ          18
 #define ATOM_MAC "00:00:ca:01:02:03"
 #define ATOM_MAC_CSC "00:05:04:03:02:01"
-BOOL validate_mac(char * physAddress)
+
+static BOOL validate_mac(char *physAddress)
 {
 	if (physAddress && physAddress[0]) {
 	    if(physAddress[2] == ':')
@@ -1071,7 +1080,7 @@ BOOL validate_mac(char * physAddress)
 	return FALSE;
 }
 
-PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
+static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
 {
     char comments[256] = {0};
     char ssid[LM_GEN_STR_SIZE]={0};
@@ -1108,8 +1117,7 @@ PLmObjectHost XHosts_AddHostByPhysAddress(char * physAddress)
     return pHost;
 }
 
-
-PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
+PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 {
     char comments[256] = {0};
     char ssid[LM_GEN_STR_SIZE]={0};
@@ -1184,6 +1192,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress)
 
 	return NULL;
 }
+
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version)
 {
     int *num;
@@ -1211,12 +1220,7 @@ static void Host_FreeIPAddress(PLmObjectHost pHost, int version)
     }
 }
 
-PLmObjectHostIPAddress
-Add_Update_IPv4Address
-    (
-        PLmObjectHost pHost,
-        char * ipAddress
-    )
+static PLmObjectHostIPAddress Add_Update_IPv4Address (PLmObjectHost pHost, char *ipAddress)
 {
 	int *num;
 	PLmObjectHostIPAddress pIpAddrList, pCur, pPre, *ppHeader;
@@ -1253,13 +1257,7 @@ Add_Update_IPv4Address
     return pCur;
 }
 
-PLmObjectHostIPAddress
-Add_Update_IPv6Address
-    (
-        PLmObjectHost pHost,
-        char * ipAddress,
-	int dibbler_flag
-    )
+static PLmObjectHostIPAddress Add_Update_IPv6Address (PLmObjectHost pHost, char * ipAddress, int dibbler_flag)
 {
 	int i, *num;
 	PLmObjectHostIPAddress pIpAddrList, pCur, *ppHeader, prev, temp;
@@ -1312,7 +1310,7 @@ Add_Update_IPv6Address
 	return pCur;
 }
 
-int extract(char* line, char* mac, char * ip)
+static int extract (char *line, char *mac, char *ip)
 {
 	PLmObjectHost pHost;
 	int i,pivot=0,mac_start=0,flag=-1;
@@ -1365,7 +1363,7 @@ int extract(char* line, char* mac, char * ip)
 	return 0;
 }
 
-void Add_IPv6_from_Dibbler()
+static void Add_IPv6_from_Dibbler (void)
 {
 	FILE *fptr = NULL;
 	char line[256]={0},ip[64]={0},mac[18]={0};
@@ -1397,13 +1395,7 @@ void Add_IPv6_from_Dibbler()
 	}
 }
 
-PLmObjectHostIPAddress
-Host_AddIPAddress
-    (
-        PLmObjectHost pHost,
-        char * ipAddress,
-        int version
-    )
+PLmObjectHostIPAddress Host_AddIPAddress (PLmObjectHost pHost, char *ipAddress, int version)
 {
     PLmObjectHostIPAddress pCur;
 
@@ -1423,7 +1415,7 @@ Host_AddIPAddress
 	return pCur;
 }
 
-void _set_comment_(LM_cmd_comment_t *cmd)
+static void _set_comment_ (LM_cmd_comment_t *cmd)
 {
     PLmObjectHost pHost;
     char mac[18];
@@ -1448,7 +1440,7 @@ void _set_comment_(LM_cmd_comment_t *cmd)
 
 }
 
-char* FindMACByIPAddress(char * ip_address)
+char *FindMACByIPAddress (char *ip_address)
 {
 	if(ip_address)
 	{
@@ -1462,7 +1454,6 @@ char* FindMACByIPAddress(char * ip_address)
 
     return NULL;
 }
-
 
 static inline int _mac_string_to_array(char *pStr, unsigned char array[6])
 {
@@ -1498,7 +1489,7 @@ PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, 
 	return pCur;
 }
 
-int LM_get_online_device()
+int LM_get_online_device (void)
 {
     int i;
     int num = 0;
@@ -1550,7 +1541,8 @@ int LM_get_online_device()
     //pthread_mutex_unlock(&LmHostObjectMutex);
 	return num;
 }
-int XLM_get_online_device()
+
+int XLM_get_online_device (void)
 {
 	int i;
     int num = 0;
@@ -1572,11 +1564,7 @@ int XLM_get_online_device()
 	return num;
 }
 
-int LMDmlHostsSetHostComment
-    (
-        char*                       pMac,
-        char*                       pComment
-    )
+int LMDmlHostsSetHostComment (char *pMac, char *pComment)
 {
     int ret;
     unsigned char mac[6];
@@ -1649,7 +1637,7 @@ Host_AddIPv6Address
 
 #ifdef LM_IPC_SUPPORT
 
-static inline void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Interfce)
+static void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Interfce)
 {
     if(l1Interfce == NULL){
         *m_type = LM_MEDIA_TYPE_UNKNOWN;
@@ -1661,7 +1649,7 @@ static inline void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Int
         *m_type = LM_MEDIA_TYPE_ETHERNET;
 }
 
-static inline enum LM_ADDR_SOURCE _get_addr_source(char *source)
+static enum LM_ADDR_SOURCE _get_addr_source(char *source)
 {
     if(source == NULL)
         return LM_ADDRESS_SOURCE_NONE;
@@ -1676,7 +1664,7 @@ static inline enum LM_ADDR_SOURCE _get_addr_source(char *source)
         return LM_ADDRESS_SOURCE_NONE;
 }
 
-static inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
+static void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
 {
     int i;   
     PLmObjectHostIPAddress pIpSrc; 
@@ -1704,7 +1692,7 @@ static inline void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost
     }
 }
 
-static inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
+static void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
 {
         mac_string_to_array(pHost->pStringParaValue[LM_HOST_PhysAddressId], pDestHost->phyAddr);
         pDestHost->online = (unsigned char)pHost->bBoolParaValue[LM_HOST_ActiveId];
@@ -1719,7 +1707,7 @@ static inline void _get_host_info(LM_host_t *pDestHost, PLmObjectHost pHost)
         _get_host_ipaddress(pDestHost, pHost); 
 }
 
-static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
+static void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
 {
     int i, len = 0;
     PLmObjectHost pHost = NULL;
@@ -1748,7 +1736,7 @@ static inline void _get_hosts_info_cfunc(int fd, void* recv_buf, int buf_size)
     write(fd, &hosts, len);
 }
 
-static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
+static void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
 {
     LM_cmd_get_host_by_mac_t *cmd = recv_buf;
     LM_cmd_common_result_t result;
@@ -1771,7 +1759,7 @@ static inline void _get_host_by_mac_cfunc(int fd, void* recv_buf, int buf_size)
     write(fd, &result, sizeof(result));
 }
 
-static inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
+static void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
 {
 
     LM_cmd_comment_t *cmd = recv_buf;
@@ -1804,7 +1792,9 @@ static inline void _set_comment_cfunc(int fd, void* recv_buf, int buf_size)
 END:
     write(fd, &result, sizeof(result));
 }
-static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
+
+static void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size)
+{
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
@@ -1830,13 +1820,14 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
     write(fd, &result, sizeof(result));
 }
 
-static inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
-
+static void _not_support_cfunc(int fd, void* recv_buf, int buf_size)
+{
 }
 
 typedef void (*LM_cfunc_t)(int, void*, int);
 
-LM_cfunc_t cfunc[LM_API_CMD_MAX] = {
+static const LM_cfunc_t cfunc[LM_API_CMD_MAX] =
+{
     _get_hosts_info_cfunc,              // LM_API_CMD_GET_HOSTS = 0,
     _get_host_by_mac_cfunc,             //LM_API_CMD_GET_HOST_BY_MAC,
     _set_comment_cfunc,                 //LM_API_CMD_SET_COMMENT,
@@ -1892,6 +1883,7 @@ int Hosts_stop_scan()
 {
     return lm_wrapper_priv_stop_scan();
 }
+
 void XHosts_SyncWifi()
 {
 	int count = 0;
@@ -1999,7 +1991,7 @@ void Hosts_SyncWifi()
     return;
 }
 
-void *Event_HandlerThread(void *threadid)
+static void *Event_HandlerThread(void *threadid)
 {
     long tid;
     tid = (long)threadid;
@@ -2286,7 +2278,7 @@ void *Event_HandlerThread(void *threadid)
    pthread_exit(NULL);
 }
 
-void Hosts_SyncArp()
+static void Hosts_SyncArp (void)
 {
     char comments[256] = {0};
     int count = 0;
@@ -2375,7 +2367,7 @@ static void Hosts_SyncDHCP(void)
     lm_wrapper_get_dhcpv4_reserved();
 }
 
-void Hosts_LoggingThread()
+static void Hosts_LoggingThread (void)
 {
     int i;
     PLmObjectHost pHost;
@@ -2387,7 +2379,9 @@ void Hosts_LoggingThread()
 	int Radio_5_Dev = 0;
 	int TotalEthDev = 0;
 	int TotalMoCADev = 0;
+
 	sleep(30);
+
 	while(1)
 	{
 		pthread_mutex_lock(&LmHostObjectMutex);
@@ -2467,9 +2461,7 @@ void Hosts_LoggingThread()
 	}
 }
 
-
-
-void Hosts_StatSyncThreadFunc()
+static void Hosts_StatSyncThreadFunc (void)
 {
     int i,count;
     char cmd[64] = {0};
@@ -2517,8 +2509,7 @@ void Hosts_StatSyncThreadFunc()
     }
 }
 
-void
-Hosts_PollHost()
+void Hosts_PollHost (void)
 {
     pthread_mutex_lock(&PollHostMutex);
     Hosts_SyncArp();
@@ -2526,7 +2517,7 @@ Hosts_PollHost()
     pthread_mutex_unlock(&PollHostMutex);
 }
 
-static BOOL ValidateHost(char *mac)
+static BOOL ValidateHost (char *mac)
 {
     char buf[200] = {0};
     FILE *fp = NULL;
@@ -2687,11 +2678,13 @@ static void RemoveHostRetryValidateList(RetryHostList *pPrevNode, RetryHostList 
     return;
 }
 
-void *ValidateHostRetry_Thread(void *arg)
+static void *ValidateHostRetry_Thread (void *arg)
 {
     RetryHostList *retryList;
     RetryHostList *prevNode = NULL;
+
     CcspTraceWarning(("%s started\n", __FUNCTION__));
+
     do
     {
         sleep(MAX_WAIT_VALIDATE_RETRY);
@@ -2731,7 +2724,7 @@ void *ValidateHostRetry_Thread(void *arg)
     pthread_exit(NULL);
 }
 
-void *ValidateHost_Thread(void *arg)
+static void *ValidateHost_Thread (void *arg)
 {
     mqd_t mq;
     struct mq_attr attr;
@@ -2786,7 +2779,8 @@ void *ValidateHost_Thread(void *arg)
 }
 
 const char compName[25]="LOG.RDK.LM";
-void LM_main()
+
+void LM_main (void)
 {
     int res;
     void *status;
@@ -2918,11 +2912,7 @@ void LM_main()
     //pthread_join(Hosts_CmdThread, &status);
 }
 
-
-char * _CloneString
-    (
-    const char * src
-    )
+static char *_CloneString (const char *src)
 {
 	if(src == NULL) return NULL;
 	
@@ -2939,7 +2929,7 @@ char * _CloneString
     return dest;
 }
 
-void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
+static void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 {
     int i;
     char dm[200];
@@ -2986,7 +2976,7 @@ void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
     *num = nname;
 }
 
-void _get_dmbyname(int num, Name_DM_t *list, char** dm, char* name)
+static void _get_dmbyname(int num, Name_DM_t *list, char** dm, char* name)
 {
     int i;
 	
@@ -3265,7 +3255,7 @@ int Hosts_FindHostIndexByPhysAddress(char * physAddress)
     return 0;
 }
 
-void DelAndShuffleAssoDevIndx(PLmObjectHost pHost)
+static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost)
 {
 	int x = 0,y = 0,tmp =0, tAP = 0;
 	int token = 0,AP = 0;
