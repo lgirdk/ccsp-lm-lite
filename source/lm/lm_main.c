@@ -105,8 +105,6 @@
 #define ARP_IPv6 0
 #define DIBBLER_IPv6 1
 
-static void Hosts_SyncEthClient(); 
-
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,6 +115,7 @@ static void Hosts_SyncEthClient();
 #include <mqueue.h>
 
 #include "ccsp_hal_ethsw.h"
+
 #define EVENT_QUEUE_NAME  "/Event_queue"
 #define DNSMASQ_NOTIFY_QUEUE_NAME  "/dnsmasq_eventqueue"
 
@@ -2397,6 +2396,40 @@ static void Hosts_SyncDHCP(void)
     lm_wrapper_get_dhcpv4_reserved();
 }
 
+static void Hosts_SyncEthClient (void)
+{
+    int i, count = 0;
+    LM_host_entry_t *hosts = NULL;
+
+    lm_wrapper_get_arp_entries ("brlan0", &count, &hosts);
+
+    if (count > 0)
+    {
+        for (i = 0; i < count; i++)
+        {
+            PLmObjectHost pHost = Hosts_FindHostByPhysAddress (hosts[i].phyAddr);
+
+            if (pHost)
+            {
+                if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] == NULL) ||
+                    ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
+                     (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL)))
+                {
+                    CCSP_HAL_ETHSW_LINK_STATUS linkStatus = CcspHalExtSw_GetLinkStatus (hosts[i].phyAddr);
+
+                    EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId], (linkStatus == CCSP_HAL_ETHSW_LINK_Up) ? TRUE : FALSE);
+                }
+            }
+        }
+    }
+
+    if (hosts)
+    {
+        free (hosts);
+        hosts = NULL;
+    }
+}
+
 static void Hosts_LoggingThread (void)
 {
     int i;
@@ -4008,37 +4041,3 @@ void Hosts_PresenceDetectionClbkFunc(void *arg)
         Hosts_PresenceNotify(pinfo);
     }
 }
-
-static void Hosts_SyncEthClient()
-{
-    int i,count = 0;
-    PLmObjectHost   pHost      = NULL;
-    LM_host_entry_t *hosts     = NULL;
-    unsigned char linkStatus   = FALSE; 
-    lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
-
-    if (count > 0)
-    {
-        for (i=0;i<count;i++)
-        {
-            pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
-            if(pHost)
-            {
-                if(!(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) ||
-                   (NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA") &&
-                   (NULL == strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))))
-                    {
-                        linkStatus = CcspHalExtSw_GetLinkStatus(hosts[i].phyAddr);
-                        EthClient_AddtoQueue(pHost->pStringParaValue[LM_HOST_PhysAddressId], linkStatus);
-                    }
-            }
-        }
-    }
-
-    if ( hosts )
-    {
-        free(hosts);
-        hosts=NULL;
-    }
-}
-
