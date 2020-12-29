@@ -213,6 +213,12 @@
               <notify>off</notify>
             </parameter>
             <parameter>
+              <name>IPv6LeaseTimeRemaining</name>
+              <type>int[-1:]</type>
+              <syntax>int</syntax>
+              <notify>off</notify>
+            </parameter>
+            <parameter>
               <name>X_CISCO_COM_ActiveTime</name>
               <type>int</type>
               <syntax>int</syntax>
