@@ -3409,10 +3409,10 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 #if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 static void Send_MoCA_Host_Sync_Req(void)
 {
-        parameterValStruct_t  value = {"Device.MoCA.X_RDKCENTRAL-COM_MoCAHost_Sync", "true", ccsp_boolean};
-        char compo[256] = "eRT.com.cisco.spvtg.ccsp.moca";
-        char bus[256] = "/com/cisco/spvtg/ccsp/moca";
-        char* faultParam = NULL;
+        parameterValStruct_t value = {"Device.MoCA.X_RDKCENTRAL-COM_MoCAHost_Sync", "true", ccsp_boolean};
+        char *compo = "eRT.com.cisco.spvtg.ccsp.moca";
+        char *bus = "/com/cisco/spvtg/ccsp/moca";
+        char *faultParam = NULL;
         int ret = CCSP_FAILURE;
 
         CcspTraceWarning(("%s : Get MoCA Clients \n",__FUNCTION__));
@@ -3444,10 +3444,10 @@ static void Send_MoCA_Host_Sync_Req(void)
 
 static void Send_Eth_Host_Sync_Req(void)
 {
-        parameterValStruct_t  value = {"Device.Ethernet.X_RDKCENTRAL-COM_EthHost_Sync", "true", ccsp_boolean};
-        char compo[256] = "eRT.com.cisco.spvtg.ccsp.ethagent";
-        char bus[256] = "/com/cisco/spvtg/ccsp/ethagent";
-        char* faultParam = NULL;
+        parameterValStruct_t value = {"Device.Ethernet.X_RDKCENTRAL-COM_EthHost_Sync", "true", ccsp_boolean};
+        char *compo = "eRT.com.cisco.spvtg.ccsp.ethagent";
+        char *bus = "/com/cisco/spvtg/ccsp/ethagent";
+        char *faultParam = NULL;
         int ret = CCSP_FAILURE;
 
         CcspTraceWarning(("%s : Get Ethernet Clients \n",__FUNCTION__));
