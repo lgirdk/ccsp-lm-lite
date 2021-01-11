@@ -2120,7 +2120,9 @@ static void *Event_HandlerThread(void *threadid)
 
             if(EthHost.Active)
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
+                char layer1InterfaceId[64];
+                sprintf(layer1InterfaceId, "Device.Ethernet.Interface.%d",pHost->instanceNum);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), layer1InterfaceId);
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
