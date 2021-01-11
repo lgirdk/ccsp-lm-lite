@@ -1087,6 +1087,25 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
     return NULL;
 }
 
+static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned char *mac)
+{
+    char buf[40];
+    char *layer1InterfaceId = "Ethernet";
+    int port = -1;
+
+    if (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK)
+    {
+        /* port 0 is internal? */
+        if (port >= 1)
+        {
+            snprintf (buf, sizeof(buf), "Device.Ethernet.Interface.%d", port);
+            layer1InterfaceId = buf;
+        }
+    }
+
+    LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), layer1InterfaceId);
+}
+
 #define MACADDR_SZ      18
 #define ATOM_MAC        "00:00:ca:01:02:03"
 #define ATOM_MAC_CSC    "00:05:04:03:02:01"
@@ -1229,7 +1248,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
         }
         else
         {
-            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+            set_Layer1InterfaceId_for_ethernet (pHost, physAddress);
         }
 
         pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
@@ -2153,7 +2172,8 @@ static void *Event_HandlerThread(void *threadid)
 
             if(EthHost.Active)
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
+                set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr);
+
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
