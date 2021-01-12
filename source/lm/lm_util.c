@@ -318,39 +318,6 @@ char * LanManager_CloneString
     return dest;
 }
 
-char * LanManager_MergeString
-    (
-    const char * src1,
-    const char * src2
-    )
-{
-    size_t len1 = 0, len2 = 0;
-    if(src1 != NULL) len1 = strlen(src1);
-    if(src2 != NULL) len2 = strlen(src2);
-    size_t len = len1 + len2 + 1;
-    if(len <= 1) return NULL;
-    char * dest = LanManager_Allocate(len);
-    if(dest){
-        strncpy(dest, src1, len1);
-        dest[len1] = 0;
-        strcat(dest, src2);
-        dest[len - 1] = 0;
-    }
-    return dest;
-}
-
-BOOL LanManager_CheckNoneEmpty
-    (
-    const char * src
-    )
-{
-    if(!src) return FALSE;
-    const char * p = src;
-    while(*p == ' ') p++;
-    if(strlen(p) <= 0) return FALSE;
-    return TRUE;
-}
-
 void LanManager_CheckCloneCopy (char **dest, const char *src)
 {
 	size_t src_len;
