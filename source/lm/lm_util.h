@@ -107,6 +107,7 @@ char * LanManager_CloneString
     const char * src
     );
 
+#if 0
 char * LanManager_MergeString
     (
     const char * src1,
@@ -117,6 +118,7 @@ BOOL LanManager_CheckNoneEmpty
     (
     const char * src
     );
+#endif
 
 void LanManager_CheckCloneCopy (char **dest, const char *src);
 
