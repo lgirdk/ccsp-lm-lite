@@ -45,7 +45,6 @@
         *   LanManager_Allocate
         *   LanManager_Free
         *   LanManager_CloneString
-        *   LanManager_MergeString
 
   ------------------------------------------------------------------------------
 
@@ -323,6 +322,7 @@ char * LanManager_CloneString
     return dest;
 }
 
+#if 0
 char * LanManager_MergeString
     (
     const char * src1,
@@ -355,6 +355,7 @@ BOOL LanManager_CheckNoneEmpty
     if(strlen(p) <= 0) return FALSE;
     return TRUE;
 }
+#endif
 
 void LanManager_CheckCloneCopy (char **dest, const char *src)
 {
