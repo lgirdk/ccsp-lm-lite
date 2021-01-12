@@ -350,26 +350,41 @@ BOOL LanManager_CheckNoneEmpty
     if(strlen(p) <= 0) return FALSE;
     return TRUE;
 }
-int LanManager_CheckCloneCopy(char ** dest , const char * src)
+
+void LanManager_CheckCloneCopy (char **dest, const char *src)
 {
-	size_t len_src = 0 , len_dest = 0;
+	size_t src_len;
 
-	
-	if(src) len_src = strlen(src) ;
-	if(*dest) len_dest = strlen(*dest) ;
+	src_len = strlen (src);
 
-	if(!len_src) return 0;
+	/*
+	   If src is an empty string then abort. This follows the original
+	   implementation but it looks wrong (it means this function can't be
+	   used to set dest to an empty string). There seem to be various
+	   workarounds in the code for this limitation (e.g. passing src as
+	   "empty" or " ") so leave it as-is for now, but it needs review.
+	*/
+	if (src_len == 0)
+		return;
 
-	if(len_dest && (len_src == len_dest) && (!strcmp(src,*dest))) return 0;
+	/*
+	   If dest has already been allocated then free the old buffer (unless
+	   it happens to exactly match the new string, in which case we can
+	   return early - although unless there's a common case for repeatedly
+	   setting a string to the same value the benefit of checking for that
+	   probably doesn't outweigh the overhead or complexity).
+	*/
+	if (*dest) {
+		size_t dest_len = strlen (*dest);
+		if ((dest_len == src_len) && (memcmp (*dest, src, src_len + 1) == 0))
+			return;
+		free (*dest);
+	}
 
-	if(len_src != len_dest)
-		*dest = (char *) realloc(*dest, len_src + 1);
+	*dest = malloc (src_len + 1);
 
-	if(*dest == NULL) return 0;
+	if (*dest == NULL)
+		return;
 
-	memset(*dest,0,len_src + 1);
-	strncpy(*dest,src,len_src);
-	(*dest)[len_src] = '\0';
-
-	return len_src;
+	memcpy (*dest, src, src_len + 1);
 }
