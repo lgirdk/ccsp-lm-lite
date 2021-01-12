@@ -94,8 +94,8 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
         ret = -1;
     }
     else{
-        *pcomponentName = LanManager_CloneString(components[0]->componentName);
-        *pcomponentPath = LanManager_CloneString(components[0]->dbusPath);
+        *pcomponentName = AnscCloneString(components[0]->componentName);
+        *pcomponentPath = AnscCloneString(components[0]->dbusPath);
         CcspTraceInfo(("WebpaInterface_DiscoverComponent find eRT PAM component %s--%s\n", *pcomponentName, *pcomponentPath));
     }
     free_componentStruct_t(bus_handle, compNum, components);

@@ -33,27 +33,6 @@
    limitations under the License.
 **********************************************************************/
 
-/*********************************************************************************
-
-    description:
-
-        This is the template file of ssp_action.c for CcspLmSsp.
-        Please replace "XXXX" with your own ssp name with the same up/lower cases.
-
-        SSP implementation of functions:
-
-        *   LanManager_Allocate
-        *   LanManager_Free
-        *   LanManager_CloneString
-        *   LanManager_MergeString
-
-  ------------------------------------------------------------------------------
-
-    revision:
-
-        09/08/2011    initial revision.
-
-**********************************************************************************/
 #include "ansc_platform.h"
 #include "lm_util.h"
 #include "lm_main.h"
@@ -178,10 +157,10 @@ char * LanManager_GetMACAddrFromIPv6Addr
 
     /* Check if interface ID is derived from MAC address: */
     if(interfaceId[7] != 'F' || interfaceId[8] != 'F' || interfaceId[10] != 'F' || interfaceId[11] != 'E')
-        return LanManager_CloneString(interfaceId);
+        return AnscCloneString(interfaceId);
     char flag = (interfaceId[1] >= 'A' && interfaceId[1] <= 'F') ? 10+interfaceId[1]-'A' : interfaceId[1]-'0';
     /* It is not cc1g */
-    if((flag & 0x02) == 0) return LanManager_CloneString(interfaceId);
+    if((flag & 0x02) == 0) return AnscCloneString(interfaceId);
     flag = flag & 0xfd; 
     /* Derive mac address. */
     char mac[18];
@@ -195,7 +174,7 @@ char * LanManager_GetMACAddrFromIPv6Addr
     mac[14] = ':';
     mac[15] = interfaceId[17];
     mac[16] = interfaceId[18];
-    return LanManager_CloneString(mac);
+    return AnscCloneString(mac);
 }
 
 /*
@@ -255,10 +234,10 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
 
     /* Check if interface ID is derived from MAC address: */
     if(interfaceId[7] != 'F' || interfaceId[8] != 'F' || interfaceId[10] != 'F' || interfaceId[11] != 'E')
-        return LanManager_CloneString(interfaceId);
+        return AnscCloneString(interfaceId);
     char flag = (interfaceId[1] >= 'A' && interfaceId[1] <= 'F') ? 10+interfaceId[1]-'A' : interfaceId[1]-'0';
     /* It is not cc1g */
-    if((flag & 0x02) == 0) return LanManager_CloneString(interfaceId);
+    if((flag & 0x02) == 0) return AnscCloneString(interfaceId);
     flag = flag & 0xfd; 
     /* Derive mac address. */
     char mac[18];
@@ -272,77 +251,7 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
     mac[14] = ':';
     mac[15] = interfaceId[17];
     mac[16] = interfaceId[18];
-    return LanManager_CloneString(mac);
-}
-
-void * LanManager_Allocate
-(
-    size_t size
-)
-{
-    //return AnscAllocateMemoryCountSize(pComponentName, size);
-    return AnscAllocateMemory(size);
-    //return malloc(size);
-}
-
-void LanManager_Free
-(
-    void *p
-)
-{
-    //return AnscFreeMemoryCountSize(pComponentName, p);
-    AnscFreeMemory(p);
-    //if(p) return free(p);
-}
-
-char * LanManager_CloneString
-    (
-    const char * src
-    )
-{
-    if(src == NULL) return NULL;
-    size_t len = strlen(src) + 1;
-    if(len <= 1) return NULL;
-    char * dest = LanManager_Allocate(len);
-    if ( dest )
-    {
-        strncpy(dest, src, len);
-        dest[len - 1] = 0;
-    }
-    return dest;
-}
-
-char * LanManager_MergeString
-    (
-    const char * src1,
-    const char * src2
-    )
-{
-    size_t len1 = 0, len2 = 0;
-    if(src1 != NULL) len1 = strlen(src1);
-    if(src2 != NULL) len2 = strlen(src2);
-    size_t len = len1 + len2 + 1;
-    if(len <= 1) return NULL;
-    char * dest = LanManager_Allocate(len);
-    if(dest){
-        strncpy(dest, src1, len1);
-        dest[len1] = 0;
-        strcat(dest, src2);
-        dest[len - 1] = 0;
-    }
-    return dest;
-}
-
-BOOL LanManager_CheckNoneEmpty
-    (
-    const char * src
-    )
-{
-    if(!src) return FALSE;
-    const char * p = src;
-    while(*p == ' ') p++;
-    if(strlen(p) <= 0) return FALSE;
-    return TRUE;
+    return AnscCloneString(mac);
 }
 
 void LanManager_CheckCloneCopy (char **dest, const char *src)
