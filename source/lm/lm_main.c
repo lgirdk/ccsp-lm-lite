@@ -2525,7 +2525,14 @@ static void Hosts_SyncArp (void)
         {
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
 
-            pHost = Hosts_FindHostByPhysAddress((char *)hosts[i].phyAddr);
+            if (hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
+            {
+                pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
+            }
+            else
+            {
+                pHost = Hosts_FindHostByPhysAddress((char *)hosts[i].phyAddr);
+            }
 
             if ( pHost )
             {
