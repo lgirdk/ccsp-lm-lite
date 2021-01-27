@@ -1441,7 +1441,9 @@ void lm_wrapper_get_dhcpv4_client()
         }
         */
         pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
- 
+
+/*Devices will be added based on ARP rather than dhcp, fix for OFW-126*/
+#if 0 
         if ( !pHost )
         {
             if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr(dhcpHost.phyAddr,pAtomBRMac) != NULL ))
@@ -1461,6 +1463,7 @@ void lm_wrapper_get_dhcpv4_client()
             }
         }
 
+#endif
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
