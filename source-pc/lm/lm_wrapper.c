@@ -671,9 +671,9 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 #endif
  
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
-    	v_secure_system(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName, pAtomBRMac);
+    	v_secure_system("ip nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName, pAtomBRMac);
     } else {
-    	v_secure_system(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10  > "ARP_CACHE_FILE, netName);
+    	v_secure_system("ip nei show | grep %s | grep -v 192.168.10  > "ARP_CACHE_FILE, netName);
     }	
 
     if ( (fp=fopen(ARP_CACHE_FILE, "r")) == NULL )
