@@ -506,6 +506,13 @@ static int logOnlineDevicesCount (void)
     return NumOfOnlineDevices;
 }
 
+static void get_uptime (int *uptime)
+{
+    struct sysinfo info;
+    sysinfo( &info );
+    *uptime = info.uptime;
+}
+
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	char interface[32] = {0};
@@ -3486,13 +3493,6 @@ void EthClient_AddtoQueue(char *phyAddr,int Status )
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
-}
-
-void get_uptime(int *uptime)
-{
-    struct 	sysinfo info;
-    sysinfo( &info );
-    *uptime= info.uptime;
 }
 
 void convert_ssid_to_radio(char *ssid, char *radio)
