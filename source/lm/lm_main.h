@@ -304,7 +304,6 @@ char* FindParentIPInExtenderList(char* mac_address);
 char* FindMACByIPAddress(char * ip_address);
 void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status );
 void EthClient_AddtoQueue(char *phyAddr,int Status );
-void get_uptime(int *uptime);
 void convert_ssid_to_radio(char *ssid, char *radio);
 PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAddress );
 BOOL Hosts_GetPresenceNotificationEnableStatus(char *Mac);
