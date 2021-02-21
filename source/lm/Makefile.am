@@ -18,29 +18,13 @@
 ##########################################################################
 AM_CFLAGS = -D_ANSC_LINUX
 AM_CFLAGS += -D_ANSC_USER
-if CCSP_ARCH_ARM
-AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
-endif
 
-if CCSP_ARCH_ATOM
-AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
-endif
-
-if CCSP_ARCH_PC
-AM_CFLAGS += -D_ANSC_LITTLE_ENDIAN_
-endif
-
-AM_LDFLAGS = -lccsp_common
-AM_LDFLAGS += -lsysevent
-AM_LDFLAGS += -lutapi
-AM_LDFLAGS += -lutctx
-AM_LDFLAGS += -lulog
-
-AM_CPPFLAGS = -Wall -Werror
 ACLOCAL_AMFLAGS = -I m4
-hardware_platform = i686-linux-gnu
+
 noinst_LTLIBRARIES = libCcspLM.la
-libCcspLM_la_CPPFLAGS = -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/http/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/ansc/include -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/common/MessageBusHelper/include -I$(top_srcdir)/../hal/inlcude -I$(top_srcdir)/source/Ssp $(CPPFLAGS)
+
+libCcspLM_la_CPPFLAGS = -I$(top_srcdir)/source/Ssp
+
 libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						plugin_main.c \
 						lm_wrapper_priv.c \
@@ -65,7 +49,7 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
                         cosa_managementserver_dml.c
                         
 
-libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
+libCcspLM_la_LDFLAGS = -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus
 if ENABLE_SESHAT
-libCcspLM_la_LDFLAGS +=  -llibseshat
+libCcspLM_la_LDFLAGS += -llibseshat
 endif
