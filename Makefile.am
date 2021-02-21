@@ -22,27 +22,18 @@ else
 SUBDIRS = source
 endif
 
-lib_LTLIBRARIES=liblmapi.la
-liblmapi_la_CPPFLAGS= -D_ANSC_LINUX -D_ANSC_USER -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/custom -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/include -I$(top_srcdir)/../CcspCommonLibrary/source/debug_api/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/include/linux -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/include -I$(top_srcdir)/../CcspCommonLibrary/source/cosa/package/slap/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/http/include -I$(top_srcdir)/../CcspCommonLibrary/source/util_api/ansc/include -I$(top_srcdir)/../CcspCommonLibrary/source/ccsp/components/common/MessageBusHelper/include -I$(top_srcdir)/../hal/include
+lib_LTLIBRARIES = liblmapi.la
 
-if CCSP_ARCH_ARM
-liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
-endif
+liblmapi_la_CPPFLAGS = -D_ANSC_LINUX -D_ANSC_USER
 
-if CCSP_ARCH_ATOM
-liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
-endif
+liblmapi_la_LDFLAGS = -lccsp_common 
 
 if CCSP_ARCH_PC
-liblmapi_la_CPPFLAGS += -D_ANSC_LITTLE_ENDIAN_
-endif
-
-liblmapi_la_LDFLAGS= -lccsp_common 
-
-if CCSP_ARCH_PC
-liblmapi_la_SOURCES= ${SUBDIRS}/lm/lm_api.c
+liblmapi_la_SOURCES = ${SUBDIRS}/lm/lm_api.c
 else
-liblmapi_la_SOURCES= ${SUBDIRS}/lm/lm_api.c
+liblmapi_la_SOURCES = ${SUBDIRS}/lm/lm_api.c
 endif
-liblmapi_la_DEPENDENCIES=
-liblmapi_la_LIBADD=$(liblmapi_la_DEPENDENCIES)
+
+liblmapi_la_DEPENDENCIES =
+
+liblmapi_la_LIBADD = $(liblmapi_la_DEPENDENCIES)
