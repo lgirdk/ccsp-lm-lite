@@ -49,7 +49,7 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
                         cosa_managementserver_dml.c
                         
 
-libCcspLM_la_LDFLAGS = -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lwrp-c -llibparodus
+libCcspLM_la_LDFLAGS = -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -ltelemetry_msgsender -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lwrp-c -llibparodus -lsecure_wrapper
 if ENABLE_SESHAT
 libCcspLM_la_LDFLAGS += -llibseshat
 endif
