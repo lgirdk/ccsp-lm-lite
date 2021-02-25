@@ -2468,7 +2468,6 @@ void *Hosts_StatSyncThreadFunc(void *args)
 {
     UNREFERENCED_PARAMETER(args);
     static BOOL bridgemode = FALSE;
-    
     while (1)
     {
         if(Hosts_stop_scan() )
@@ -2493,6 +2492,7 @@ void *Hosts_StatSyncThreadFunc(void *args)
                 bridgemode = FALSE;
             }
 #else
+             UNREFERENCED_PARAMETER(bridgemode);
              Send_Eth_Host_Sync_Req();
              SyncWiFi();
 #endif
