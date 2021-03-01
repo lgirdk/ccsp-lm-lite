@@ -70,6 +70,8 @@
 #include "cosa_hosts_dml.h"
 #include "lm_main.h"
 #include "lm_util.h"
+#include "ctype.h"
+#include <syscfg/syscfg.h>
 
 extern LmObjectHosts lmHosts;
 
@@ -163,6 +165,10 @@ Hosts_GetParamBoolValue
         BOOL*                       pBool
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(pBool);
+
     /* check the parameter name and return the corresponding value */
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -207,6 +213,10 @@ Hosts_GetParamIntValue
         int*                        pInt
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(pInt);
+
     /* check the parameter name and return the corresponding value */
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -251,6 +261,8 @@ Hosts_GetParamUlongValue
         ULONG*                      puLong
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+
     /* check the parameter name and return the corresponding value */
     if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectedDeviceNumber", TRUE))
     {
@@ -297,21 +309,23 @@ Hosts_SetParamUlongValue
         ULONG                       uValue
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+
     /* check the parameter name and set the corresponding value */
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod", TRUE))
     {
 		char buf1[8];
 		memset(buf1, 0, sizeof(buf1));
         g_Client_Poll_interval = uValue;
-		snprintf(buf1,sizeof(buf1),"%d",uValue);
+		snprintf(buf1,sizeof(buf1),"%lu",uValue);
 			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
-                     		     return ANSC_STATUS_FAILURE;
+                     		     return FALSE;
              } else {
 
                     if (syscfg_commit() != 0)
 						{
                             CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
-							return ANSC_STATUS_FAILURE;
+							return FALSE;
 						}
 			 }
         return TRUE;
@@ -371,6 +385,9 @@ Hosts_GetParamStringValue
         ULONG*                      pUlSize
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pUlSize);
+
     /* check the parameter name and return the corresponding value */
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
     {
@@ -421,6 +438,8 @@ Hosts_SetParamStringValue
         char*                       pString
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+
     /* check the parameter name and set the corresponding value */
     if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
     {
@@ -505,6 +524,8 @@ Host_GetEntryCount
         ANSC_HANDLE                 hInsContext
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+
 	ULONG host_count = 0;
 	pthread_mutex_lock(&LmHostObjectMutex);   
 	host_count = lmHosts.numHost;
@@ -550,6 +571,8 @@ Host_GetEntry
         ULONG*                      pInsNumber
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+
 	ANSC_HANDLE host = NULL;	
 	pthread_mutex_lock(&LmHostObjectMutex); 
 	*pInsNumber = lmHosts.hostArray[nIndex]->instanceNum;
@@ -587,6 +610,8 @@ Host_IsUpdated
         ANSC_HANDLE                 hInsContext
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+
     if ( HostsUpdateTime == 0 ) 
     {
         HostsUpdateTime = AnscGetTickInSeconds();
@@ -634,7 +659,8 @@ Host_Synchronize
         ANSC_HANDLE                 hInsContext
     )
 {
-    ULONG count,i;
+    UNREFERENCED_PARAMETER(hInsContext);
+    ULONG count;
 
     //CosaDmlHostsGetHosts(NULL,&count);
 
@@ -818,7 +844,7 @@ Host_GetParamIntValue
         time_t currentTime = time(NULL);
         if(pHost->LeaseTime == 0xffffffff){
             *pInt = -1;
-        }else if(currentTime <  pHost->LeaseTime){
+        }else if(currentTime < (time_t)pHost->LeaseTime){
             *pInt = pHost->LeaseTime - currentTime;
         }else{
             *pInt = 0;
@@ -1142,6 +1168,10 @@ Host_SetParamBoolValue
         BOOL                        bValue
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(bValue);
+
     /* check the parameter name and set the corresponding value */
     
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1186,6 +1216,10 @@ Host_SetParamIntValue
         int                         iValue
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(iValue);
+
     /* check the parameter name and set the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1230,6 +1264,10 @@ Host_SetParamUlongValue
         ULONG                       uValue
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(uValue);
+
     /* check the parameter name and set the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1328,6 +1366,10 @@ Host_Validate
         ULONG*                      puLength
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(pReturnParamName);
+    UNREFERENCED_PARAMETER(puLength);
+
     return TRUE;
 }
 
@@ -1397,9 +1439,7 @@ Host_Rollback
         ANSC_HANDLE                 hInsContext
     )
 {
-	pthread_mutex_lock(&LmHostObjectMutex);     
-    PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+    UNREFERENCED_PARAMETER(hInsContext);
 
     return 0;
 }
@@ -1542,6 +1582,10 @@ Host_IPv4Address_GetParamBoolValue
         BOOL*                       pBool
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(pBool);
+
     /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1586,6 +1630,10 @@ Host_IPv4Address_GetParamIntValue
         int*                        pInt
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(pInt);
+
     /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1630,6 +1678,10 @@ Host_IPv4Address_GetParamUlongValue
         ULONG*                      puLong
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(puLong);
+
     /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1855,6 +1907,10 @@ Host_IPv6Address_GetParamBoolValue
         BOOL*                       pBool
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(pBool);
+
     /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1899,6 +1955,10 @@ Host_IPv6Address_GetParamIntValue
         int*                        pInt
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(pInt);
+
     /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
@@ -1943,6 +2003,10 @@ Host_IPv6Address_GetParamUlongValue
         ULONG*                      puLong
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    UNREFERENCED_PARAMETER(ParamName);
+    UNREFERENCED_PARAMETER(puLong);
+
     /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */

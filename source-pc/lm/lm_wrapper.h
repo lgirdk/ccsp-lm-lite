@@ -39,6 +39,7 @@
 #include <sys/socket.h>
 #include <lm_api.h>
 #include "moca_hal.h"
+#include "lm_main.h"
 #include "ccsp_custom_logs.h"
 /*****************
  *
@@ -188,7 +189,6 @@ ANSC_HANDLE bus_handle;
 #define  CcspWifiTrace(msg)                         \
 {\
 	                char   pTempChar1[4096];                                     \
-			char	sfn[32];														 \
                     	CcspTraceBaseStr msg;                                                       \
 			WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.WifiLogMsg"); \
 }
@@ -208,5 +208,7 @@ int mac_string_to_array(char *pStr, unsigned char array[6]);
 int ip_string_to_arrary(char* pStr, unsigned char array[4]);
 void getAddressSource(char *physAddress, char *pAddressSource);
 int getIPAddress(char *physAddress,char *IPAddress);
+
+void Xlm_wrapper_get_info(PLmObjectHost pHost);
 
 #endif
