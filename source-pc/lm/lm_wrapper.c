@@ -161,7 +161,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
     memset(&arp_req, 0, sizeof(arp_req));
     memset(&reqsa, 0, sizeof(reqsa));
     mac_string_to_array(strMac,phyAddr);
-    ip_string_to_arrary(ip, t_ip);
+    ip_string_to_arrary((char*)ip, t_ip);
 
     reqsa.sll_ifindex = if_nametoindex(netName);
     reqsa.sll_ifindex = if_nametoindex(netName);
@@ -170,7 +170,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
         if (fd < 0)
         {
             /*CID: 61675: Expression with no effect - added header file*/
-            printf(("LM %s create socket erro\nr", __FUNCTION__));
+            printf("LM %s create socket erro\nr", __FUNCTION__);
             return -1;
         }
     }
@@ -181,13 +181,13 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
     /* get interface mac address */
     if(-1 == ioctl(fd, SIOCGIFHWADDR, &ifr)){
        /*CID: 59688 Expression with no effect - added header file*/
-        printf(("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName));
+        printf("LM %s ioctl get %s HW addr error\n", __FUNCTION__, netName);
         return -1;
     }
     memcpy(m_mac, ifr.ifr_hwaddr.sa_data, 6);
     if(-1 == ioctl(fd, SIOCGIFADDR, &ifr)){
         /* CID:65508 Expression with no effect - added header file*/
-        printf(("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName));
+        printf("LM %s ioctl get %s IP addr error\n", __FUNCTION__, netName);
         return -1;
     }
     ip_sockaddr = (struct sockaddr_in *)&(ifr.ifr_addr);
@@ -218,7 +218,7 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[]){
 }
 
 int lm_wrapper_init(){
-    int ret, i = 0;
+    int ret;
     pthread_mutex_init(&GetARPEntryMutex, 0);
     ret = CCSP_Message_Bus_Init(
                 "ccsp.lmbusclient",
@@ -237,7 +237,7 @@ int lm_wrapper_init(){
     fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
     if(fd < 0){
         /*CID: 55379 Expression with no effect - added header file*/
-        printf(("LM %s create socket erro\nr", __FUNCTION__));
+        printf("LM %s create socket erro\nr", __FUNCTION__);
         return -1;
     }
 
@@ -247,7 +247,9 @@ int lm_wrapper_init(){
 
 int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_moca_cpe_t **ppArray)
 {
-    int n=0,i,ret;
+    UNREFERENCED_PARAMETER(netName);
+
+    int n=0,i;
     moca_cpe_list cpes[kMoca_MaxCpeList];
     LM_moca_cpe_t *pMoca = NULL;
 
@@ -270,8 +272,8 @@ int lm_wrapper_get_moca_cpe_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount
     *ppArray = pMoca;
 
     for(i = 0; i < n;i++){
-         sprintf(pMoca->phyAddr, "%02x:%02x:%02x:%02x:%02x:%02x",cpes[i].mac_addr[0],cpes[i].mac_addr[1],cpes[i].mac_addr[2],cpes[i].mac_addr[3],cpes[i].mac_addr[4],cpes[i].mac_addr[5]);
-         strncpy(pMoca->ncId, "Device.MoCA.Interface.1", LM_GEN_STR_SIZE);
+         sprintf((char*)pMoca->phyAddr, "%02x:%02x:%02x:%02x:%02x:%02x",cpes[i].mac_addr[0],cpes[i].mac_addr[1],cpes[i].mac_addr[2],cpes[i].mac_addr[3],cpes[i].mac_addr[4],cpes[i].mac_addr[5]);
+         strncpy((char*)pMoca->ncId, "Device.MoCA.Interface.1", LM_GEN_STR_SIZE);
          pMoca++;
     }
 
@@ -304,6 +306,8 @@ OUT:
 
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
+    UNREFERENCED_PARAMETER(netName);
+
     char *tblName = DEVICE_WIFI_ACCESS_POINT;
     char *pWiFiComponentName = pERTPAMComponentName;
     char *pComponentPath = pERTPAMComponentPath;
@@ -321,11 +325,6 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
     *pCount = 0;
     PRINTD("ENT %s\n", __FUNCTION__);
-
-     char  *paramAtomMacName[1] ;
-     parameterValStruct_t    **valStructs = NULL;
-     int valNum = 0;
-     char br0Mac[128]  = {'\0'};
 
     if(pComponentPath == NULL || pWiFiComponentName == NULL)
     {
@@ -397,8 +396,8 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
             &ref_size,
             &parametervalSSIDRef);
     if(ret != CCSP_Message_Bus_OK) {
-            CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, pReferenceParaName, ret));
-            printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, pReferenceParaName, ret);
+            CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, (char*)pReferenceParaName, ret));
+            printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, (char*)pReferenceParaName, ret);
             goto RET5;
     }
 
@@ -472,14 +471,14 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		{
 			for(i = device_count, j = 1; i < *pCount && j <=device_no ; i++,device_count++,j++)
 			{
-				strncpy(pwifi_wsta->phyAddr, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterValue, 18);
+				strncpy((char*)pwifi_wsta->phyAddr, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterValue, 18);
 				itmp = strlen(parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterName) - strlen(".MACAddress");
 				itmp = (itmp > LM_GEN_STR_SIZE - 1) ? LM_GEN_STR_SIZE-1 : itmp;
 				memcpy(pwifi_wsta->AssociatedDevice, parametervalAssociatedDeviceNum[i * field_num + pos[0]]->parameterName, itmp);
 				pwifi_wsta->AssociatedDevice[itmp] = '\0';
 				pwifi_wsta->RSSI = atoi(parametervalAssociatedDeviceNum[i * field_num + pos[1]]->parameterValue);
-				strncpy(pwifi_wsta->ssid, parametervalSSIDRef[k]->parameterValue, LM_GEN_STR_SIZE-1);
-				pwifi_wsta->ssid[strlen(pwifi_wsta->ssid) - 1] = '\0';
+				strncpy((char*)pwifi_wsta->ssid, parametervalSSIDRef[k]->parameterValue, LM_GEN_STR_SIZE-1);
+				pwifi_wsta->ssid[strlen((char*)pwifi_wsta->ssid) - 1] = '\0';
 				pwifi_wsta++;
 			}
 		}
@@ -502,13 +501,11 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 	int radioInt = 0;
 	int currentChannel = 0;
         LM_wifi_wsta_t *hosts = *ppWstaArray;
-	time_t     now;
-	int activityTimeChangeDiff = 0;
 	for (i = 0; i < *pCount ; i++)
         {
 		PLmObjectHost pHost;
 		char index;
-  		index = hosts[i].ssid[strlen(hosts[i].ssid)-1];
+  		index = hosts[i].ssid[strlen((char*)hosts[i].ssid)-1];
 		interface = index - '0';
 		/* SSID index check. Disabling logging for xfinity wifi devices and XHS clients. As these devices are not getting saved, whenever this loop runs , everytime these devices are getting logged as New Client.
 			TODO: Need to figure out the way to idenify new client. 
@@ -519,7 +516,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 			continue;
 		}
 		/* disable logic ends */
-		pHost = Hosts_FindHostByPhysAddress(hosts[i].phyAddr);
+		pHost = Hosts_FindHostByPhysAddress((char*)hosts[i].phyAddr);
 		if(pHost) {
 		    if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]) {
 			     if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
@@ -541,14 +538,14 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		    bus_handle,
 		    pWiFiComponentName,
 		    pComponentPath,
-		    &name,
+		    (char**)&name,
 		    2,
 		    &nval,
 		    &valStrchannel);
 
 		if(ret != CCSP_Message_Bus_OK){
 			CcspTraceError(("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, name, ret));
-			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, name, ret);
+			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, (char*)name, ret);
 			goto RET1;
 		}
 
@@ -785,7 +782,7 @@ void getAddressSource(char *physAddress, char *pAddressSource)
         if(ret != 4)
             continue;
 
-	if (!strcasecmp(physAddress,dhcpHost.phyAddr))
+	if (!strcasecmp(physAddress, (const char*)dhcpHost.phyAddr))
 	{
 		strcpy(pAddressSource,"DHCP");
 		break;
@@ -814,7 +811,7 @@ memset(buf,0,sizeof(buf));
         if(ret != 3)
             continue;
 
-	if (!strcasecmp(physAddress,dhcpHost.phyAddr))
+	if (!strcasecmp(physAddress, (const char*)dhcpHost.phyAddr))
 	{
 		strcpy(pAddressSource,"Static");
 		break;
@@ -850,7 +847,6 @@ void lm_wrapper_get_dhcpv4_client()
 {
     FILE *fp = NULL;
     char buf[200] = {0};
-    char stub[64];
     int ret;
     PLmObjectHostIPAddress pIP;
 
@@ -878,7 +874,7 @@ void lm_wrapper_get_dhcpv4_client()
 
         if(ret != 4)
             continue;
-        pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
+        pHost = Hosts_FindHostByPhysAddress((char*) dhcpHost.phyAddr);
 
         if ( pHost )
         {
@@ -888,23 +884,23 @@ void lm_wrapper_get_dhcpv4_client()
             {
                 LanManager_Free(pHost->pStringParaValue[LM_HOST_HostNameId]);
             }
-            if(dhcpHost.hostName == NULL || AnscEqualString(dhcpHost.hostName, "*", FALSE))
+            if(dhcpHost.hostName == NULL || AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
             {
                 pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
-                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(dhcpHost.hostName);
+                pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString((char*)dhcpHost.hostName);
 
             pIP = Host_AddIPv4Address
             (
                 pHost,
-                dhcpHost.ipAddr
+                (char*)dhcpHost.ipAddr
             );
             if(pIP != NULL)
             {
                 if(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId])
                     LanManager_Free(pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
                 pIP->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId] = LanManager_CloneString("DHCP");
-                pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime); 
+                pIP->LeaseTime = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime); 
             }
         }
     }
@@ -919,7 +915,6 @@ void lm_wrapper_get_dhcpv4_reserved()
 
     FILE *fp = NULL;
     char buf[200] = {0};
-    char stub[64];
     int ret;
 
     PLmObjectHostIPAddress pIP;
@@ -945,11 +940,11 @@ void lm_wrapper_get_dhcpv4_reserved()
         if(ret != 3)
             continue;
 
-        pHost = Hosts_FindHostByPhysAddress(dhcpHost.phyAddr);
+        pHost = Hosts_FindHostByPhysAddress((char*)dhcpHost.phyAddr);
 
         if ( !pHost )
         {
-            pHost = Hosts_AddHostByPhysAddress(dhcpHost.phyAddr);
+            pHost = Hosts_AddHostByPhysAddress((char*)dhcpHost.phyAddr);
 
             if ( pHost )
             {
@@ -980,7 +975,7 @@ void lm_wrapper_get_dhcpv4_reserved()
             pIP = Host_AddIPv4Address
                 (
                     pHost,
-                    dhcpHost.ipAddr
+                    (char*)dhcpHost.ipAddr
                 );
             if(pIP != NULL)
             {
@@ -1002,7 +997,6 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
 {
     FILE *fp = NULL;
     char buf[200] = {0};
-    char stub[64];
     int ret;
     LM_host_entry_t dhcpHost;
 
@@ -1027,16 +1021,16 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
         if(ret != 4)
             continue;
 
-                if(strstr(dhcpHost.ipAddr,"172.16.12.") && AnscEqualString(dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
+                if(strstr((char*)dhcpHost.ipAddr,"172.16.12.") && AnscEqualString((char*)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
                 {
                         pthread_mutex_lock(&XLmHostObjectMutex);
                         /*CID: 68185 Array compared against 0*/
-                        if(AnscEqualString(dhcpHost.hostName, "*", FALSE))
+                        if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
                         else
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), dhcpHost.hostName);
-                        Host_AddIPv4Address ( pHost, dhcpHost.ipAddr);
-                        pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: dhcpHost.LeaseTime);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char*)dhcpHost.hostName);
+                        Host_AddIPv4Address ( pHost, (char*)dhcpHost.ipAddr);
+                        pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
 
                         pthread_mutex_unlock(&XLmHostObjectMutex);
                         break;

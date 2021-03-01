@@ -36,6 +36,7 @@
 #include "lm_main.h"
 #include "report_common.h"
 #include <stdint.h>
+#include "webpa_interface.h"
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -47,7 +48,6 @@ static pthread_mutex_t ndsMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t ndsCond = PTHREAD_COND_INITIALIZER;
 
 
-static sem_t mutex;
 extern LmObjectHosts lmHosts;
 ULONG NetworkDeviceStatusPeriods[] = {5,10,15,30,60,300,900,1800,3600,10800,21600,43200,86400};
 
@@ -147,7 +147,7 @@ static void WaitForPthreadConditionTimeoutNDS()
     clock_gettime(CLOCK_REALTIME, &_now);
     _ts.tv_sec = _now.tv_sec + GetNDSPollingPeriod();
 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %d sec\n",__FUNCTION__,GetNDSPollingPeriod()));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %lu sec\n",__FUNCTION__,GetNDSPollingPeriod()));
 
     n = pthread_cond_timedwait(&ndsCond, &ndsMutex, &_ts);
     if(n == ETIMEDOUT)
@@ -233,7 +233,7 @@ BOOL GetNDSHarvestingStatus()
 int SetNDSReportingPeriod(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDSReportingPeriod, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%lu] New[%lu] \n", __FUNCTION__, NDSReportingPeriod, period ));
 
     if (NDSReportingPeriod != period)
     {
@@ -250,7 +250,7 @@ int SetNDSReportingPeriod(ULONG period)
 ULONG GetNDSReportingPeriod()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSReportingPeriod ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSReportingPeriod ));
     return NDSReportingPeriod;
 }
 
@@ -258,7 +258,7 @@ int SetNDSPollingPeriod(ULONG period)
 {
     int ret;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Old[%d] New[%d] \n", __FUNCTION__, NDSPollingPeriod, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Old[%lu] New[%lu] \n", __FUNCTION__, NDSPollingPeriod, period ));
     if (NDSPollingPeriod != period)
     {
         NDSPollingPeriod = period;
@@ -294,14 +294,14 @@ BOOL ValidateNDSPeriod(ULONG period)
 ULONG GetNDSPollingPeriod()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSPollingPeriod ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSPollingPeriod ));
     return NDSPollingPeriod;
 }
 
 ULONG SetNDSReportingPeriodDefault(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDSReportingPeriodDefault, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%lu] New[%lu] \n", __FUNCTION__, NDSReportingPeriodDefault, period ));
 
     if(NDSReportingPeriodDefault != period)
     {
@@ -317,14 +317,14 @@ ULONG SetNDSReportingPeriodDefault(ULONG period)
 ULONG GetNDSReportingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSReportingPeriodDefault ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSReportingPeriodDefault ));
     return NDSReportingPeriodDefault;
 }
 
 ULONG SetNDSPollingPeriodDefault(ULONG period)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%d] New[%d] \n", __FUNCTION__, NDSPollingPeriodDefault, period ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT Old[%lu] New[%lu] \n", __FUNCTION__, NDSPollingPeriodDefault, period ));
 
     if(NDSPollingPeriodDefault != period)
     {
@@ -340,28 +340,28 @@ ULONG SetNDSPollingPeriodDefault(ULONG period)
 ULONG GetNDSPollingPeriodDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSPollingPeriodDefault ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSPollingPeriodDefault ));
     return NDSPollingPeriodDefault;
 }
 
 ULONG GetNDSOverrideTTLDefault()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSOverrideTTLDefault ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSOverrideTTLDefault ));
     return NDSOverrideTTLDefault;
 }
 
 ULONG GetNDSOverrideTTL()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSOverrideTTL ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSOverrideTTL ));
     return NDSOverrideTTL;
 }
 
 int SetNDSOverrideTTL(ULONG ttl)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%d] \n", __FUNCTION__, NDSOverrideTTL ));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT RET[%lu] \n", __FUNCTION__, NDSOverrideTTL ));
     NDSOverrideTTL = ttl;
     return 0;
 }
@@ -431,7 +431,7 @@ void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head)
 #ifndef UTC_ENABLE
         ptr->timestamp.tv_sec -= tm_offset;
 #endif
-        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%u] \n",ptr->timestamp.tv_sec ));
+        CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Timestamp[%ld] \n",ptr->timestamp.tv_sec ));
 
          if(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent])
                 ptr->parent = strdup(host->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]);
@@ -614,6 +614,8 @@ void ResetNDSReportingConfiguration()
 
 void* StartNetworkDeviceStatusHarvesting( void *arg )
 {
+    UNREFERENCED_PARAMETER(arg);
+    
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
 
 	ULONG uDefaultVal = 0;

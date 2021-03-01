@@ -67,4 +67,5 @@ ssp_Mbi_FreeResources
         void * user_data
     );
 
+BOOLEAN waitConditionReady(void* hMBusHandle, const char* dst_component_id, char* dbus_path, char *src_component_id);
 #endif

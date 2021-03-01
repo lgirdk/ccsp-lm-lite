@@ -56,7 +56,8 @@
 **********************************************************************************/
 #include "ansc_platform.h"
 #include "lm_util.h"
-
+#include "lm_main.h"
+#include <ctype.h>
 
 
 /* Listent to value change signal on the following parameters:
@@ -74,6 +75,7 @@ LanManager_ParamValueChanged
         void            *user_data
 	)
 {
+    UNREFERENCED_PARAMETER(user_data);
     int i = 0;
     for(; i < size; i++){
         if(strstr(val[i].parameterName, "Device.DHCPv4.Server.Pool.") != NULL
@@ -83,7 +85,6 @@ LanManager_ParamValueChanged
             Hosts_PollHost();
         }
     }
-    return TRUE;
 }
 
 /*
@@ -101,7 +102,7 @@ char * LanManager_GetMACAddrFromIPv6Addr
     char ipv6AddrOrg[200] = {0};
     /* turn to upper case. */
     int i;
-    for(i=0; i<len; i++) ipv6AddrOrg[i] = toupper(ipv6Address[i]);
+    for(i=0; i<(int)len; i++) ipv6AddrOrg[i] = toupper(ipv6Address[i]);
     /* Cut the prefix part after '/'. */
     for(i=len-1; i>=0; i--){
         if(ipv6AddrOrg[i] == '/'){
@@ -112,7 +113,7 @@ char * LanManager_GetMACAddrFromIPv6Addr
     }
     /* Check how many '::' and ':' in this string. */
     int colonNum = 0;
-    for(i=0; i<len; i++) {
+    for(i=0; i<(int)len; i++) {
         if(ipv6AddrOrg[i] == ':'){
             colonNum++;
         }
@@ -169,7 +170,7 @@ char * LanManager_GetMACAddrFromIPv6Addr
         return LanManager_CloneString(interfaceId);
     char flag = (interfaceId[1] >= 'A' && interfaceId[1] <= 'F') ? 10+interfaceId[1]-'A' : interfaceId[1]-'0';
     /* It is not cc1g */
-    if(flag & 0x02 == 0) return LanManager_CloneString(interfaceId);
+    if((flag & 0x02) == 0) return LanManager_CloneString(interfaceId);
     flag = flag & 0xfd; 
     /* Derive mac address. */
     char mac[18];
@@ -202,7 +203,7 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
     int i;
     char ipv6Addr[200] = {0};
     /* turn to upper case. */
-    for(i=0; i<len; i++) ipv6Addr[i] = toupper(ipv6Address[i]);
+    for(i=0; i<(int)len; i++) ipv6Addr[i] = toupper(ipv6Address[i]);
     /* Not a local-link address. */
     if(strstr(ipv6Addr, "FE80:") != ipv6Addr) return NULL;
     /* Cut the prefix part after '/'. */
@@ -246,7 +247,7 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
         return LanManager_CloneString(interfaceId);
     char flag = (interfaceId[1] >= 'A' && interfaceId[1] <= 'F') ? 10+interfaceId[1]-'A' : interfaceId[1]-'0';
     /* It is not cc1g */
-    if(flag & 0x02 == 0) return LanManager_CloneString(interfaceId);
+    if((flag & 0x02) == 0) return LanManager_CloneString(interfaceId);
     flag = flag & 0xfd; 
     /* Derive mac address. */
     char mac[18];
@@ -327,7 +328,7 @@ BOOL LanManager_CheckNoneEmpty
     )
 {
     if(!src) return FALSE;
-    char * p = src;
+    char * p = (char*)src;
     while(*p == ' ') p++;
     if(strlen(p) <= 0) return FALSE;
     return TRUE;
@@ -337,23 +338,25 @@ BOOL LanManager_CheckNoneEmpty
 int 
 LanManager_CheckCloneCopy(char ** dest , const char * src)
 {
-        size_t len_src = 0 , len_dest = 0;
+    size_t len_src = 0 , len_dest = 0;
 
+    
+    if(src) len_src = strlen(src) ;
+    if(*dest) len_dest = strlen(*dest) ;
 
-        if(src) len_src = strlen(src) ;
-        if(*dest) len_dest = strlen(*dest) ;
+    if(!len_src) return 0;
 
-        if(!len_src) return;
+    if(len_dest && (len_src == len_dest) && (!strcmp(src,*dest))) return 0;
 
-        if(len_dest && (len_src == len_dest) && (!strcmp(src,*dest))) return;
+    if(len_src != len_dest)
+        *dest = (char *) realloc(*dest, len_src + 1);
 
-        if(len_src != len_dest)
-                *dest = (char *) realloc(*dest, len_src + 1);
+    if(*dest == NULL) return 0;
 
-        if(*dest == NULL) return;
+    memset(*dest,0,len_src + 1);
+    strncpy(*dest,src,len_src);
+    (*dest)[len_src] = '\0';
 
-        memset(*dest,0,len_src + 1);
-        strncpy(*dest,src,len_src);
-        (*dest)[len_src] = '\0';
+    return len_src;
 }
 

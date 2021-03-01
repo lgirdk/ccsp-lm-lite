@@ -197,7 +197,8 @@ avro_writer_t prepare_writer_idw()
 /* function call from harvester with parameters */
 void extender_report_associateddevices(struct associateddevicedata *head, char* ServiceType, char* extender_mac)
 {
-  int i, j, k = 0;
+  int i, k = 0;
+  unsigned int j = 0;
   uint8_t* b64buffer =  NULL;
   size_t decodesize = 0;
   int numElements = 0;
@@ -259,7 +260,7 @@ void extender_report_associateddevices(struct associateddevicedata *head, char* 
 
   avro_value_set_long(&optional, tstamp_av_main );
   
-  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = %ld\n", tstamp_av_main ));
+  CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = %lld\n", tstamp_av_main ));
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp = ""%" PRId64 "\n", tstamp_av_main ));
 
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, timestamp\tType: %d\n", avro_value_get_type(&optional)));

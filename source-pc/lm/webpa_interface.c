@@ -23,6 +23,7 @@
 #include "webpa_interface.h"
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_util.h"
+#include <math.h>
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -49,6 +50,10 @@ static void get_seshat_url();
 static void get_parodus_url();
 
 static void macToLower(char macValue[]);
+
+int init_lib_seshat (const char *url);
+char* seshat_discover(const char *service);
+int shutdown_seshat_lib (void);
 
 
 int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
@@ -192,7 +197,6 @@ static void *handle_parodus()
     int max_retry_sleep;
     //Retry Backoff count shall start at c=2 & calculate 2^c - 1.
     int c =2;
-	int retval=-1;
     
     CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ******** Start of handle_parodus ********\n"));
 
@@ -239,7 +243,7 @@ static void *handle_parodus()
             sleep(backoffRetryTime);
             c++;
         }
-	retval = libparodus_shutdown(client_instance);
+	libparodus_shutdown(client_instance);
        
     }
 
@@ -254,7 +258,7 @@ static void get_seshat_url()
         char str[255] = {'\0'};
         while( fscanf(fp,"%s", str) != EOF ) {
             char *value = NULL;
-            if( value = strstr(str, "SESHAT_URL=") ) {
+            if( NULL != (value = strstr(str, "SESHAT_URL=")) ) {
                 value = value + strlen("SESHAT_URL=");
                 strncpy(seshat_url, value, (strlen(str) - strlen("SESHAT_URL="))+1);
                 CcspLMLiteConsoleTrace(("RDK_LOG_INFO, seshat_url is %s\n", seshat_url));

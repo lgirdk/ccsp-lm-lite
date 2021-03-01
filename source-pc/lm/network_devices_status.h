@@ -110,5 +110,6 @@ ULONG GetNDSOverrideTTLDefault();
  * @return status 0 for success and 1 for failure
  */
 BOOL ValidateNDSPeriod(ULONG period);
+int SetNDSOverrideTTL(ULONG ttl);
 
 #endif 

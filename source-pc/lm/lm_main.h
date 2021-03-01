@@ -340,7 +340,19 @@ Hosts_FreeHost(PLmObjectHost pHost);
 PLmObjectHost 
 Hosts_AddHost(int instanceNum);
 
-
+PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress);
+PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress);
 void Hosts_RmHosts();
+int Hosts_stop_scan();
+int LM_get_host_info();
+int LM_get_online_device();
+PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, int version);
+int LMDmlHostsSetHostComment(char* pMac, char* pComment);
+char* FindMACByIPAddress(char * ip_address);
+void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status );
+int XLM_get_host_info();
+int XLM_get_online_device();
+
+void LM_main();
 
 #endif

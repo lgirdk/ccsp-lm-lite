@@ -54,7 +54,6 @@
 static pthread_mutex_t idwMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t idwCond = PTHREAD_COND_INITIALIZER;
 
-static sem_t mutex;
 extern LmObjectHosts lmHosts;
 
 extern ExtenderList *extenderlist;
@@ -108,7 +107,7 @@ static void WaitForPthreadConditionTimeoutIDW()
     clock_gettime(CLOCK_REALTIME, &_now);
     _ts.tv_sec = _now.tv_sec + GetIDWPollingPeriod();
 
-    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %d sec\n",__FUNCTION__,GetIDWPollingPeriod()));
+    CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : Waiting for %lu sec\n",__FUNCTION__,GetIDWPollingPeriod()));
 
     n = pthread_cond_timedwait(&idwCond, &idwMutex, &_ts);
     if(n == ETIMEDOUT)
@@ -431,7 +430,6 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    BOOL enabled = FALSE;
     int ret = 0;
     UINT array_size = 1;
     char interfaceMAC[128] = {0};
@@ -462,8 +460,7 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 			memset(interfaceMAC, 0, 128);
 			memset(band_client, 0, 128);
 
-    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device %x\n", __FUNCTION__,tmp ));
-   	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender MACAddress [%s]\n", __FUNCTION__,tmp->MAC_Address ));
+    	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender MACAddress [%s]\n", __FUNCTION__,tmp->MAC_Address ));
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Type [%s]\n", __FUNCTION__, tmp->SSID_Type ));
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender Device_Name [%s] \n", __FUNCTION__,tmp->Device_Name ));
     	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s Extender SSID_Name [%s] \n", __FUNCTION__,tmp->SSID_Name ));
@@ -600,6 +597,8 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 
 void* StartAssociatedDeviceHarvesting( void *arg )
 {
+    UNREFERENCED_PARAMETER(arg);
+
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER \n", __FUNCTION__ ));
     CcspLMLiteEventTrace(("RDK_LOG_DEBUG, LMLite %s : Started Thread to start DeviceData Harvesting  \n", __FUNCTION__ ));
 
