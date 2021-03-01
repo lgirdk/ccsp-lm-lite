@@ -3575,10 +3575,10 @@ void convert_ssid_to_radio(char *ssid, char *radio)
         CcspTraceWarning(("Empty ssid\n"));
     }
     else{
-        if(strstr(ssid,".1") || strstr(ssid,".3")|| strstr(ssid,".15")){
+        if(strstr(ssid,".1") || strstr(ssid,".3")|| strstr(ssid,".7")){
                AnscCopyString(radio,"Device.WiFi.Radio.1");
         }
-        else if(strstr(ssid,".2") || strstr(ssid,".4")|| strstr(ssid,".16")){
+        else if(strstr(ssid,".2") || strstr(ssid,".4")|| strstr(ssid,".8")){
                AnscCopyString(radio,"Device.WiFi.Radio.2");
         }
         else{
