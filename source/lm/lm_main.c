@@ -212,6 +212,8 @@ Name_DM_t *g_pDHCPv4List = NULL;
 static int firstFlg = 0;
 static int xfirstFlg = 0;
 
+static pthread_cond_t Logging_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t Logging_lock = PTHREAD_MUTEX_INITIALIZER;
 
 extern int bWifiHost;
 
@@ -616,6 +618,9 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 		logOnlineDevicesCount();
 
 	}
+
+	pthread_cond_signal(&Logging_cond);
+
 	PRINTD("%d: mac %s, state %d time %d\n",line ,pHost->pStringParaValue[LM_HOST_PhysAddressId], state, pHost->activityChangeTime);
     }
 	#ifdef USE_NOTIFY_COMPONENT
@@ -2506,8 +2511,15 @@ static void *Hosts_LoggingThread(void *args)
 	int Radio_5_Dev = 0;
 	int TotalEthDev = 0;
 	int TotalMoCADev = 0;
+	struct timespec timeToWait;
+	struct timeval now;
 
-	sleep(30);
+	gettimeofday (&now, NULL);
+	timeToWait.tv_sec = now.tv_sec + 180;
+
+	pthread_mutex_lock (&Logging_lock);
+	pthread_cond_timedwait (&Logging_cond, &Logging_lock, &timeToWait);
+	pthread_mutex_unlock (&Logging_lock);
 
 	while(1)
 	{
