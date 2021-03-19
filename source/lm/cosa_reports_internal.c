@@ -47,9 +47,7 @@
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
 #endif
-#if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
-#include "cosa_managementserver_dml.h"
-#endif
+
 //extern void* g_pDslhDmlAgent;
 
 /**********************************************************************
@@ -142,9 +140,7 @@ CosaReportsInitialize
     {        
         return  returnStatus;
     }
-#if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
-   returnStatus = CosaDmlManagedDeviceInit((ANSC_HANDLE)hThisObject);
-#endif
+
     return returnStatus;
 }
 

@@ -51,16 +51,13 @@
     ULONG                           uNDTReportingPeriodDefault;    \
     BOOLEAN                         bNDTDefPollingPeriodChanged;    \
     BOOLEAN                         bNDTDefReportingPeriodChanged;    \
-    ULONG                           uNDTOverrideTTL;                  
+    ULONG                           uNDTOverrideTTL;
+
 
 typedef  struct
 _COSA_DATAMODEL_REPORTS                                               
 {
 	COSA_DATAMODEL_REPORTS_CLASS_CONTENT
-#if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
-     SLIST_HEADER                    MangDevList;                      
-     ULONG                           MangDevNextInsNum;
-#endif
 }
 COSA_DATAMODEL_REPORTS,  *PCOSA_DATAMODEL_REPORTS;
 

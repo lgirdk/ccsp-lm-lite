@@ -60,9 +60,7 @@ libCcspLM_la_SOURCES = 	cosa_hosts_dml.c \
 						network_devices_traffic.c \
 						cosa_xhosts_dml.c \
                         network_devices_interface.c \
-                        device_presence_detection.c \
-                        cosa_managementserver_apis.c \
-                        cosa_managementserver_dml.c
+                        device_presence_detection.c
                         
 
 libCcspLM_la_LDFLAGS =  -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lcimplog -lwrp-c -llibparodus

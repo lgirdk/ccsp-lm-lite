@@ -61,7 +61,6 @@
 #include "cosa_ndtraffic_dml.h"
 
 #include "cosa_reports_internal.h"
-#include "cosa_managementserver_dml.h"
 
 #define THIS_PLUGIN_VERSION                         1
 COSA_DATAMODEL_REPORTS* g_pReports = NULL;
@@ -172,13 +171,7 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Validate",  NetworkDevicesTraffic_Default_Validate);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Commit",  NetworkDevicesTraffic_Default_Commit);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Rollback",  NetworkDevicesTraffic_Default_Rollback);
- 
-    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_GetEntryCount",  ManageableDevice_GetEntryCount);
-    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_IsUpdated",  ManageableDevice_IsUpdated);
-    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_GetParamStringValue",  ManageableDevice_GetParamStringValue);
-    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_Synchronize",  ManageableDevice_Synchronize);
-    pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_GetEntry",  ManageableDevice_GetEntry);
- 
+    
      /* Create LMLite Object for Settings */
     g_pReports = (PCOSA_DATAMODEL_REPORTS)CosaReportsCreate();
 
