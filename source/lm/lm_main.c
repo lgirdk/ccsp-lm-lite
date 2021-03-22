@@ -1805,11 +1805,8 @@ END:
     write(fd, &result, sizeof(result));
 }
 static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size){
-    UNREFERENCED_PARAMETER(fd);
     UNREFERENCED_PARAMETER(recv_buf);
     UNREFERENCED_PARAMETER(buf_size);
-#if 0
-/* Dead code, commented out the api */
     int i;
     int num = 0;
     LM_cmd_common_result_t result;
@@ -1834,7 +1831,6 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
     result.result = LM_CMD_RESULT_OK;
     result.data.online_num = num;
     write(fd, &result, sizeof(result));
-#endif
 }
 static inline void _not_support_cfunc(int fd, void* recv_buf, int buf_size){
     UNREFERENCED_PARAMETER(fd);
@@ -1856,11 +1852,7 @@ LM_cfunc_t cfunc[LM_API_CMD_MAX] = {
 
 void *lm_cmd_thread_func(void *args)
 {
-  UNREFERENCED_PARAMETER(args);
-  return NULL;
-#if 0
-/*Deadcode - commented out the api lm_cmd_thread_func() */
-    socklen_t clt_addr_len;
+	UNREFERENCED_PARAMETER(args);
     int listen_fd;
     int cmd_fd;
     int ret;
@@ -1881,14 +1873,14 @@ void *lm_cmd_thread_func(void *args)
     {
 	    perror("bind failed");
             close(listen_fd);
-            return;
+            return NULL;
     }
     /*CID: 55938 Unchecked return value*/
     if(listen(listen_fd, 10) < 0)
     {
 	    perror("listen");
             close(listen_fd);
-            return;
+            return NULL;
     }
 
     PRINTD("start listen\n");
@@ -1907,7 +1899,7 @@ void *lm_cmd_thread_func(void *args)
         }
         close(cmd_fd);
     }
-#endif
+	return NULL;
 }
 #endif
 
