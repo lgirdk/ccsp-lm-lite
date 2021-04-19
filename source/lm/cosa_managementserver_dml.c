@@ -525,22 +525,22 @@ ManageableDevice_GetParamStringValue
     PCOSA_CONTEXT_LINK_OBJ     pLinkObj = (PCOSA_CONTEXT_LINK_OBJ)hInsContext;
     COSA_DML_MANG_DEV            *pMangDev = (COSA_DML_MANG_DEV*)pLinkObj->hContext;
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "ManufacturerOUI", TRUE))
+    if (strcmp(ParamName, "ManufacturerOUI") == 0)
     {
         AnscCopyString(pValue, pMangDev->ManufacturerOUI);
         return 0;
     }
-    if( AnscEqualString(ParamName, "SerialNumber", TRUE))
+    if (strcmp(ParamName, "SerialNumber") == 0)
     {
         AnscCopyString(pValue, pMangDev->SerialNumber);
         return 0;
     }
-    if( AnscEqualString(ParamName, "ProductClass", TRUE))
+    if (strcmp(ParamName, "ProductClass") == 0)
     {
         AnscCopyString(pValue, pMangDev->ProductClass);
         return 0;
     }
-    if( AnscEqualString(ParamName, "Host", TRUE))
+    if (strcmp(ParamName, "Host") == 0)
     {
         AnscCopyString(pValue, pMangDev->Host);
         return 0;
