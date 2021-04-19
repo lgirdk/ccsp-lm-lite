@@ -161,7 +161,7 @@ XHosts_GetParamUlongValue
 {
 	UNREFERENCED_PARAMETER(hInsContext);
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectedDeviceNumber", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_ConnectedDeviceNumber") == 0)
     {
 
         *puLong = XLM_get_online_device(); 
@@ -461,7 +461,7 @@ XHost_GetParamIntValue
 	pthread_mutex_lock(&XLmHostObjectMutex);  
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_CISCO_COM_ActiveTime", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_ActiveTime") == 0)
     {
         /* collect dynamic value */
         if(pHost->bBoolParaValue[LM_HOST_ActiveId]){
@@ -481,7 +481,7 @@ XHost_GetParamIntValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_InactiveTime", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_InactiveTime") == 0)
     {
         /* collect dynamic value */
         if(!pHost->bBoolParaValue[LM_HOST_ActiveId]){
@@ -501,7 +501,7 @@ XHost_GetParamIntValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_RSSI", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_RSSI") == 0)
     {
         /* collect value */
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
@@ -509,7 +509,7 @@ XHost_GetParamIntValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "LeaseTimeRemaining", TRUE))
+    if (strcmp(ParamName, "LeaseTimeRemaining") == 0)
     {
         time_t currentTime = time(NULL);
         if(pHost->LeaseTime == 0xffffffff){
@@ -648,7 +648,7 @@ XHost_GetParamStringValue
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
     int i = 0;
     for(; i<LM_HOST_NumStringPara; i++){
-		if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
+		if (strcmp(ParamName, "Layer3Interface") == 0)
 	    {
 	        /* collect value */
 			AnscCopyString(pValue, pHost->Layer3Interface);
@@ -718,7 +718,7 @@ XHost_SetParamStringValue
 	pthread_mutex_lock(&XLmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
 
-    if( AnscEqualString(ParamName, "Comments", TRUE))
+    if (strcmp(ParamName, "Comments") == 0)
     {
         /* save update to backup */
         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]) , pString);

@@ -145,7 +145,7 @@ InterfaceDevicesWifiExtender_GetParamBoolValue
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
     /* check the parameter name and return the corresponding value */
-    if ( AnscEqualString(ParamName, "Enabled", TRUE))
+    if (strcmp(ParamName, "Enabled") == 0)
     {
         /* collect value */
         *pBool    =  GetIDWHarvestingStatus();
@@ -169,7 +169,7 @@ InterfaceDevicesWifiExtender_SetParamBoolValue
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
     /* check the parameter name and set the corresponding value */
 
-    if ( AnscEqualString(ParamName, "Enabled", TRUE))
+    if (strcmp(ParamName, "Enabled") == 0)
     {
         g_pReports->bIDWEnabledChanged = true;
         g_pReports->bIDWEnabled = bValue;
@@ -192,14 +192,14 @@ InterfaceDevicesWifiExtender_GetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
+    if (strcmp(ParamName, "PollingPeriod") == 0)
     {
         *puLong =  GetIDWPollingPeriod();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
-    if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
+    if (strcmp(ParamName, "ReportingPeriod") == 0)
     {
         *puLong =  GetIDWReportingPeriod();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
@@ -222,7 +222,7 @@ InterfaceDevicesWifiExtender_SetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
+    if (strcmp(ParamName, "PollingPeriod") == 0)
     {
         g_pReports->bIDWPollingPeriodChanged = true;
         g_pReports->uIDWPollingPeriod = uValue;
@@ -230,7 +230,7 @@ InterfaceDevicesWifiExtender_SetParamUlongValue
         return TRUE;
     }
 
-    if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
+    if (strcmp(ParamName, "ReportingPeriod") == 0)
     {
         g_pReports->bIDWReportingPeriodChanged = true;
         g_pReports->uIDWReportingPeriod = uValue;
@@ -254,7 +254,7 @@ InterfaceDevicesWifiExtender_GetParamStringValue
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if( AnscEqualString(ParamName, "Schema", TRUE))
+    if (strcmp(ParamName, "Schema") == 0)
     {
         /* collect value */
         int bufsize = GetIDWSchemaBufferSize();
@@ -283,7 +283,7 @@ InterfaceDevicesWifiExtender_GetParamStringValue
 	}
     }
 
-    if( AnscEqualString(ParamName, "SchemaID", TRUE))
+    if (strcmp(ParamName, "SchemaID") == 0)
     {
         /* collect value */
         int bufsize = GetIDWSchemaIDBufferSize();
@@ -553,21 +553,21 @@ InterfaceDevicesWifiExtender_Default_GetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
+    if (strcmp(ParamName, "PollingPeriod") == 0)
     {
         *puLong =  GetIDWPollingPeriodDefault();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
-    if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
+    if (strcmp(ParamName, "ReportingPeriod") == 0)
     {
         *puLong =  GetIDWReportingPeriodDefault();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
         return TRUE;
     }
 
-    if ( AnscEqualString(ParamName, "OverrideTTL", TRUE))
+    if (strcmp(ParamName, "OverrideTTL") == 0)
     {
         *puLong =  GetIDWOverrideTTLDefault();
         CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ParamName[%s] Value[%lu] \n", __FUNCTION__ , ParamName, *puLong ));
@@ -590,7 +590,7 @@ InterfaceDevicesWifiExtender_Default_SetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
 
-    if ( AnscEqualString(ParamName, "PollingPeriod", TRUE))
+    if (strcmp(ParamName, "PollingPeriod") == 0)
     {
         g_pReports->bIDWDefPollingPeriodChanged = true;
         g_pReports->uIDWPollingPeriodDefault = uValue;
@@ -598,7 +598,7 @@ InterfaceDevicesWifiExtender_Default_SetParamUlongValue
         return TRUE;
     }
 
-    if ( AnscEqualString(ParamName, "ReportingPeriod", TRUE))
+    if (strcmp(ParamName, "ReportingPeriod") == 0)
     {
         g_pReports->bIDWDefReportingPeriodChanged = true;
         g_pReports->uIDWReportingPeriodDefault = uValue;
