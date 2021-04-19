@@ -209,7 +209,7 @@ Hosts_GetParamBoolValue
 
     /* check the parameter name and return the corresponding value */
 
-    if( AnscEqualString(ParamName, "X_RDK_WebPA_PresenceNotificationEnable", TRUE))
+    if (strcmp(ParamName, "X_RDK_WebPA_PresenceNotificationEnable") == 0)
     {
         /* collect value */
         /*CID:60375 Array compared against 0*/
@@ -223,7 +223,7 @@ Hosts_GetParamBoolValue
         }
     }
 
-    if( AnscEqualString(ParamName, "X_RDK_PresenceDetectEnable", TRUE))
+    if (strcmp(ParamName, "X_RDK_PresenceDetectEnable") == 0)
     {
         /* collect value */
         /*CID:60375 Array compared against 0*/
@@ -283,7 +283,7 @@ Hosts_SetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     /* check the parameter name and set the corresponding value */
 
-    if( AnscEqualString(ParamName, "X_RDK_WebPA_PresenceNotificationEnable", TRUE))
+    if (strcmp(ParamName, "X_RDK_WebPA_PresenceNotificationEnable") == 0)
     {
         char buf[8];
         memset (buf,0,sizeof(buf));
@@ -308,7 +308,7 @@ Hosts_SetParamBoolValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_RDK_PresenceDetectEnable", TRUE))
+    if (strcmp(ParamName, "X_RDK_PresenceDetectEnable") == 0)
     {
         Update_RFC_Presencedetection(bValue);
         return TRUE;
@@ -405,7 +405,7 @@ Hosts_GetParamUlongValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval") == 0)
     {
         /* collect value */
 	    pthread_mutex_lock(&LmHostObjectMutex);   
@@ -414,7 +414,7 @@ Hosts_GetParamUlongValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries") == 0)
     {
         /* collect value */
 	    pthread_mutex_lock(&LmHostObjectMutex);   
@@ -423,7 +423,7 @@ Hosts_GetParamUlongValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval") == 0)
     {
         /* collect value */
 	    pthread_mutex_lock(&LmHostObjectMutex);   
@@ -432,7 +432,7 @@ Hosts_GetParamUlongValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries") == 0)
     {
         /* collect value */
 	    pthread_mutex_lock(&LmHostObjectMutex);   
@@ -442,7 +442,7 @@ Hosts_GetParamUlongValue
     }
 
     // To do
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval") == 0)
     {
         /* collect value */
         pthread_mutex_lock(&LmHostObjectMutex);   
@@ -452,7 +452,7 @@ Hosts_GetParamUlongValue
     }
 
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectedDeviceNumber", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_ConnectedDeviceNumber") == 0)
     {
         /* collect value */
         //*puLong = CosaDmlHostsGetOnline();
@@ -461,26 +461,26 @@ Hosts_GetParamUlongValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectedWiFiNumber", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_ConnectedWiFiNumber") == 0)
     {
         /* collect value */
         *puLong = 0;
         return TRUE;
     }
     
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostVersionId", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostVersionId") == 0)
     {
         /* collect value */
         *puLong = lmHosts.lastActivity;
         return TRUE;
     }
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod") == 0)
     {
         /* collect value */
         *puLong = g_Client_Poll_interval;
         return TRUE;
     }
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync") == 0)
     {
 		*puLong = 0;
         return TRUE;
@@ -503,28 +503,28 @@ Hosts_SetParamUlongValue
 
 	pthread_mutex_lock(&LmHostObjectMutex);   
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV4_ARP_LEAVE_INTERVAL;
 	    lmHosts.param_val.ipv4CheckInterval = uValue;
     }
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV4_RETRY_COUNT;
 	    lmHosts.param_val.ipv4RetryCount = uValue;
     }
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV6_ARP_LEAVE_INTERVAL;
 	    lmHosts.param_val.ipv6CheckInterval = uValue;
     }
 
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV6_RETRY_COUNT;
@@ -532,7 +532,7 @@ Hosts_SetParamUlongValue
     }
 
     // To Do
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_BKG_JOIN_INTERVAL;
@@ -548,7 +548,7 @@ Hosts_SetParamUlongValue
     pthread_mutex_unlock(&LmHostObjectMutex);
 
     /* check the parameter name and set the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod") == 0)
     {
 		char buf1[8];
 		memset(buf1, 0, sizeof(buf1));
@@ -566,7 +566,7 @@ Hosts_SetParamUlongValue
 			 }
         return TRUE;
     }
- 	if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync", TRUE))
+ 	if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync") == 0)
     {
 	
         return TRUE;
@@ -626,9 +626,10 @@ Hosts_GetParamStringValue
     errno_t  rc   = -1;
 
     /* check the parameter name and return the corresponding value */
-    if (AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE)
-    || AnscEqualString(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac", TRUE)
-    || AnscEqualString(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac", TRUE)) {
+    if ((strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi") == 0) ||
+        (strcmp(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac") == 0) ||
+        (strcmp(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac") == 0))
+    {
         /* collect value */
         rc = strcpy_s(pValue, *pUlSize, "");
         if (rc != EOK) {
@@ -742,7 +743,7 @@ Hosts_SetParamStringValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac") == 0)
     {        
         // To DO
         if (!pString)
@@ -753,7 +754,7 @@ Hosts_SetParamStringValue
     }
 
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac") == 0)
     {
         // To DO
         if (!pString)
@@ -764,7 +765,7 @@ Hosts_SetParamStringValue
     }
 
     /* check the parameter name and set the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi") == 0)
     {
         if (!pString)
             return FALSE;
@@ -827,7 +828,7 @@ Hosts_SetParamStringValue
 		
         return TRUE;
     }
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_EthHost_Sync", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_EthHost_Sync") == 0)
     {
         CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > X_RDKCENTRAL-COM_EthHost_Sync Param received\n",__FUNCTION__,__LINE__));
         if (!pString)
@@ -866,7 +867,7 @@ CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > <macAddr=%s> <sta
         EthClient_AddtoQueue(macAddr,active);
         return TRUE;
     }
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_MoCA", TRUE))
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_MoCA") == 0)
     {
      
         if (!pString)
@@ -1186,7 +1187,7 @@ Host_GetParamBoolValue
         }
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_TrueStaticIPClient", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_TrueStaticIPClient") == 0)
     {
         /* collect value */
         *pBool = pHost->bTrueStaticIPClient;
@@ -1251,7 +1252,7 @@ Host_GetParamIntValue
     }
 #endif
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_CISCO_COM_ActiveTime", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_ActiveTime") == 0)
     {
         /* collect dynamic value */
         if(pHost->bBoolParaValue[LM_HOST_ActiveId]){
@@ -1271,7 +1272,7 @@ Host_GetParamIntValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_InactiveTime", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_InactiveTime") == 0)
     {
         /* collect dynamic value */
         if(!pHost->bBoolParaValue[LM_HOST_ActiveId]){
@@ -1291,7 +1292,7 @@ Host_GetParamIntValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_RSSI", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_RSSI") == 0)
     {
         /* collect value */
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
@@ -1299,7 +1300,7 @@ Host_GetParamIntValue
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "LeaseTimeRemaining", TRUE))
+    if (strcmp(ParamName, "LeaseTimeRemaining") == 0)
     {
         time_t currentTime = time(NULL);
         if(pHost->LeaseTime == 0xffffffff){
@@ -1382,19 +1383,19 @@ Host_GetParamUlongValue
     }
 #if 0
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_CISCO_COM_DeviceType", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_DeviceType") == 0)
     {
         /* collect value */
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_NetworkInterface", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_NetworkInterface") == 0)
     {
         /* collect value */
         return TRUE;
     }
 
-    if( AnscEqualString(ParamName, "X_CISCO_COM_ConnectionStatus", TRUE))
+    if (strcmp(ParamName, "X_CISCO_COM_ConnectionStatus") == 0)
     {
         /* collect value */
         return TRUE;
@@ -1473,7 +1474,7 @@ Host_GetParamStringValue
        pHost->Layer3Interface seems to be NULL in some (or all?) cases.
        Fixme: to be reviewed.
     */
-    if (AnscEqualString (ParamName, "Layer3Interface", TRUE))
+    if (strcmp(ParamName, "Layer3Interface") == 0)
     {
         rc = 0;
         value = pHost->Layer3Interface;
@@ -1677,7 +1678,7 @@ Host_SetParamStringValue
 	pthread_mutex_lock(&LmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
 
-    if( AnscEqualString(ParamName, "Comments", TRUE))
+    if (strcmp(ParamName, "Comments") == 0)
     {
         /* save update to backup */
 #if defined(_HUB4_PRODUCT_REQ_)
@@ -1694,7 +1695,7 @@ Host_SetParamStringValue
 		pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
-	else if (AnscEqualString(ParamName, "AddressSource", TRUE))
+	else if (strcmp(ParamName, "AddressSource") == 0)
 	{
 		/* save update to AddressSource */
 		if( strcasecmp(pString, "DHCP") == 0 )
