@@ -70,7 +70,7 @@ struct timeval reset_timestamp;
 bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size);
 
 void* StartNetworkDevicesTrafficHarvesting( void *arg );
-int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize);
+static int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize);
 void add_to_list_ndt(char* ip_table_line);
 void print_list_ndt();
 void delete_list_ndt();
@@ -345,7 +345,7 @@ int SetNDTOverrideTTL(ULONG ttl)
     return 0;
 }
 
-int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize)
+static int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
