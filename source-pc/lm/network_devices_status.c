@@ -69,7 +69,7 @@ int tm_offset = 0;
 bool isvalueinarray(ULONG val, ULONG *arr, int size);
 
 void* StartNetworkDeviceStatusHarvesting( void *arg );
-int _syscmd(char *cmd, char *retBuf, int retBufSize);
+static int _syscmd(char *cmd, char *retBuf, int retBufSize);
 void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head);
 void print_list(struct networkdevicestatusdata *head);
 void delete_list(struct networkdevicestatusdata **head);
@@ -366,7 +366,7 @@ int SetNDSOverrideTTL(ULONG ttl)
     return 0;
 }
 
-int _syscmd(char *cmd, char *retBuf, int retBufSize)
+static int _syscmd(char *cmd, char *retBuf, int retBufSize)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
