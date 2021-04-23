@@ -16,8 +16,8 @@
 #include "cosa_managementserver_dml.h"
 #if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
 static time_t lastModifiedv4 = {0};
-BOOL findAndUpdateMatchedEntry(COSA_DATAMODEL_REPORTS*, PCOSA_DML_MANG_DEV);
-ANSC_STATUS CosaSListPushEntryByInsNum(PSLIST_HEADER, PCOSA_CONTEXT_LINK_OBJ);
+static BOOL findAndUpdateMatchedEntry(COSA_DATAMODEL_REPORTS*, PCOSA_DML_MANG_DEV);
+static ANSC_STATUS CosaSListPushEntryByInsNum(PSLIST_HEADER, PCOSA_CONTEXT_LINK_OBJ);
 #endif
 #ifdef USE_NOTIFY_COMPONENT
 extern ANSC_HANDLE bus_handle;
@@ -232,6 +232,8 @@ ManageableDevice_IsUpdated
     return TRUE;
 #endif
 }
+
+#if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
 /**********************************************************************
     description:
         This function is called to retrieve Host string from Hosts table
@@ -246,13 +248,12 @@ ManageableDevice_IsUpdated
     return:     TRUE if the managed device exists in both lists;
                 FALSE if the managed device is removed from new list.
 **********************************************************************/
-BOOL findAndUpdateMatchedEntry
+static BOOL findAndUpdateMatchedEntry
 (
     COSA_DATAMODEL_REPORTS*         g_pReports, 
     PCOSA_DML_MANG_DEV              pMangDevTableEntry
 )
 {
-#if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
     BOOL foundMatch = FALSE;
     PSINGLE_LINK_ENTRY                   pSListEntry       = NULL;
     PCOSA_CONTEXT_LINK_OBJ            pCxtLink          = NULL;
@@ -292,21 +293,15 @@ BOOL findAndUpdateMatchedEntry
         }
     }
     return foundMatch;
-#else
-    UNREFERENCED_PARAMETER(g_pReports);
-    UNREFERENCED_PARAMETER(pMangDevTableEntry);
-    return TRUE;
-#endif
 }
-ANSC_STATUS
+
+static ANSC_STATUS
 CosaSListPushEntryByInsNum
     (
         PSLIST_HEADER               pListHead,
         PCOSA_CONTEXT_LINK_OBJ   pCosaContext
     )
 {
-#if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
-
     ANSC_STATUS                     returnStatus      = ANSC_STATUS_SUCCESS;
     PCOSA_CONTEXT_LINK_OBJ       pCosaContextEntry = (PCOSA_CONTEXT_LINK_OBJ)NULL;
     PSINGLE_LINK_ENTRY              pSLinkEntry       = (PSINGLE_LINK_ENTRY       )NULL;
@@ -330,12 +325,10 @@ CosaSListPushEntryByInsNum
         }
         AnscSListPushEntryAtBack(pListHead, &pCosaContext->Linkage);
     }
-#else
-    UNREFERENCED_PARAMETER(pListHead);
-    UNREFERENCED_PARAMETER(pCosaContext);
-#endif
     return ANSC_STATUS_SUCCESS;
 }
+#endif
+
 /**********************************************************************
     caller:     owner of this object
     prototype:
