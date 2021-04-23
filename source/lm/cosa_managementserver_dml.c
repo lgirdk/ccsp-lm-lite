@@ -16,8 +16,8 @@
 #include "cosa_managementserver_dml.h"
 #if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
 static time_t lastModifiedv4 = {0};
-BOOL findAndUpdateMatchedEntry(COSA_DATAMODEL_REPORTS*, PCOSA_DML_MANG_DEV);
-ANSC_STATUS CosaSListPushEntryByInsNum(PSLIST_HEADER, PCOSA_CONTEXT_LINK_OBJ);
+static BOOL findAndUpdateMatchedEntry(COSA_DATAMODEL_REPORTS*, PCOSA_DML_MANG_DEV);
+static ANSC_STATUS CosaSListPushEntryByInsNum(PSLIST_HEADER, PCOSA_CONTEXT_LINK_OBJ);
 #endif
 #ifdef USE_NOTIFY_COMPONENT
 extern ANSC_HANDLE bus_handle;
@@ -246,7 +246,7 @@ ManageableDevice_IsUpdated
     return:     TRUE if the managed device exists in both lists;
                 FALSE if the managed device is removed from new list.
 **********************************************************************/
-BOOL findAndUpdateMatchedEntry
+static BOOL findAndUpdateMatchedEntry
 (
     COSA_DATAMODEL_REPORTS*         g_pReports, 
     PCOSA_DML_MANG_DEV              pMangDevTableEntry
@@ -298,7 +298,8 @@ BOOL findAndUpdateMatchedEntry
     return TRUE;
 #endif
 }
-ANSC_STATUS
+
+static ANSC_STATUS
 CosaSListPushEntryByInsNum
     (
         PSLIST_HEADER               pListHead,
