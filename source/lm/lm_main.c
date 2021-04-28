@@ -2662,6 +2662,7 @@ static void *Hosts_StatSyncThreadFunc(void *args)
              Send_Eth_Host_Sync_Req();
              SyncWiFi();
 #endif
+            Hosts_SyncEthClient();
             sleep(30);
             Sendmsg_dnsmasq(lmHosts.enablePresence);
             Hosts_SyncDHCP();
