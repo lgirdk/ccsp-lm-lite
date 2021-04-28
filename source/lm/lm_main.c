@@ -2670,6 +2670,7 @@ static void *Hosts_StatSyncThreadFunc(void *args)
 #else
              UNREFERENCED_PARAMETER(bridgemode);
 #endif
+            Hosts_SyncEthClient();
             sleep(30);
             Sendmsg_dnsmasq(lmHosts.enablePresence);
             Hosts_SyncDHCP();
