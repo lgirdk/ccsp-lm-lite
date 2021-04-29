@@ -1031,7 +1031,7 @@ PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress)
 {
     int i = 0;
     for(; i<lmHosts.numHost; i++){
-        if(AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
+        if(lmHosts.hostArray[i] && AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
             return lmHosts.hostArray[i];
         }
     }
