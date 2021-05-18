@@ -1123,7 +1123,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 #if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
     // This is added to remove atom mac from the connected device list.
     if (pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
-        char *cmd = "ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14";
+        char *cmd = "rpcclient2 ifconfig eth0 | grep HWaddr | awk '{print $5}' | cut -c 1-18 | head -n 1";
         _get_shell_output(cmd, pAtomBRMac, sizeof(pAtomBRMac));
         CcspTraceWarning(("Atom mac is %s\n",pAtomBRMac));
     }
