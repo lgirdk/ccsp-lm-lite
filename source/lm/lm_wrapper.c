@@ -1091,7 +1091,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     char cmd[256] = {0};
     char out[32] = {0};
      if(pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
-		_ansc_sprintf(cmd, "ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14\n" );
+		_ansc_sprintf(cmd, "rpcclient2 ifconfig eth0 | grep HWaddr | awk '{print $5}' | cut -c 1-18 | head -n 1\n" );
 		_get_shell_output(cmd, out, sizeof(out));
 		 strncpy(pAtomBRMac,out,sizeof(out));
 		CcspTraceWarning(("Atom mac is %s \n",pAtomBRMac));
