@@ -37,6 +37,7 @@
 **********************************************************************************/
 
 #include "ssp_global.h"
+#include "safec_lib_common.h"
 
 
 ANSC_HANDLE                 bus_handle               = NULL;
@@ -86,6 +87,7 @@ ssp_Mbi_MessageBusEngage
     ANSC_STATUS                 returnStatus       = ANSC_STATUS_SUCCESS;
     CCSP_Base_Func_CB           cb                 = {0};
     char PsmName[256];
+    errno_t                     rc                 = -1;
 
     if ( ! component_id || ! path )
     {
@@ -114,15 +116,14 @@ ssp_Mbi_MessageBusEngage
 
     CcspTraceInfo(("INFO: bus_handle: 0x%8x \n", bus_handle));
     g_MessageBusHandle_Irep = bus_handle;
-    AnscCopyString(g_SubSysPrefix_Irep, g_Subsystem);
+    rc = STRCPY_S_NOCLOBBER(g_SubSysPrefix_Irep, sizeof(g_SubSysPrefix_Irep),g_Subsystem);
+    ERR_CHK(rc);
 
-    if ( g_Subsystem[0] != 0 )
+    rc = sprintf_s(PsmName, sizeof(PsmName), "%s%s", g_Subsystem, CCSP_DBUS_PSM);
+    if(rc < EOK)
     {
-        _ansc_sprintf(PsmName, "%s%s", g_Subsystem, CCSP_DBUS_PSM);
-    }
-    else
-    {
-        AnscCopyString(PsmName, CCSP_DBUS_PSM);
+       ERR_CHK(rc);
+       return ANSC_STATUS_FAILURE;
     }
 
     /* Wait for PSM ready within 60 seconds */

@@ -67,6 +67,7 @@
 #include "lm_util.h"
 
 #include "lm_main.h"
+#include "safec_lib_common.h"
 
 extern LmObjectHosts XlmHosts;
 extern ULONG XHostsUpdateTime;
@@ -646,16 +647,10 @@ XHost_GetParamStringValue
     //printf("Host_GetParamStringValue %p, %s\n", hInsContext, ParamName);
 	pthread_mutex_lock(&XLmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
+    errno_t  rc  = -1;
     int i = 0;
     for(; i<LM_HOST_NumStringPara; i++){
-		if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
-	    {
-	        /* collect value */
-			AnscCopyString(pValue, pHost->Layer3Interface);
-			pthread_mutex_unlock(&XLmHostObjectMutex);
-	        return 0;
-	    }
-        else if( AnscEqualString(ParamName, XlmHosts.pHostStringParaName[i], TRUE))
+        if( AnscEqualString(ParamName, XlmHosts.pHostStringParaName[i], TRUE))
         {
             /* collect value */
             size_t len = 0;
@@ -665,10 +660,33 @@ XHost_GetParamStringValue
 				pthread_mutex_unlock(&XLmHostObjectMutex); 
                 return 1;
             }
-            AnscCopyString(pValue, pHost->pStringParaValue[i]);
+
+            /* Here, check the NULL condition before copy*/
+            if(pHost->pStringParaValue[i]){
+                 rc = strcpy_s(pValue, *pUlSize, pHost->pStringParaValue[i]);
+                 if(rc != EOK){
+                    ERR_CHK(rc);
+                    pthread_mutex_unlock(&XLmHostObjectMutex);
+                    return -1;
+                 }
+            }
 			pthread_mutex_unlock(&XLmHostObjectMutex); 
             return 0;
         }
+    }
+
+    if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
+    {
+        /* collect value */
+        rc = strcpy_s(pValue, *pUlSize, pHost->Layer3Interface);
+        if(rc != EOK)
+        {
+            ERR_CHK(rc);
+            pthread_mutex_unlock(&XLmHostObjectMutex);
+            return -1;
+        }
+        pthread_mutex_unlock(&XLmHostObjectMutex);
+        return 0;
     }
 
 	pthread_mutex_unlock(&XLmHostObjectMutex); 
@@ -995,6 +1013,7 @@ XHost_IPv4Address_GetParamStringValue
 
     pthread_mutex_lock(&XLmHostObjectMutex);
     PLmObjectHostIPAddress pIPv4Address = (PLmObjectHostIPAddress) hInsContext;
+    errno_t  rc  = -1;
     int i = 0;
     for(; i<LM_HOST_IPv4Address_NumStringPara; i++){
         if( AnscEqualString(ParamName, XlmHosts.pIPv4AddressStringParaName[i], TRUE))
@@ -1007,7 +1026,16 @@ XHost_IPv4Address_GetParamStringValue
                 pthread_mutex_unlock(&XLmHostObjectMutex);
                 return 1;
             }
-            AnscCopyString(pValue, pIPv4Address->pStringParaValue[i]);
+
+            /* Here, check the NULL condition before copy*/
+            if(pIPv4Address->pStringParaValue[i]){
+                rc = strcpy_s(pValue, *pUlSize, pIPv4Address->pStringParaValue[i]);
+                if(rc != EOK){
+                    ERR_CHK(rc);
+                    pthread_mutex_unlock(&XLmHostObjectMutex);
+                    return -1;
+                }
+            }
             pthread_mutex_unlock(&XLmHostObjectMutex);
             return 0;
         }
@@ -1165,6 +1193,7 @@ XHost_IPv6Address_GetParamStringValue
    
     pthread_mutex_lock(&XLmHostObjectMutex);
     PLmObjectHostIPAddress pIPv6Address = (PLmObjectHostIPAddress) hInsContext;
+    errno_t rc = -1;
     int i = 0;
     for(; i<LM_HOST_IPv6Address_NumStringPara; i++){
         if( AnscEqualString(ParamName, XlmHosts.pIPv6AddressStringParaName[i], TRUE))
@@ -1177,7 +1206,16 @@ XHost_IPv6Address_GetParamStringValue
                 pthread_mutex_unlock(&XLmHostObjectMutex);
                 return 1;
             }
-            AnscCopyString(pValue, pIPv6Address->pStringParaValue[i]);
+
+            /* Here, check the NULL condition before copy*/
+            if(pIPv6Address->pStringParaValue[i]){
+                rc = strcpy_s(pValue, *pUlSize, pIPv6Address->pStringParaValue[i]);
+                if(rc != EOK){
+                    ERR_CHK(rc);
+                    pthread_mutex_unlock(&XLmHostObjectMutex);
+                    return -1;
+                }
+            }
             pthread_mutex_unlock(&XLmHostObjectMutex);
             return 0;
         }

@@ -25,6 +25,7 @@
 #include "device_presence_detection.h"
 #include "lm_util.h"
 #include "syscfg/syscfg.h"
+#include "safec_lib_common.h"
 
 #define MAX_NUM_OF_DEVICE 200
 #define MAX_SIZE    512
@@ -59,6 +60,7 @@ int Neighbourdiscovery_Update(BOOL enable)
     int fd;
     NDSNotifyInfo input = { 0 };
     NDSNotifyInfo output = { 0 };
+    errno_t rc = -1;
     
     printf("\nOpening Driver\n");
     fd = open("/dev/etx_device", O_RDWR);
@@ -74,7 +76,13 @@ int Neighbourdiscovery_Update(BOOL enable)
         input.enable = 1;
     }
     syscfg_get( NULL, "lan_ifname", buf, sizeof(buf));        
-    strcpy (input.interface,buf);
+    rc = strcpy_s(input.interface, sizeof(input.interface), buf);
+    if(rc != EOK)
+    {
+        ERR_CHK(rc);
+        close(fd);
+        return -1;
+    }
     /*CID: 68224 Unchecked return value*/
     if (-1 == ioctl(fd, WR_VALUE, (NDSNotifyInfo*) &input))
     {
@@ -392,6 +400,7 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
     struct sockaddr_ll device;
     struct ifreq ifr;
     char buf[64];
+    errno_t rc = -1;
 
     if (pobject)
     {
@@ -447,7 +456,9 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
 
                 syscfg_get( NULL, "lan_ifname", buf, sizeof(buf));        
                 // Interface to send packet through.
-                strcpy (interface, buf);
+                rc = strcpy_s(interface, 40, buf);
+                ERR_CHK(rc);
+
                 // int cnt = 0;
                 // for(cnt = 0; cnt < nPresenceDev;cnt++)
                 // {
@@ -490,11 +501,13 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
 
                 // Source IPv4 address:  you need to fill this out
                 syscfg_get( NULL, "lan_ipaddr", buf, sizeof(buf));        
-                strcpy (src_ip, buf);
+                rc = strcpy_s (src_ip, INET_ADDRSTRLEN ,buf);
+                ERR_CHK(rc);
 
                 // Destination URL or IPv4 address (must be a link-local node): you need to fill this out
                 //strcpy (target, "10.0.0.126");
-                strcpy (target, obj->ipv4);
+                rc = strcpy_s(target, 40,obj->ipv4);
+                ERR_CHK(rc);
 
                 // Fill out hints for getaddrinfo().
                 memset (&hints, 0, sizeof (struct addrinfo));
@@ -1097,6 +1110,11 @@ void read_event(int sock)
         char *ip = NULL;
 
         CcspTraceDebug(("Received message payload: %s\n", NLMSG_DATA((struct nlmsghdr *) buffer)));
+        /* LIMITATION
+         * Following strcpy() can't modified to safec strcpy_s() api
+         * Because, safec has the limitation of copying only 4k ( RSIZE_MAX ) to destination pointer
+         * And here, we have destination and source pointer size more than 4k, i.e 65536
+         */
         strcpy(buffer1,NLMSG_DATA((struct nlmsghdr *) buffer));
         CcspTraceDebug(("buffer1: %s\n", buffer1));
         token = strtok_r(buffer1, ",", &st);

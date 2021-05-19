@@ -34,6 +34,7 @@
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
 #endif
+#include "safec_lib_common.h"
 
 #define MAX_PARAMETERNAME_LEN   512
 
@@ -59,12 +60,14 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
 {
     char CrName[256] = {0};
     int ret = 0;
+    errno_t rc = -1;
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    CrName[0] = 0;
-    strcpy(CrName, "eRT.");
-    strcat(CrName, CCSP_DBUS_INTERFACE_CR);
-
+    rc = sprintf_s(CrName, sizeof(CrName), "eRT.%s", CCSP_DBUS_INTERFACE_CR);
+    if(rc < EOK)
+    {
+        ERR_CHK(rc);
+    }
     componentStruct_t **components = NULL;
     int compNum = 0;
     int res = CcspBaseIf_discComponentSupportingNamespace (
@@ -312,9 +315,14 @@ static void checkComponentHealthStatus(char * compName, char * dbusPath, char *s
 	parameterValStruct_t **parameterval = NULL;
 	char *parameterNames[1] = {};
 	char tmp[MAX_PARAMETERNAME_LEN];
-	char str[MAX_PARAMETERNAME_LEN/2];     
+	char str[MAX_PARAMETERNAME_LEN/2];
+	errno_t rc = -1;
 
-	sprintf(tmp,"%s.%s",compName, "Health");
+	rc = sprintf_s(tmp, sizeof(tmp),"%s.Health",compName);
+	if(rc < EOK)
+	{
+		ERR_CHK(rc);
+	}
 	parameterNames[0] = tmp;
 
 	snprintf(str, sizeof(str), "eRT.%s", compName);
@@ -325,7 +333,8 @@ static void checkComponentHealthStatus(char * compName, char * dbusPath, char *s
 	if(ret == CCSP_SUCCESS)
 	{
 		CcspTraceDebug(("parameterval[0]->parameterName : %s parameterval[0]->parameterValue : %s\n",parameterval[0]->parameterName,parameterval[0]->parameterValue));
-		strcpy(status, parameterval[0]->parameterValue);
+		rc = strcpy_s(status, 32,parameterval[0]->parameterValue);
+		ERR_CHK(rc);
 		CcspTraceDebug(("status of component:%s\n", status));
 	}
 	free_parameterValStruct_t (bus_handle, val_size, parameterval);
@@ -343,6 +352,7 @@ static int check_ethernet_wan_status()
     componentStruct_t **        ppComponents = NULL;
     char dst_pathname_cr[256] = {0};
     char isEthEnabled[64]={'\0'};
+    errno_t rc = -1;
     
     if(0 == syscfg_init())
     {
@@ -355,7 +365,11 @@ static int check_ethernet_wan_status()
     else
     {
         waitForEthAgentComponentReady();
-        sprintf(dst_pathname_cr, "%s%s", "eRT.", CCSP_DBUS_INTERFACE_CR);
+        rc = sprintf_s(dst_pathname_cr, sizeof(dst_pathname_cr),"eRT.%s", CCSP_DBUS_INTERFACE_CR);
+        if(rc < EOK)
+        {
+           ERR_CHK(rc);
+        }
         ret = CcspBaseIf_discComponentSupportingNamespace(bus_handle, dst_pathname_cr, ETH_WAN_STATUS_PARAM, "", &ppComponents, &size);
         if ( ret == CCSP_SUCCESS && size >= 1)
         {
@@ -412,6 +426,7 @@ char * getDeviceMac()
         parameterValStruct_t **parameterval = NULL;
         token_t  token;
         char deviceMACValue[32] = { '\0' };
+        errno_t rc = -1;
 #ifndef _XF3_PRODUCT_REQ_
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
 #else
@@ -427,7 +442,8 @@ char * getDeviceMac()
         fd = s_sysevent_connect(&token);
         if(CCSP_SUCCESS == check_ethernet_wan_status() && sysevent_get(fd, token, "eth_wan_mac", deviceMACValue, sizeof(deviceMACValue)) == 0 && deviceMACValue[0] != '\0')
         {
-            strcpy(fullDeviceMAC, deviceMACValue);
+            rc = STRCPY_S_NOCLOBBER(fullDeviceMAC, sizeof(fullDeviceMAC),deviceMACValue);
+            ERR_CHK(rc);
             AnscMacToLower(deviceMAC, deviceMACValue, sizeof(deviceMAC));
             CcspTraceInfo(("deviceMAC is %s\n", deviceMAC));
         }
@@ -462,7 +478,8 @@ char * getDeviceMac()
                 
                 }
                 CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Calling macToLower to get deviceMacId\n"));
-                strcpy(fullDeviceMAC, parameterval[0]->parameterValue);
+                rc = STRCPY_S_NOCLOBBER(fullDeviceMAC, sizeof(fullDeviceMAC),parameterval[0]->parameterValue);
+                ERR_CHK(rc);
                 AnscMacToLower(deviceMAC, parameterval[0]->parameterValue, sizeof(deviceMAC));
                 if(pcomponentName)
                 {

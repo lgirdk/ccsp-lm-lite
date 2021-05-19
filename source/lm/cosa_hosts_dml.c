@@ -72,6 +72,7 @@
 #include "lm_util.h"
 #include "ctype.h"
 #include <syscfg/syscfg.h>
+#include "safec_lib_common.h"
 
 extern LmObjectHosts lmHosts;
 
@@ -586,27 +587,18 @@ Hosts_GetParamStringValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(pUlSize);
-    /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE))
-    {
-        /* collect value */
-        AnscCopyString(pValue, "");
-        return 0;
-    }
+    errno_t  rc   = -1;
 
     /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac", TRUE))
-    {
+    if (AnscEqualString(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi", TRUE)
+    || AnscEqualString(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac", TRUE)
+    || AnscEqualString(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac", TRUE)) {
         /* collect value */
-        AnscCopyString(pValue, "");
-        return 0;
-    }
-
-    /* check the parameter name and return the corresponding value */
-    if( AnscEqualString(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac", TRUE))
-    {
-        /* collect value */
-        AnscCopyString(pValue, "");
+        rc = strcpy_s(pValue, *pUlSize, "");
+        if (rc != EOK) {
+            ERR_CHK(rc);
+            return -1;
+        }
         return 0;
     }
 
@@ -1428,16 +1420,10 @@ Host_GetParamStringValue
     //printf("Host_GetParamStringValue %p, %s\n", hInsContext, ParamName);
 	pthread_mutex_lock(&LmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
+    errno_t       rc    = -1;
     int i = 0;
     for(; i<LM_HOST_NumStringPara; i++){
-		if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
-	    {
-	        /* collect value */
-			AnscCopyString(pValue, pHost->Layer3Interface);
-			pthread_mutex_unlock(&LmHostObjectMutex);
-	        return 0;
-	    }
-        else if( AnscEqualString(ParamName, lmHosts.pHostStringParaName[i], TRUE))
+        if( AnscEqualString(ParamName, lmHosts.pHostStringParaName[i], TRUE))
         {
             /* collect value */
             size_t len = 0;
@@ -1447,10 +1433,32 @@ Host_GetParamStringValue
 				pthread_mutex_unlock(&LmHostObjectMutex); 
                 return 1;
             }
-            AnscCopyString(pValue, pHost->pStringParaValue[i]);
+
+            /* Here, check the NULL condition before copy*/
+            if(pHost->pStringParaValue[i]){
+                rc = strcpy_s(pValue, *pUlSize, pHost->pStringParaValue[i]);
+                if(rc != EOK){
+                   ERR_CHK(rc);
+                   pthread_mutex_unlock(&LmHostObjectMutex);
+                   return -1;
+                }
+            }
 			pthread_mutex_unlock(&LmHostObjectMutex); 
             return 0;
         }
+    }
+
+    if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
+    {
+        /* collect value */
+        rc = strcpy_s(pValue, *pUlSize, pHost->Layer3Interface);
+        if(rc != EOK){
+            ERR_CHK(rc);
+            pthread_mutex_unlock(&LmHostObjectMutex);
+            return -1;
+        }
+        pthread_mutex_unlock(&LmHostObjectMutex);
+        return 0;
     }
 #if 0
     /* check the parameter name and return the corresponding value */
@@ -2197,6 +2205,7 @@ Host_IPv4Address_GetParamStringValue
     //printf("IPv4Address_GetParamStringValue %p, %s\n", hInsContext, ParamName);
 	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHostIPAddress pIPv4Address = (PLmObjectHostIPAddress) hInsContext;
+    errno_t                rc           = -1;
     int i = 0;
     for(; i<LM_HOST_IPv4Address_NumStringPara; i++){
         if( AnscEqualString(ParamName, lmHosts.pIPv4AddressStringParaName[i], TRUE))
@@ -2209,7 +2218,16 @@ Host_IPv4Address_GetParamStringValue
 				pthread_mutex_unlock(&LmHostObjectMutex);
                 return 1;
             }
-            AnscCopyString(pValue, pIPv4Address->pStringParaValue[i]);
+
+            /* Here, check the NULL condition before copy*/
+            if(pIPv4Address->pStringParaValue[i]){
+                rc = strcpy_s(pValue, *pUlSize, pIPv4Address->pStringParaValue[i]);
+                if(rc != EOK){
+                    ERR_CHK(rc);
+                    pthread_mutex_unlock(&LmHostObjectMutex);
+                    return -1;
+                }
+            }
 			pthread_mutex_unlock(&LmHostObjectMutex);
             return 0;
         }
@@ -2519,6 +2537,7 @@ Host_IPv6Address_GetParamStringValue
     //printf("IPv6Address_GetParamStringValue %p, %s\n", hInsContext, ParamName);
 	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHostIPAddress pIPv6Address = (PLmObjectHostIPAddress) hInsContext;
+    errno_t                rc           = -1;
     int i = 0;
     for(; i<LM_HOST_IPv6Address_NumStringPara; i++){
         if( AnscEqualString(ParamName, lmHosts.pIPv6AddressStringParaName[i], TRUE))
@@ -2531,7 +2550,16 @@ Host_IPv6Address_GetParamStringValue
 				pthread_mutex_unlock(&LmHostObjectMutex);
                 return 1;
             }
-            AnscCopyString(pValue, pIPv6Address->pStringParaValue[i]);
+
+            /* Here, check the NULL condition before copy*/
+            if(pIPv6Address->pStringParaValue[i]){
+                rc = strcpy_s(pValue, *pUlSize, pIPv6Address->pStringParaValue[i]);
+                if(rc != EOK){
+                     ERR_CHK(rc);
+                     pthread_mutex_unlock(&LmHostObjectMutex);
+                     return -1;
+                }
+            }
 			pthread_mutex_unlock(&LmHostObjectMutex);
             return 0;
         }
