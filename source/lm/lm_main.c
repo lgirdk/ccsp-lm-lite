@@ -517,7 +517,12 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
         UNREFERENCED_PARAMETER(line);
 	char interface[32] = {0};
 	int uptime = 0;
+	char *macAddr;
+	char *hostName;
+	ClientConnectState clientState;
+	BOOL bSendNotification = FALSE;
 	errno_t rc = -1;
+
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
 
         char addressSource[20] = {0};
@@ -692,12 +697,14 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
             if(pHost->bNotify == TRUE)
             {
                 //CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s Offline \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-                Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_OFFLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
+                bSendNotification = TRUE;
+                clientState = CLIENT_STATE_OFFLINE;
             }
 			#endif
 		}
 		else
 		{
+                        bSendNotification = TRUE;
 			
 			{
 				if(pHost->bNotify == FALSE)
@@ -726,7 +733,6 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 						}
 					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
-					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_CONNECT, pHost->pStringParaValue[LM_HOST_HostNameId]);
 					if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
 					{
 						AnscTraceWarning(("syscfg_set failed\n"));
@@ -740,18 +746,34 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 		
 					}
 					pHost->bNotify = TRUE;
+					clientState = CLIENT_STATE_CONNECT;
 				}
 				else
 				{
 				    // This case is for "Online" events after we have send a connection message. WebPA apparently only wants a
 				    // single connect request and no online/offline events.
                     //CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Online  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
-                    Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_ONLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
+                    clientState = CLIENT_STATE_ONLINE;
 
 				}
 			}
 			
 		}
+	}
+	if (bSendNotification) {
+		macAddr = strdup(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+		hostName = strdup(pHost->pStringParaValue[LM_HOST_HostNameId]);
+
+		pthread_mutex_unlock(&LmHostObjectMutex);
+
+		Send_Notification(interface, macAddr, clientState, hostName);
+
+		free(macAddr);
+		free(hostName);
+	}
+	else
+	{
+		pthread_mutex_unlock(&LmHostObjectMutex);
 	}
 #endif
 } 
@@ -1097,7 +1119,8 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned char *mac)
 {
     char buf[40];
-    char *layer1InterfaceId = "Ethernet";
+    //TODO: Workaround when the switch mac Address dB doesn't return all the connected devices.
+    char *layer1InterfaceId = "Device.Ethernet.Interface.1";
     int port = -1;
 
     if (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK)
@@ -2068,6 +2091,8 @@ void Hosts_SyncWifi()
             if ( pHost )
             {
 			pthread_mutex_lock(&LmHostObjectMutex);           	
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
 #ifdef USE_NOTIFY_COMPONENT
 			if(hosts[i].Status)
 			{
@@ -2087,9 +2112,9 @@ void Hosts_SyncWifi()
 					LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
 			}
 #endif
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), " ");
+#ifndef USE_NOTIFY_COMPONENT
 			pthread_mutex_unlock(&LmHostObjectMutex);
+#endif
             }
         }
         //pthread_mutex_unlock(&LmHostObjectMutex);
@@ -2177,6 +2202,9 @@ static void *Event_HandlerThread(void *threadid)
                 }      
             }
 
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), ""); 
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             if(EthHost.Active)
             {
                 set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr);
@@ -2194,10 +2222,9 @@ static void *Event_HandlerThread(void *threadid)
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }
            
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), ""); 
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+#ifndef USE_NOTIFY_COMPONENT
             pthread_mutex_unlock(&LmHostObjectMutex);
+#endif
 
             if(EthHost.Active && do_dhcpsync)
             {
@@ -2236,6 +2263,8 @@ static void *Event_HandlerThread(void *threadid)
                 
             }
 
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             if(hosts.Status)
             {
 				memset(radio,0,sizeof(radio));	
@@ -2269,13 +2298,24 @@ static void *Event_HandlerThread(void *threadid)
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                         LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
                     }
+                    else
+                    {
+#ifdef USE_NOTIFY_COMPONENT
+                        pthread_mutex_unlock(&LmHostObjectMutex);
+#endif
+                    }
+                }
+                else
+                {
+#ifdef USE_NOTIFY_COMPONENT
+                    pthread_mutex_unlock(&LmHostObjectMutex);
+#endif
                 }
             }
             
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), " ");
+#ifndef USE_NOTIFY_COMPONENT
             pthread_mutex_unlock(&LmHostObjectMutex);
-
+#endif
             if(hosts.Status && do_dhcpsync) 
             {
                 Hosts_SyncDHCP();
@@ -2340,8 +2380,9 @@ static void *Event_HandlerThread(void *threadid)
 
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }       
+#ifndef USE_NOTIFY_COMPONENT
             pthread_mutex_unlock(&LmHostObjectMutex);
-
+#endif
            if(mhosts.Status && do_dhcpsync)
             {
                 Hosts_SyncDHCP();
