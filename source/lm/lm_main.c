@@ -2557,9 +2557,12 @@ static void Hosts_SyncEthClient (void)
                     ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
                      (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL)))
                 {
-                    CCSP_HAL_ETHSW_LINK_STATUS linkStatus = CcspHalExtSw_GetLinkStatus (hosts[i].phyAddr);
-
-                    EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId], (linkStatus == CCSP_HAL_ETHSW_LINK_Up) ? TRUE : FALSE);
+                    if (hosts[i].status != LM_NEIGHBOR_STATE_STALE){
+                            CCSP_HAL_ETHSW_LINK_STATUS linkStatus = CcspHalExtSw_GetLinkStatus (hosts[i].phyAddr);
+                            EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId], (linkStatus == CCSP_HAL_ETHSW_LINK_Up) ? TRUE : FALSE);
+                    }else{
+                            EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE);
+                    }
                 }
             }
         }
