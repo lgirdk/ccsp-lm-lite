@@ -1153,7 +1153,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
-        if ( strstr(buf, "FAILED") != 0 || strstr(buf, "router") != 0)
+        if ( strstr(buf, "router") != 0)
         {
             continue;
         }
@@ -1168,6 +1168,23 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
             CcspTraceError(("unlinking ARP cache file at %s -  %d\n", __FILE__,__LINE__));
             pthread_mutex_unlock(&GetARPEntryMutex);
             return -1;
+        }
+
+        if ( strstr(buf, "FAILED") != 0)
+        {
+            //192.168.1.200 dev brlan0  FAILED
+            ret = sscanf(buf, "%63s %63s %63s %63s",
+                    hosts[index].ipAddr,
+                    stub,
+                    hosts[index].ifName,
+                    stub
+                    );
+
+            hosts[index].phyAddr[0] = '\0';
+            hosts[index].status = LM_NEIGHBOR_STATE_FAILED;
+
+            index++;
+            continue;
         }
 
         /*
