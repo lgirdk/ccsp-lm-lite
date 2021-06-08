@@ -1086,7 +1086,7 @@ static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned ch
 {
     char buf[40];
     //TODO: Workaround when the switch mac Address dB doesn't return all the connected devices.
-    char *layer1InterfaceId = "Device.Ethernet.Interface.1";
+    char *layer1InterfaceId = NULL;
     int port = -1;
 
     if (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK)
@@ -1099,7 +1099,15 @@ static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned ch
         }
     }
 
-    LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), layer1InterfaceId);
+    if (layer1InterfaceId != NULL) 
+    {
+        LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), layer1InterfaceId);
+    }
+    else if (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId])
+    {
+        LanManager_Free (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+    }
 }
 
 #define MACADDR_SZ      18
@@ -2184,6 +2192,8 @@ static void *Event_HandlerThread(void *threadid)
             else
             {
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                /* after set active state time, set Layer1Interface string to null */
+                set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr);
             }
            
 #ifndef USE_NOTIFY_COMPONENT
