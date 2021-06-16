@@ -1263,7 +1263,7 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
             pHost->pStringParaValue[LM_HOST_Comments] = AnscCloneString(comments);
         }
 
-        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString("Device.WiFi.SSID.3");
+        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString("Device.WiFi.Radio.1");
         pHost->pStringParaValue[LM_HOST_AddressSource] = AnscCloneString("DHCP");
         pHost->bClientReady = FALSE;
         //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
@@ -2122,6 +2122,7 @@ void XHosts_SyncWifi()
 	CcspTraceWarning(("Inside %s \n",__FUNCTION__));
     PLmObjectHost pHost;
     LM_wifi_wsta_t *hosts = NULL;
+    char radio[32];
 
 	Xlm_wrapper_get_wifi_wsta_list(&count, &hosts);
 	
@@ -2150,7 +2151,8 @@ void XHosts_SyncWifi()
 	    }
 			Xlm_wrapper_get_info(pHost);
 			Host_AddIPv4Address ( pHost, pHost->pStringParaValue[LM_HOST_IPAddressId]);
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts[i].ssid);
+			convert_ssid_to_radio((char *)hosts->ssid, radio);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)hosts[i].AssociatedDevice);
 			pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
 			pHost->l1unReachableCnt = 1;
@@ -2174,6 +2176,7 @@ void Hosts_SyncWifi()
 {
     int count = 0;
     int i;
+    char radio[32];
 
     PLmObjectHost pHost;
     LM_wifi_wsta_t *hosts = NULL;
@@ -2198,7 +2201,8 @@ void Hosts_SyncWifi()
 			if(hosts[i].Status)
 			{
 #endif
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts[i].ssid);
+				convert_ssid_to_radio((char *)hosts->ssid, radio);
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)hosts[i].AssociatedDevice);
 				pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts[i].RSSI;
 				pHost->l1unReachableCnt = 1;
@@ -2371,7 +2375,7 @@ static void *Event_HandlerThread(void *threadid)
 				memset(radio,0,sizeof(radio));	
                 convert_ssid_to_radio((char *)hosts.ssid, radio);
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts.ssid);
+                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), (const char *)hosts.AssociatedDevice);
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = hosts.RSSI;
                 pHost->l1unReachableCnt = 1;
@@ -2388,13 +2392,12 @@ static void *Event_HandlerThread(void *threadid)
                 /*CID:63986 Array compared against 0*/
                 if( (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) )
                 {
-                    if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], (const char *)hosts.ssid))
+                    convert_ssid_to_radio((char *)hosts.ssid, radio);
+                    if(!strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], radio))
                     {
-                        memset(radio,0,sizeof(radio));
-                        convert_ssid_to_radio((char *)hosts.ssid, radio);
                         DelAndShuffleAssoDevIndx(pHost);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), (const char *)hosts.ssid);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
                         //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                         LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
@@ -2769,15 +2772,15 @@ static void *Hosts_LoggingThread(void *args)
 
 						if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi")))
 						{
-                                                        if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.17")))
+                                                        if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.Radio.17")))
                                                         {
                                                             Radio_6_Dev++;
                                                         }
-                                                        else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.1")))
+                                                        else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.Radio.1")))
 							{
 								Radio_2_Dev++;
 							}
-							else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.2")))
+							else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.Radio.2")))
 							{
 								Radio_5_Dev++;
 							}
@@ -3519,7 +3522,7 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 			pthread_mutex_lock(&XLmHostObjectMutex);
 			convert_ssid_to_radio(ssid, radio);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
 			if(strncmp(AssociatedDevice,"NULL",strlen(AssociatedDevice)) == 0)
 				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " ");
 			else
