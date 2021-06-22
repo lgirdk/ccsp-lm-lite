@@ -65,6 +65,7 @@
 #define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63[^,]"
 #define LM_DHCP_CLIENT_FORMAT   "%63d %17s %63s %63s"      
 #define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
+#define LM_ARP_ENTRY_FAILED_FORMAT  "%63s %63s %63s %63s"
 
 extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
@@ -1154,7 +1155,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
-        if ( strstr(buf, "FAILED") != 0 || strstr(buf, "router") != 0)
+        if ( strstr(buf, "router") != 0)
         {
             continue;
         }
@@ -1169,6 +1170,23 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
             CcspTraceError(("unlinking ARP cache file at %s -  %d\n", __FILE__,__LINE__));
             pthread_mutex_unlock(&GetARPEntryMutex);
             return -1;
+        }
+
+        if ( strstr(buf, "FAILED") != 0)
+        {
+            //192.168.1.200 dev brlan0  FAILED
+            ret = sscanf(buf, LM_ARP_ENTRY_FAILED_FORMAT,
+                    hosts[index].ipAddr,
+                    stub,
+                    hosts[index].ifName,
+                    stub
+                    );
+
+            hosts[index].phyAddr[0] = '\0';
+            hosts[index].status = LM_NEIGHBOR_STATE_FAILED;
+
+            index++;
+            continue;
         }
 
         /*
