@@ -2419,11 +2419,31 @@ static void *Event_HandlerThread(void *threadid)
    pthread_exit(NULL);
 }
 
+static int ping_interval = 0;
+
+static PLmObjectHost Hosts_FindHostByIpAddress (char *ipAddr)
+{
+    int i;
+
+    for (i = 0; i < lmHosts.numHost; i++)
+    {
+        if (lmHosts.hostArray[i] && AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ipAddr, FALSE))
+        {
+            return lmHosts.hostArray[i];
+        }
+    }
+
+    return NULL;
+}
+
 static void Hosts_SyncArp (void)
 {
     char comments[256] = {0};
+    char cmd[50];
     int count = 0;
     int i,cntVal;
+
+    ping_interval += 10;
 
     PLmObjectHost pHost = NULL;
     LM_host_entry_t *hosts = NULL;
@@ -2451,6 +2471,10 @@ static void Hosts_SyncArp (void)
             {
                 pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
             }
+            else if (hosts[i].status == LM_NEIGHBOR_STATE_FAILED)
+            {
+                pHost = Hosts_FindHostByIpAddress(hosts[i].ipAddr);
+            }
             else
             {
                 pHost = Hosts_FindHostByPhysAddress((char *)hosts[i].phyAddr);
@@ -2472,6 +2496,13 @@ static void Hosts_SyncArp (void)
                 }
                 else
                 {
+                    if (hosts[i].status == LM_NEIGHBOR_STATE_STALE && (ping_interval/30))
+                    {  
+                       sprintf(cmd,"ping -c1 -W1 %s > /dev/null",(char*)hosts[i].ipAddr);
+                       system(cmd); 
+                       ping_interval = 0;
+                    }
+
                     if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
                     {
 						/*
@@ -2536,7 +2567,21 @@ static void Hosts_SyncEthClient (void)
     {
         for (i = 0; i < count; i++)
         {
-            PLmObjectHost pHost = Hosts_FindHostByPhysAddress (hosts[i].phyAddr);
+            PLmObjectHost pHost;
+
+            if (_isIPv6Addr ((char *)hosts[i].ipAddr))
+            {
+                continue;
+            }
+
+            if (hosts[i].status == LM_NEIGHBOR_STATE_FAILED)
+            {
+                pHost = Hosts_FindHostByIpAddress (hosts[i].ipAddr);
+            }
+            else
+            {
+                pHost = Hosts_FindHostByPhysAddress (hosts[i].phyAddr);
+            }
 
             if (pHost)
             {
@@ -2544,11 +2589,13 @@ static void Hosts_SyncEthClient (void)
                     ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
                      (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL)))
                 {
-                    if (hosts[i].status != LM_NEIGHBOR_STATE_STALE){
-                            CCSP_HAL_ETHSW_LINK_STATUS linkStatus = CcspHalExtSw_GetLinkStatus (hosts[i].phyAddr);
-                            EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId], (linkStatus == CCSP_HAL_ETHSW_LINK_Up) ? TRUE : FALSE);
-                    }else{
-                            EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE);
+                    if (hosts[i].status != LM_NEIGHBOR_STATE_FAILED)
+                    {
+                        EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId], TRUE);
+                    }
+                    else
+                    {
+                        EthClient_AddtoQueue (pHost->pStringParaValue[LM_HOST_PhysAddressId], FALSE);
                     }
                 }
             }
@@ -2707,7 +2754,7 @@ static void *Hosts_StatSyncThreadFunc(void *args)
              SyncWiFi();
 #endif
             Hosts_SyncEthClient();
-            sleep(30);
+            sleep(10);
             Sendmsg_dnsmasq(lmHosts.enablePresence);
             Hosts_SyncDHCP();
             Hosts_SyncArp();
