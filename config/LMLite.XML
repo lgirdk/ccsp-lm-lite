@@ -243,7 +243,7 @@
               <name>AddressSource</name>
               <type>string(8)</type>
               <syntax>string</syntax>
-              <writable>true</writable>
+              <writable>false</writable>
             </parameter>
             <parameter>
               <name>Comments</name>
