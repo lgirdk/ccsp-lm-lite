@@ -40,7 +40,6 @@ ANSC_STATUS CosaDmlGetHostPath(char *value, char *hostPath, ULONG hostPathSize)
 
     ULONG dmLen = 0;
     ULONG hostPathLen = 0;
-    FILE *fpLmlite = NULL;
     int i = 0;
     int retVal = ANSC_STATUS_SUCCESS;
     int array_size = 0;

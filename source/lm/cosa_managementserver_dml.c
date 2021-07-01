@@ -176,7 +176,6 @@ ManageableDevice_IsUpdated
     struct stat fileStatv4 = {0};
     PCOSA_CONTEXT_LINK_OBJ              pCxtLink          = NULL;
     PSINGLE_LINK_ENTRY                  pSListEntry       = NULL;
-    PSINGLE_LINK_ENTRY                  pTmpSListEntry    = NULL;
     PCOSA_DML_MANG_DEV                  pMangDevEntry     = NULL;
     int                                leaseUpdated = 0;
     retValv4 = stat(DHCP_VENDOR_CLIENT_V4_PATH, &fileStatv4);
@@ -196,7 +195,6 @@ ManageableDevice_IsUpdated
             while (pSListEntry)
             {
                 pCxtLink          = ACCESS_COSA_CONTEXT_LINK_OBJ(pSListEntry);
-                pTmpSListEntry      = pSListEntry;
                 pSListEntry       = AnscSListGetNextEntry(pSListEntry);
                 pMangDevEntry     = (PCOSA_DML_MANG_DEV)pCxtLink->hContext;
                 if(!(IsLeaseAvailable(pMangDevEntry->MacAddr)))
@@ -258,7 +256,6 @@ static BOOL findAndUpdateMatchedEntry
     PSINGLE_LINK_ENTRY                   pSListEntry       = NULL;
     PCOSA_CONTEXT_LINK_OBJ            pCxtLink          = NULL;
     PCOSA_DML_MANG_DEV                   pMangDevEntry     = NULL;
-    FILE *fp =NULL;
     pSListEntry =   AnscSListGetFirstEntry(&g_pReports->MangDevList);
     while (pSListEntry)
     {
@@ -302,7 +299,6 @@ CosaSListPushEntryByInsNum
         PCOSA_CONTEXT_LINK_OBJ   pCosaContext
     )
 {
-    ANSC_STATUS                     returnStatus      = ANSC_STATUS_SUCCESS;
     PCOSA_CONTEXT_LINK_OBJ       pCosaContextEntry = (PCOSA_CONTEXT_LINK_OBJ)NULL;
     PSINGLE_LINK_ENTRY              pSLinkEntry       = (PSINGLE_LINK_ENTRY       )NULL;
     ULONG                           ulIndex           = 0;
@@ -349,6 +345,8 @@ ManageableDevice_Synchronize
         ANSC_HANDLE                 hInsContext
     )
 {
+    UNREFERENCED_PARAMETER(hInsContext);
+    
 #if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
     ULONG tableEntryCount = 0;
     ULONG tableIndex = 0;
@@ -360,7 +358,6 @@ ManageableDevice_Synchronize
     PCOSA_CONTEXT_LINK_OBJ            pCxtLink          = NULL;
     PSINGLE_LINK_ENTRY                   pSListEntry       = NULL;
     PSINGLE_LINK_ENTRY                   pTmpSListEntry    = NULL;
-    ULONG                                retrycount        = 0;
     pMangDevTable = CosaDmlGetManageableDevices(&tableEntryCount, DHCP_VENDOR_CLIENT_ALL_PATH);
     if ((pMangDevTable != NULL) && (tableEntryCount > 0))
     {
@@ -485,7 +482,6 @@ ManageableDevice_Synchronize
     }
     return returnStatus;
 #else
-    UNREFERENCED_PARAMETER(hInsContext);
     return ANSC_STATUS_SUCCESS;
 #endif
 }
