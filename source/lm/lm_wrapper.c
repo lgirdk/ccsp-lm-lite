@@ -1199,6 +1199,7 @@ void getAddressSource(char *physAddress, char *pAddressSource)
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
+        memset(&dhcpHost,0,sizeof(LM_host_entry_t));
         /*
         Sample:
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
@@ -1232,6 +1233,7 @@ memset(buf,0,sizeof(buf));
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
+        memset(&dhcpHost,0,sizeof(LM_host_entry_t));
         /*
         Sample:
         02:10:18:01:00:02,10.0.0.91,*
@@ -1347,6 +1349,7 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
+        memset(&dhcpHost,0,sizeof(LM_host_entry_t));
         /*
         Sample:sss
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
@@ -1402,6 +1405,7 @@ void lm_wrapper_get_dhcpv4_client()
 
     while ( fgets(buf, sizeof(buf), fp)!= NULL )
     {
+        memset(&dhcpHost,0,sizeof(LM_host_entry_t));
         /*
         Sample:sss
         6885 f0:de:f1:0b:39:65 10.0.0.96 shiywang-WS 01:f0:de:f1:0b:39:65 6765 MSFT 5.0
