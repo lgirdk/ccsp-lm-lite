@@ -1534,12 +1534,10 @@ void lm_wrapper_get_dhcpv4_client()
                 rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
                 ERR_CHK(rc);
             }
-            if (strcmp((char *) dhcpHost.hostName, "*") == 0)
+            if (strcmp((char *) dhcpHost.hostName, "*") != 0)
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            }else
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
-
+            }
             
             if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
