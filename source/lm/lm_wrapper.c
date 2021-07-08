@@ -1477,14 +1477,11 @@ void lm_wrapper_get_dhcpv4_client()
 	{
             if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE))
                 strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
-            /*CID: 54682 Array compared against 0*/
-            if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
+            if(!AnscEqualString((char*)dhcpHost.hostName, "*", FALSE)) 
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            }else
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
-
-            
+            }
+  
             if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
                     strcpy(pHost->backupHostname,pHost->pStringParaValue[LM_HOST_HostNameId]);
