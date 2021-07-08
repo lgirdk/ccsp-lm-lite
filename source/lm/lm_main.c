@@ -1223,7 +1223,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
     if (pHost)
     {
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
-        pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString("unknown");
 
         comments[0] = 0;
         _getLanHostComments(physAddress, comments);
