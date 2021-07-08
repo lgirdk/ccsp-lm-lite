@@ -1254,7 +1254,7 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
     if (pHost)
     {
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = AnscCloneString(physAddress);
-        pHost->pStringParaValue[LM_HOST_HostNameId] = AnscCloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_HostNameId] = AnscCloneString("unknown");
 
         comments[0] = 0;
         _getLanHostComments(physAddress, comments);
