@@ -1531,13 +1531,10 @@ void lm_wrapper_get_dhcpv4_client()
                 rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
                 ERR_CHK(rc);
             }
-            /*CID: 54682 Array compared against 0*/
-            if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
+            if(!AnscEqualString((char*)dhcpHost.hostName, "*", FALSE)) 
             {
-                LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            }else
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
-
+            }
             
             if((pHost->backupHostname)&&(pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
