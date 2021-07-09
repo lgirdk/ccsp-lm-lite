@@ -1140,8 +1140,7 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned char *mac)
 {
     char buf[40];
-    //TODO: Workaround when the switch mac Address dB doesn't return all the connected devices.
-    char *layer1InterfaceId = "Device.Ethernet.Interface.1";
+    char *layer1InterfaceId = "Unknown";
     int port = -1;
 
     if (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK)
@@ -2234,6 +2233,11 @@ static void *Event_HandlerThread(void *threadid)
             {
                 set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr);
 
+                if (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == 0)
+                {
+                    LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Device.Ethernet.Interface.1");
+                } 
+
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
@@ -2622,11 +2626,11 @@ static void Hosts_SyncEthClient (void)
                 pHost = Hosts_FindHostByPhysAddress (hosts[i].phyAddr);
             }
 
-            if (pHost)
+            if ((pHost) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]))
             {
-                if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] == NULL) ||
-                    ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
-                     (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL)))
+                if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
+                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL) &&
+                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == NULL))
                 {
                     if (hosts[i].status != LM_NEIGHBOR_STATE_FAILED)
                     {
