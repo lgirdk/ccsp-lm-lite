@@ -1207,7 +1207,7 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned char *mac)
 {
     char buf[40];
-    char *layer1InterfaceId = "Ethernet";
+    char *layer1InterfaceId = "Unknown";
     int unknown = 1;
     int port = -1;
 
@@ -2749,11 +2749,10 @@ static void Hosts_SyncEthClient (void)
                 pHost = Hosts_FindHostByPhysAddress (hosts[i].phyAddr);
             }
 
-            if (pHost)
+            if ((pHost) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]))
             {
-                if ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] == NULL) ||
-                    ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
-                     (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL)))
+                if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
+                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL))
                 {
                     if (hosts[i].status != LM_NEIGHBOR_STATE_FAILED)
                     {
