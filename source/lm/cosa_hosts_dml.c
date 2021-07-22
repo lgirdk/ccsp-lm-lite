@@ -550,11 +550,8 @@ Hosts_SetParamUlongValue
     /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod") == 0)
     {
-		char buf1[8];
-		memset(buf1, 0, sizeof(buf1));
         g_Client_Poll_interval = uValue;
-		snprintf(buf1,sizeof(buf1),"%d",(int)uValue);
-			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
+			if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , uValue) != 0) {
 				     return FALSE;
              } else {
 
