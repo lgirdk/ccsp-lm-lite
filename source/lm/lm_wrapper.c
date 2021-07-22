@@ -1517,9 +1517,7 @@ void lm_wrapper_get_dhcpv4_client()
                     lmHosts.lastActivity++;
                     CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
 		    t2_event_d("SYS_INFO_Hostname_changed", 1);
-		    char buf[8];
-                    snprintf(buf,sizeof(buf),"%d", (int)lmHosts.lastActivity);
-                    if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+                    if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
                     {
                         AnscTraceWarning(("syscfg_set failed\n"));
                     }
@@ -1643,9 +1641,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 					lmHosts.lastActivity++;
 					CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
 					t2_event_d("SYS_INFO_Hostname_changed", 1);
-					char buf[8];
-					snprintf(buf,sizeof(buf),"%lu",lmHosts.lastActivity);
-					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
+					if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
 					{
 						AnscTraceWarning(("syscfg_set failed\n"));
 					}
