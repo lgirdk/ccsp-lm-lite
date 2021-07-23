@@ -718,7 +718,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 					get_uptime(&uptime);
                   			CcspTraceWarning(("Client_Connect_complete:%d\n",uptime));	
 					OnboardLog("Client_Connect_complete:%d\n",uptime);
-					t2_event_d("bootuptime_ClientConnectComplete_split", uptime);
+					t2_event_d("btime_clientconn_split", uptime);
 				   }
 					CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 					lmHosts.lastActivity++;
