@@ -86,8 +86,7 @@
 #include "safec_lib_common.h"
 
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
-#include "cimplog.h"
-#define OnboardLog(...)                     onboarding_log("LM", __VA_ARGS__)
+#define OnboardLog(...)                     rdk_log_onboard("LM", __VA_ARGS__)
 #else
 #define OnboardLog(...)
 #endif
