@@ -2266,7 +2266,19 @@ static void *Event_HandlerThread(void *threadid)
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                         LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
                     }
-                }
+#ifdef USE_NOTIFY_COMPONENT
+                    else
+                    {
+                        pthread_mutex_unlock(&LmHostObjectMutex);
+                    }
+               }
+               else
+               {
+                    pthread_mutex_unlock(&LmHostObjectMutex);
+               }
+#else
+               }
+#endif
             }
             
 #ifndef USE_NOTIFY_COMPONENT
