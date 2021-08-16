@@ -2197,11 +2197,6 @@ static void *Event_HandlerThread(void *threadid)
             {
                 set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr);
 
-                if (strcmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == 0)
-                {
-                    LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Device.Ethernet.Interface.1");
-                } 
-
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
                     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
@@ -2593,8 +2588,7 @@ static void Hosts_SyncEthClient (void)
             if ((pHost) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]))
             {
                 if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
-                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL) &&
-                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == NULL))
+                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL))
                 {
                     if (hosts[i].status != LM_NEIGHBOR_STATE_FAILED)
                     {
