@@ -1994,7 +1994,7 @@ void XHosts_SyncWifi()
 			pHost->bBoolParaValue[LM_HOST_ActiveId] = hosts[i].Status;
 			pHost->activityChangeTime = time((time_t*)NULL);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), " ");
 			
         }
  	}
@@ -2049,7 +2049,7 @@ void Hosts_SyncWifi()
 			}
 #endif
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), " ");
 			pthread_mutex_unlock(&LmHostObjectMutex);
             }
         }
@@ -2233,7 +2233,7 @@ static void *Event_HandlerThread(void *threadid)
             }
             
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), " ");
             pthread_mutex_unlock(&LmHostObjectMutex);
 
             if(hosts.Status && do_dhcpsync) 
@@ -3208,13 +3208,16 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 			convert_ssid_to_radio(ssid, radio);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), ssid);
+			if(strncmp(AssociatedDevice,"NULL",strlen(AssociatedDevice)) == 0)
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " ");
+			else
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), AssociatedDevice);
 			pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = RSSI;
 			pHost->l1unReachableCnt = 1;
 			pHost->bBoolParaValue[LM_HOST_ActiveId] = Status;
 			pHost->activityChangeTime = time((time_t*)NULL);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Parent]), getFullDeviceMac());
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), " ");
 
 			if( Status ) 
 			{
