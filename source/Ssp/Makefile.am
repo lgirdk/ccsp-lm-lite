@@ -33,14 +33,6 @@ CcspLMLite_CPPFLAGS = \
     -I$(top_srcdir)/source/Custom \
     -I$(top_srcdir)/source/lm
 
-if CCSP_ARCH_ARM
-CcspLMLite_CPPFLAGS += -I$(top_srcdir)/source-arm/TR-181/board_include -I$(top_srcdir)/source-arm/TR-181/board_sbapi
-endif
-
-if CCSP_ARCH_MIPS
-CcspLMLite_CPPFLAGS += -I$(top_srcdir)/source-mips/TR-181/board_include -I$(top_srcdir)/source-mips/TR-181/board_sbapi
-endif
-
 CcspLMLite_CFLAGS = $(SYSTEMD_CFLAGS)
 CcspLMLite_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c dm_pack_datamodel.c
 CcspLMLite_LDFLAGS = -lccsp_common -ldl -rdynamic $(SYSTEMD_LDFLAGS)
