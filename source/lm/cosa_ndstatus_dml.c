@@ -31,9 +31,6 @@
 #include "ccsp_custom_logs.h"
 #include "ccsp_lmliteLog_wrapper.h"
 
-#include "safec_lib_common.h"
-
-
 extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
 extern COSA_DATAMODEL_REPORTS* g_pReports;
@@ -70,7 +67,6 @@ ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value)
     int retPsmSet = CCSP_SUCCESS;
     char psmValue[32] = {};
     ULONG psm_value = 0;
-    errno_t rc      = -1;
 
     retPsmSet = GetNVRamULONGConfiguration(setting,&psm_value);
 
@@ -80,13 +76,7 @@ ANSC_STATUS SetNVRamULONGConfiguration(char* setting, ULONG value)
       return retPsmSet;
     }
 
-    rc = sprintf_s(psmValue, sizeof(psmValue), "%lu", value);
-    if(rc < EOK)
-    {
-        ERR_CHK(rc);
-        return CCSP_FAILURE;
-    }
-
+    sprintf(psmValue,"%d", (int)value);
     retPsmSet = PSM_Set_Record_Value2(bus_handle,g_Subsystem, setting, ccsp_string, psmValue);
     if (retPsmSet != CCSP_SUCCESS) 
         {
@@ -308,7 +298,6 @@ NetworkDevicesStatus_GetParamStringValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    errno_t  rc = -1;
 
     if( AnscEqualString(ParamName, "Schema", TRUE))
     {
@@ -316,12 +305,8 @@ NetworkDevicesStatus_GetParamStringValue
         int bufsize = GetNDStatusSchemaBufferSize();
         if(!bufsize)
         {
-            rc = strcpy_s(pValue, *pUlSize, "Schema Buffer is empty");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return -1;
-            }
+            char result[1024] = "Schema Buffer is empty";
+            AnscCopyString(pValue, (char*)&result);
             return 0;
         }
         else
@@ -329,11 +314,6 @@ NetworkDevicesStatus_GetParamStringValue
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%lu]\n", bufsize, *pUlSize));
         if (bufsize < (int)*pUlSize)
         {
-             /* LIMITATION
-             * Following AnscCopyString() can't modified to safec strcpy_s() api
-             * Because, safec has the limitation of copying only 4k ( RSIZE_MAX ) to destination pointer
-             * And here, we have source pointer size more than 4k, i.e simetimes 190k also
-            */
             AnscCopyString(pValue, GetNDStatusSchemaBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
@@ -354,12 +334,8 @@ NetworkDevicesStatus_GetParamStringValue
         int bufsize = GetNDStatusSchemaIDBufferSize();
         if(!bufsize)
         {
-            rc = strcpy_s(pValue, *pUlSize, "SchemaID Buffer is empty");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return -1;
-            }
+            char result[1024] = "SchemaID Buffer is empty";
+            AnscCopyString(pValue, (char*)&result);
             return 0;
         }
         else
@@ -368,12 +344,7 @@ NetworkDevicesStatus_GetParamStringValue
 	CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Buffer Size [%d] InputSize [%lu]\n", bufsize, *pUlSize));
         if (bufsize < (int)*pUlSize)
         {
-            rc = strcpy_s(pValue, *pUlSize, GetNDStatusSchemaIDBuffer());
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return -1;
-            }
+            AnscCopyString(pValue, GetNDStatusSchemaIDBuffer());
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, pValue Buffer Size [%d] \n", (int)strlen(pValue)));
             CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : EXIT \n", __FUNCTION__ ));
             return 0;
@@ -435,7 +406,6 @@ NetworkDevicesStatus_Validate
 {
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    errno_t  rc  = -1;
 
     if(g_pReports->bNDSPollingPeriodChanged)
     {
@@ -443,25 +413,14 @@ NetworkDevicesStatus_Validate
         if(!validated)
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDSPollingPeriod));
-            rc = strcpy_s(pReturnParamName, *puLength, "PollingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
         }
         if( GetNDSHarvestingStatus() && g_pReports->uNDSPollingPeriod > GetNDSPollingPeriod())
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%lu] > Current Polling Period [%lu] \n", __FUNCTION__ , g_pReports->uNDSPollingPeriod, GetNDSPollingPeriod() ));
-            rc = strcpy_s(pReturnParamName, *puLength, "PollingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
+            AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
         }
@@ -471,13 +430,7 @@ NetworkDevicesStatus_Validate
         if(g_pReports->uNDSPollingPeriod > period )
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : PollingPeriod Validation Failed : New Polling Period [%lu] > Current Reporting Period [%lu] \n", __FUNCTION__ , g_pReports->uNDSPollingPeriod, period ));
-            rc = strcpy_s(pReturnParamName, *puLength, "PollingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;           
         }
@@ -489,12 +442,7 @@ NetworkDevicesStatus_Validate
         if(!validated)
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : NeighboringAPPollingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDSReportingPeriod));
-            rc = strcpy_s(pReturnParamName, *puLength, "ReportingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
+            AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
         }
@@ -504,26 +452,14 @@ NetworkDevicesStatus_Validate
         if(g_pReports->uNDSReportingPeriod < period )
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%lu] < Current Polling Period [%lu] \n", __FUNCTION__ , g_pReports->uNDSReportingPeriod, period ));
-            rc = strcpy_s(pReturnParamName, *puLength, "ReportingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
         }
         if(GetNDSHarvestingStatus() && g_pReports->uNDSReportingPeriod > GetNDSReportingPeriod())
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : ReportingPeriod Validation Failed : New Reporting Period [%lu] > Current Reporting Period [%lu] \n", __FUNCTION__ , g_pReports->uNDSReportingPeriod, GetNDSReportingPeriod() ));
-            rc = strcpy_s(pReturnParamName, *puLength, "ReportingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;           
         }
@@ -758,7 +694,6 @@ NetworkDevicesStatus_Default_Validate
 {
     UNREFERENCED_PARAMETER(hInsContext);
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s : ENTER \n", __FUNCTION__ ));
-    errno_t  rc  = -1;
 
     if(g_pReports->bNDSDefPollingPeriodChanged)
     {
@@ -766,12 +701,7 @@ NetworkDevicesStatus_Default_Validate
         if(!validated)
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default PollingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDSPollingPeriodDefault));
-            rc = strcpy_s(pReturnParamName, *puLength, "PollingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
+            AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
         }
@@ -781,13 +711,7 @@ NetworkDevicesStatus_Default_Validate
         if (g_pReports->uNDSPollingPeriodDefault > period)
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default PollingPeriod Validation Failed : New Default Polling Period [%lu] > Current Default Reporting Period [%lu] \n", __FUNCTION__ , g_pReports->uNDSPollingPeriodDefault, period ));
-            rc = strcpy_s(pReturnParamName, *puLength, "PollingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "PollingPeriod");
             *puLength = AnscSizeOfString("PollingPeriod");
             return FALSE;
         }
@@ -799,13 +723,7 @@ NetworkDevicesStatus_Default_Validate
         if(!validated)
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default ReportingPeriod Validation Failed : [%lu] Value not Allowed \n", __FUNCTION__ , g_pReports->uNDSReportingPeriodDefault));
-            rc = strcpy_s(pReturnParamName, *puLength, "ReportingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
         }
@@ -815,13 +733,7 @@ NetworkDevicesStatus_Default_Validate
 	if (g_pReports->uNDSReportingPeriodDefault < period)
         {
             CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Default ReportingPeriod Validation Failed : New Default Reporting Period [%lu] < Current Default Polling Period [%lu] \n", __FUNCTION__ , g_pReports->uNDSReportingPeriodDefault, period ));
-            rc = strcpy_s(pReturnParamName, *puLength, "ReportingPeriod");
-            if(rc != EOK)
-            {
-                ERR_CHK(rc);
-                return FALSE;
-            }
-
+            AnscCopyString(pReturnParamName, "ReportingPeriod");
             *puLength = AnscSizeOfString("ReportingPeriod");
             return FALSE;
         }

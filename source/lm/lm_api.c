@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include "lm_api.h"
 #include "ansc_wrapper_base.h"
-#include "safec_lib_common.h"
 
 #define LM_LOG(x) printf x 
 
@@ -53,13 +52,11 @@ int init_client_socket(int *client_fd){
     struct sockaddr_un srv_addr; 
     int fd;
     int ret;
-    errno_t rc = -1;
     fd = socket(PF_UNIX,SOCK_STREAM,0);
     if(fd < 0 )
         return LM_RET_ERR;
     srv_addr.sun_family=AF_UNIX;  
-    rc = strcpy_s(srv_addr.sun_path, sizeof(srv_addr.sun_path),LM_SERVER_FILE_NAME);
-    ERR_CHK(rc);
+    strcpy(srv_addr.sun_path,LM_SERVER_FILE_NAME); 
 
     ret=connect(fd,(struct sockaddr*)&srv_addr,sizeof(srv_addr));  
     if(ret==-1)  

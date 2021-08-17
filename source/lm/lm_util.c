@@ -63,7 +63,6 @@
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
 #endif
-#include "safec_lib_common.h"
 
 void LanManager_StringToLower( char *pstring )
 {
@@ -144,19 +143,15 @@ char * LanManager_GetMACAddrFromIPv6Addr
        return NULL;
     }
     char ipv6Addr[200] = {0};
-    errno_t rc = -1;
     /* Copy to new string ipv6Addr and fill in all missed ':' to "::" */
 
     *doubleColon = 0;
-    rc = strcpy_s(ipv6Addr,  sizeof(ipv6Addr),ipv6AddrOrg);
-    ERR_CHK(rc);
+    strcpy(ipv6Addr, ipv6AddrOrg);
     for(i=0; i<=(7-colonNum); i++){
-        rc = strcat_s(ipv6Addr,  sizeof(ipv6Addr),":");
-        ERR_CHK(rc);
+        strcat(ipv6Addr, ":");
     }
     doubleColon++;
-    rc = strcat_s(ipv6Addr, sizeof(ipv6Addr),doubleColon);
-    ERR_CHK(rc);
+    strcat(ipv6Addr, doubleColon);
     len = strlen(ipv6Addr);
 
     /* Cut off the interface ID. Fill in omitted 0. */

@@ -51,7 +51,6 @@
 #if defined(_ENABLE_EPON_SUPPORT_)
 #include <syslog.h>
 #endif
-#include "safec_lib_common.h"
 
 #define DEBUG_INI_NAME "/etc/debug.ini"
 extern char*                                pComponentName;
@@ -61,7 +60,6 @@ FILE* debugLogFile;
 
 int  cmd_dispatch(int  command)
 {
-    ANSC_STATUS  returnStatus    = ANSC_STATUS_SUCCESS;
     switch ( command )
     {
         case    'e' :
@@ -71,14 +69,14 @@ int  cmd_dispatch(int  command)
 
             {
                 char                            CName[256];
-                errno_t                         rc = -1;
 
-
-                rc = sprintf_s(CName, sizeof(CName), "%s%s", g_Subsystem, CCSP_COMPONENT_ID_LMLITE);
-                if(rc < EOK)
+                if ( g_Subsystem[0] != 0 )
                 {
-                    ERR_CHK(rc);
-                    return -1;
+                    _ansc_sprintf(CName, "%s%s", g_Subsystem, CCSP_COMPONENT_ID_LMLITE);
+                }
+                else
+                {
+                    _ansc_sprintf(CName, "%s", CCSP_COMPONENT_ID_LMLITE);
                 }
 
                 ssp_Mbi_MessageBusEngage
@@ -90,14 +88,8 @@ int  cmd_dispatch(int  command)
             }
 #endif
 
-            returnStatus = ssp_create();
-            if(ANSC_STATUS_SUCCESS != returnStatus)
-               return -1;
-
-            returnStatus = ssp_engage();
-            if(ANSC_STATUS_SUCCESS != returnStatus)
-               return -1;
-
+            ssp_create();
+            ssp_engage();
 
             break;
 
@@ -115,9 +107,7 @@ int  cmd_dispatch(int  command)
 
         case    'c':
                 
-                returnStatus = ssp_cancel();
-                if(ANSC_STATUS_SUCCESS != returnStatus)
-                   return -1;
+                ssp_cancel();
 
                 break;
 
@@ -238,10 +228,6 @@ int main(int argc, char* argv[])
     extern ANSC_HANDLE bus_handle;
     char *subSys            = NULL;  
     DmErr_t    err;
-    ANSC_STATUS   returnStatus = ANSC_STATUS_SUCCESS;
-    int           ret          = 0;
-    errno_t       rc           = -1;
-
     debugLogFile = stderr;
 #if defined(_ENABLE_EPON_SUPPORT_)
     setlogmask(LOG_UPTO(LOG_INFO));
@@ -250,20 +236,7 @@ int main(int argc, char* argv[])
     {
         if ( (strcmp(argv[idx], "-subsys") == 0) )
         {
-           if ((idx+1) < argc)
-           {
-               rc = strcpy_s(g_Subsystem, sizeof(g_Subsystem), argv[idx+1]);
-               if(rc != EOK)
-               {
-                  ERR_CHK(rc);
-                  CcspTraceError(("exit ERROR %s:%d\n", __FUNCTION__, __LINE__));
-                  exit(1);
-               }
-           }
-           else
-           {
-               CcspTraceError(("Argument missing after -subsys\n"));
-           }
+            AnscCopyString(g_Subsystem, argv[idx+1]);
         }
         else if ( strcmp(argv[idx], "-c") == 0 )
         {
@@ -304,24 +277,13 @@ int main(int argc, char* argv[])
 
     AnscStartupSocketWrapper(NULL);
 
-    ret = cmd_dispatch('e');
-    if(ret != 0)
-    {
-       CcspTraceError(("exit ERROR %s:%d\n", __FUNCTION__, __LINE__));
-       exit(1);
-    }
-
+    cmd_dispatch('e');
 
     while ( cmdChar != 'q' )
     {
         cmdChar = getchar();
 
-        ret = cmd_dispatch(cmdChar);
-        if(ret != 0)
-        {
-           CcspTraceError(("exit ERROR %s:%d\n", __FUNCTION__, __LINE__));
-           exit(1);
-        }
+        cmd_dispatch(cmdChar);
     }
 #elif defined(_ANSC_LINUX)
     if ( bRunAsDaemon ) 
@@ -343,13 +305,7 @@ int main(int argc, char* argv[])
     signal(SIGHUP, sig_handler);
 #endif
 
-    ret = cmd_dispatch('e');
-    if(ret != 0)
-    {
-       CcspTraceError(("exit ERROR %s:%d\n", __FUNCTION__, __LINE__));
-       exit(1);
-    }
-
+    cmd_dispatch('e');
 #ifdef _COSA_SIM_
     subSys = "";        /* PC simu use empty string as subsystem */
 #else
@@ -380,12 +336,7 @@ int main(int argc, char* argv[])
         {
             cmdChar = getchar();
 
-            ret = cmd_dispatch(cmdChar);
-            if(ret != 0)
-            {
-              CcspTraceError(("exit ERROR %s:%d\n", __FUNCTION__, __LINE__));
-              exit(1);
-            }
+            cmd_dispatch(cmdChar);
         }
     }
 
@@ -397,13 +348,7 @@ int main(int argc, char* argv[])
 	exit(1);
 	}
 
-    returnStatus = ssp_cancel();
-    if (ANSC_STATUS_SUCCESS != returnStatus)
-    {
-      CcspTraceError(("exit ERROR %s:%d\n", __FUNCTION__, __LINE__));
-      exit(1);
-    }
-
+	ssp_cancel();
 
     if(debugLogFile)
     {

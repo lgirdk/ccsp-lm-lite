@@ -42,8 +42,6 @@
 #include "mlt_malloc.h"
 #endif
 
-#include "safec_lib_common.h"
-
 #define PUBLIC  0
 #define PRIVATE 1
 
@@ -440,7 +438,6 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 	ULONG channel = 0;
     char freqband[128] = {0};
     ExtenderList *list = extenderlist;
-    errno_t rc = -1;
 
     while(list)
     {
@@ -495,20 +492,16 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 
             if((strstr(tmp->SSID_Type,"2.4"))) 
             {
-                rc = strcpy_s(freqband, sizeof(freqband),"_2_4GHz");
-                ERR_CHK(rc);
+                strcpy(freqband, "_2_4GHz");
 				/* RDKB-7592 : Extender connected device report should have correct interface_mac */
-                rc = strcpy_s(band_client, sizeof(band_client),IDW_WIFI_BAND_2_4);
-                ERR_CHK(rc);
+				strcpy(band_client,IDW_WIFI_BAND_2_4);
 				
             }
             else
             {
-                rc = strcpy_s(freqband, sizeof(freqband),"_5GHz");
-                ERR_CHK(rc);
+                strcpy(freqband, "_5GHz");
 				/* RDKB-7592 : Extender connected device report should have correct interface_mac */
-                rc = strcpy_s(band_client, sizeof(band_client),IDW_WIFI_BAND_5_0);
-                ERR_CHK(rc);
+				strcpy(band_client,IDW_WIFI_BAND_5_0);
             }
 
             memset(wifi_associated_dev_array->cli_OperatingStandard, 0, sizeof wifi_associated_dev_array->cli_OperatingStandard);
@@ -553,8 +546,7 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 						if( AnscEqualString(curSsid->band,band_client, FALSE) &&
 							AnscEqualString(curSsid->name,tmp->SSID_Name, FALSE) )
 						{
-							rc = strcpy_s(interfaceMAC, sizeof(interfaceMAC),curSsid->bssid);
-							ERR_CHK(rc);
+							strcpy(interfaceMAC,curSsid->bssid);
 							break;
 						}
 					}
@@ -562,8 +554,7 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 					{
 						if( AnscEqualString(curSsid->band,band_client, FALSE) )
 						{
-							rc = strcpy_s(interfaceMAC, sizeof(interfaceMAC),curSsid->bssid);
-							ERR_CHK(rc);
+							strcpy(interfaceMAC,curSsid->bssid);
 							break;
 						}
 					}

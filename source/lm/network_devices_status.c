@@ -37,7 +37,6 @@
 #include "report_common.h"
 #include <stdint.h>
 #include "webpa_interface.h"
-#include "safec_lib_common.h"
 
 static pthread_mutex_t ndsMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t ndsCond = PTHREAD_COND_INITIALIZER;
@@ -91,12 +90,7 @@ int getTimeOffsetFromUtc()
     char timezonecmd[128] = {0};
     char timezonearr[32] = {0};
     int ret  = 0;
-    errno_t rc = strcpy_s(timezonecmd, sizeof(timezonecmd),"dmcli eRT getv Device.Time.TimeOffset | grep value | awk '{print $5}'");
-    if(rc != EOK)
-    {
-       ERR_CHK(rc);
-       return -1;
-    }
+    sprintf(timezonecmd, "dmcli eRT getv Device.Time.TimeOffset | grep value | awk '{print $5}'");
     ret = _syscmd(timezonecmd, timezonearr, sizeof(timezonearr));
     if(ret)
     {

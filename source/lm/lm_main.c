@@ -83,7 +83,6 @@
 #include "syscfg/syscfg.h"
 #include "ccsp_memory.h"
 #include "cosa_plugin_api.h"
-#include "safec_lib_common.h"
 
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
 #include "cimplog.h"
@@ -323,18 +322,15 @@ void Send_PresenceNotification(char* interface,char*mac , ClientConnectState sta
 	char* faultParam = NULL;
 	int ret = 0;
 	char status_str[256]={0};
-	errno_t rc = -1;
 	
 
 	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 	switch (status) {
 	case CLIENT_STATE_OFFLINE:
-	    rc = strcpy_s(status_str, sizeof(status_str),"Presence Leave Detected");
-        ERR_CHK(rc);
+	    strcpy(status_str,"Presence Leave Detected");
 	    break;
    case CLIENT_STATE_ONLINE:
-        rc = strcpy_s(status_str, sizeof(status_str),"Presence Join Detected");
-        ERR_CHK(rc);
+        strcpy(status_str,"Presence Join Detected");
         break;
    default:
         break;
@@ -398,26 +394,21 @@ void Send_Notification(char* interface, char*mac , ClientConnectState status, ch
 	char* faultParam = NULL;
 	int ret = 0;
 	char status_str[16]={0};
-	errno_t rc = -1;
 	
 
 	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 	switch (status) {
 	case CLIENT_STATE_OFFLINE:
-	    rc = strcpy_s(status_str, sizeof(status_str),"Offline");
-	    ERR_CHK(rc);
+	    strcpy(status_str,"Offline");
 	    break;
     case CLIENT_STATE_DISCONNECT:
-        rc = strcpy_s(status_str, sizeof(status_str),"Disconnected");
-	    ERR_CHK(rc);
+        strcpy(status_str,"Disconnected");
         break;
     case CLIENT_STATE_ONLINE:
-        rc = strcpy_s(status_str, sizeof(status_str),"Online");
-	    ERR_CHK(rc);
+        strcpy(status_str,"Online");
         break;
     case CLIENT_STATE_CONNECT:
-        rc = strcpy_s(status_str, sizeof(status_str),"Connected");
-	    ERR_CHK(rc);
+        strcpy(status_str,"Connected");
         break;
     default:
         break;
@@ -530,7 +521,6 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
         UNREFERENCED_PARAMETER(line);
 	char interface[32] = {0};
 	int uptime = 0;
-	errno_t rc = -1;
     if(pHost->bBoolParaValue[LM_HOST_ActiveId] != state){
 
         char addressSource[20] = {0};
@@ -578,8 +568,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				remove_Mac_to_band_mapping(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 #endif
 			}
-			rc = strcpy_s(interface, sizeof(interface),"WiFi");
-			ERR_CHK(rc);
+			strcpy(interface,"WiFi");
 		}
 #ifndef _CBR_PRODUCT_REQ_ 
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
@@ -596,8 +585,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 
 				}
 			}
-			rc = strcpy_s(interface, sizeof(interface),"MoCA");
-			ERR_CHK(rc);
+			strcpy(interface,"MoCA");
 		}
 #endif
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
@@ -613,8 +601,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 					OnboardLog("RDKB_CONNECTED_CLIENTS: Ethernet client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
 				}
 			}
-			rc = strcpy_s(interface, sizeof(interface),"Ethernet");
-			ERR_CHK(rc);
+			strcpy(interface,"Ethernet");
 		}
 
 		else 
@@ -627,8 +614,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 				OnboardLog("RDKB_CONNECTED_CLIENTS:  client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
 			}
-			rc = strcpy_s(interface, sizeof(interface),"Other");
-			ERR_CHK(rc);
+			strcpy(interface,"Other");
 		}
         pHost->bBoolParaValue[LM_HOST_ActiveId] = state;
         pHost->activityChangeTime = time((time_t*)NULL);
@@ -641,23 +627,19 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
 	{
 		if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
-			rc = strcpy_s(interface, sizeof(interface),"WiFi");
-			ERR_CHK(rc);
+			strcpy(interface,"WiFi");
 		}
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 		{
-			rc = strcpy_s(interface, sizeof(interface),"MoCA");
-			ERR_CHK(rc);
+			strcpy(interface,"MoCA");
 		}
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
 		{
-			rc = strcpy_s(interface, sizeof(interface),"Ethernet");
-			ERR_CHK(rc);
+			strcpy(interface,"Ethernet");
 		}
 		else
 		{
-			rc = strcpy_s(interface, sizeof(interface),"Other");
-			ERR_CHK(rc);
+			strcpy(interface,"Other");
 		}
 	
 		if(state == FALSE)
@@ -912,22 +894,9 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
     /* Compose Host object name. */
     char objectName[100] = LM_HOST_OBJECT_NAME_HEADER;
     char instanceNumStr[50] = {0};
-    errno_t rc              = -1;
     _ansc_itoa(pHost->instanceNum, instanceNumStr, 10);
-    rc = strcat_s(instanceNumStr, sizeof(instanceNumStr),".");
-    if(rc != EOK)
-    {
-       ERR_CHK(rc);
-       LanManager_Free(pHost);
-       return NULL;
-    }
-    rc = strcat_s(objectName, sizeof(objectName),instanceNumStr);
-    if(rc != EOK)
-    {
-        ERR_CHK(rc);
-        LanManager_Free(pHost);
-        return NULL;
-    }
+    strcat(instanceNumStr, ".");
+    strcat(objectName, instanceNumStr);
     pHost->objectName = LanManager_CloneString(objectName);
 
     pHost->ipv4AddrArray = NULL;
@@ -1018,23 +987,9 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	    /* Compose Host object name. */
 	    char objectName[100] = LM_HOST_OBJECT_NAME_HEADER;
 	    char instanceNumStr[50] = {0};
-	    errno_t rc = -1;
 	    _ansc_itoa(pHost->instanceNum, instanceNumStr, 10);
-	    rc = strcat_s(instanceNumStr, sizeof(instanceNumStr),".");
-	    if(rc != EOK)
-	    {
-	       ERR_CHK(rc);
-	       LanManager_Free(pHost);
-	       return NULL;
-	    }
-	    rc = strcat_s(objectName, sizeof(objectName),instanceNumStr);
-	    if(rc != EOK)
-	    {
-	       ERR_CHK(rc);
-	       LanManager_Free(pHost);
-	       return NULL;
-	    }
-
+	    strcat(instanceNumStr, ".");
+	    strcat(objectName, instanceNumStr);
 	    pHost->objectName = LanManager_CloneString(objectName);
 
 	    pHost->l3unReachableCnt = 0;
@@ -1901,7 +1856,6 @@ void *lm_cmd_thread_func(void *args)
     int len;
     struct sockaddr_un clt_addr;
     struct sockaddr_un srv_addr;
-    errno_t rc = -1;
 
     listen_fd=socket(PF_UNIX,SOCK_STREAM,0);
     if(listen_fd<0)
@@ -1909,9 +1863,7 @@ void *lm_cmd_thread_func(void *args)
 
     srv_addr.sun_family=AF_UNIX;
     unlink(LM_SERVER_FILE_NAME);
-    rc = strcpy_s(srv_addr.sun_path, sizeof(srv_addr.sun_path),LM_SERVER_FILE_NAME);
-    ERR_CHK(rc);
-
+    strcpy(srv_addr.sun_path,LM_SERVER_FILE_NAME);
     /*CID: 53112 Unchecked return value from library*/
     if(bind(listen_fd, (struct sockaddr*)&srv_addr, sizeof(srv_addr)) < 0)
     {
@@ -2637,18 +2589,14 @@ static BOOL ValidateHost (char *mac)
 static RetryHostList *CreateValidateHostEntry(ValidateHostQData *pValidateHost)
 {
     RetryHostList *pHost;
-    errno_t rc = -1;
 
     pHost = (RetryHostList *)malloc(sizeof(RetryHostList));
     if (pHost)
     {
         memset(pHost, 0, sizeof(RetryHostList));
-        rc = strcpy_s(pHost->host.phyAddr, sizeof(pHost->host.phyAddr), pValidateHost->phyAddr);
-        ERR_CHK(rc);
-        rc = strcpy_s(pHost->host.AssociatedDevice, sizeof(pHost->host.AssociatedDevice),pValidateHost->AssociatedDevice);
-        ERR_CHK(rc);
-        rc = strcpy_s(pHost->host.ssid, sizeof(pHost->host.ssid),pValidateHost->ssid);
-        ERR_CHK(rc);
+        strcpy(pHost->host.phyAddr, pValidateHost->phyAddr);
+        strcpy(pHost->host.AssociatedDevice, pValidateHost->AssociatedDevice);
+        strcpy(pHost->host.ssid, pValidateHost->ssid);
         pHost->host.RSSI = pValidateHost->RSSI;
         pHost->host.Status = pValidateHost->Status;
         pHost->retryCount = 0;
@@ -2663,7 +2611,6 @@ static void UpdateHostRetryValidateList(ValidateHostQData *pValidateHostMsg, int
     RetryHostList *pHostNode = NULL;
     RetryHostList *retryList = NULL;
     RetryHostList *prevNode = NULL;
-    errno_t rc = -1;
 
     if (!pValidateHostMsg)
     {
@@ -2699,10 +2646,8 @@ static void UpdateHostRetryValidateList(ValidateHostQData *pValidateHostMsg, int
                  * update info, and reset the retry count 
                  */
                 if (!retryList->host.Status && pValidateHostMsg->Status) {
-                    rc = strcpy_s(retryList->host.AssociatedDevice, sizeof(retryList->host.AssociatedDevice),pValidateHostMsg->AssociatedDevice);
-                    ERR_CHK(rc);
-                    rc = strcpy_s(retryList->host.ssid, sizeof(retryList->host.ssid),pValidateHostMsg->ssid);
-                    ERR_CHK(rc);
+                    strcpy(retryList->host.AssociatedDevice, pValidateHostMsg->AssociatedDevice);
+                    strcpy(retryList->host.ssid, pValidateHostMsg->ssid);
                     retryList->host.RSSI = pValidateHostMsg->RSSI;
                     retryList->host.Status = pValidateHostMsg->Status;
                 }
@@ -2901,8 +2846,7 @@ void LM_main (void)
 	else
 		{
 			g_Client_Poll_interval = 60;
-			errno_t rc = strcpy_s(buf1, sizeof(buf1),"60");
-			ERR_CHK(rc);
+			strcpy(buf1,"60");
 			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
 				return;
              } else {
@@ -3019,7 +2963,6 @@ static void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
     int i;
     char (*dmnames)[CDM_PATH_SZ]=NULL;
     int nname = 0;
-    errno_t rc = -1;
     
     if(*pList != NULL){
         AnscFreeMemory(*pList);
@@ -3037,16 +2980,9 @@ static void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 			parameterValStruct_t varStruct = {0};
 			UCHAR      ucEntryParamName[NAME_DM_LEN] = {0}; 
 			
-			rc = sprintf_s((*pList)[i].dm , sizeof((*pList)[i].dm),"%s", dmnames[i]);
-			if(rc < EOK)
-			{
-				ERR_CHK(rc);
-			}
-			rc = sprintf_s((char *)ucEntryParamName , sizeof(ucEntryParamName),"%s%s", dmnames[i], name);
-			if(rc < EOK)
-			{
-				ERR_CHK(rc);
-			}
+			sprintf((*pList)[i].dm ,"%s", dmnames[i]);
+			(*pList)[i].dm[strlen((*pList)[i].dm) - 1 ] = '\0';
+			sprintf((char *)ucEntryParamName ,"%s%s", dmnames[i], name);
 			varStruct.parameterName = (char *)ucEntryParamName;
    			varStruct.parameterValue = (*pList)[i].name;
 			/*CID: 73391 Unchecked return value*/
@@ -3356,7 +3292,6 @@ static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost)
 	int x = 0,y = 0,tmp =0, tAP = 0;
 	int token = 0,AP = 0;
 	char str[100];
-	errno_t rc = -1;
 	
 	x = Hosts_FindHostIndexByPhysAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 
@@ -3383,11 +3318,8 @@ static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost)
 				if(strcmp(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId],"empty"))
 				{
 					tmp = tmp-1;
-					rc = sprintf_s(str, sizeof(str),"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
-					if(rc < EOK)
-					{
-						ERR_CHK(rc);
-					}
+					memset(str, 0, sizeof(str));
+					sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
 					LanManager_CheckCloneCopy(&(lmHosts.hostArray[y]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
 				}
 			}
@@ -3414,11 +3346,8 @@ static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost)
 				if(token < tmp)
 				{
 					tmp = tmp-1;
-					rc = sprintf_s(str, sizeof(str),"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
-					if(rc < EOK)
-					{
-						ERR_CHK(rc);
-					}
+					memset(str, 0, sizeof(str));
+					sprintf(str,"Device.WiFi.AccessPoint.%d.AssociatedDevice.%d",tAP,tmp);
 					LanManager_CheckCloneCopy(&(lmHosts.hostArray[x]->pStringParaValue[LM_HOST_AssociatedDeviceId]), str);
 				}
 			}
@@ -3560,15 +3489,13 @@ void EthClient_AddtoQueue(char *phyAddr,int Status )
 		Eth_data EthHost;
 		mqd_t mq;
         char buffer[MAX_SIZE];
-        errno_t rc = -1;
 		
 		mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
         CHECK((mqd_t)-1 != mq);
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_ETH;
 
-		rc = strcpy_s(EthHost.MacAddr, sizeof(EthHost.MacAddr),phyAddr);
-		ERR_CHK(rc);
+		strcpy(EthHost.MacAddr,phyAddr);
 		EthHost.Active = Status;
 		memcpy(EventMsg.Msg,&EthHost,sizeof(EthHost));
 		memcpy(buffer,&EventMsg,sizeof(EventMsg));
@@ -3638,18 +3565,22 @@ static void Sendmsg_dnsmasq(BOOL enablePresenceFeature)
         mqd_t mq;
         char buffer[MAX_SIZE_DNSMASQ_Q];
         char buf_ip[32];
-        errno_t rc = -1;
 
         mq = mq_open(DNSMASQ_NOTIFY_QUEUE_NAME, O_WRONLY | O_NONBLOCK);
         CHECK((mqd_t)-1 != mq);
         memset(buffer, 0, MAX_SIZE_DNSMASQ_Q);
         EventMsg.MsgType = MSG_TYPE_DNSMASQ;
 
-        rc = strcpy_s(EventMsg.enable, sizeof(EventMsg.enable), ((enablePresenceFeature == TRUE) ? "true" : "false"));
-        ERR_CHK(rc);
+        if (enablePresenceFeature)
+        {
+            strcpy(EventMsg.enable,"true");
+        }
+        else
+        {
+            strcpy(EventMsg.enable,"false");
+        }
         syscfg_get( NULL, "lan_ipaddr", buf_ip, sizeof(buf_ip)); 
-        rc = strcpy_s (EventMsg.ip, sizeof(EventMsg.ip),buf_ip);
-        ERR_CHK(rc);
+        strcpy (EventMsg.ip,buf_ip);
         /*CID: 70724 Uninitialized scalar variable*/
         memset (&EventMsg.mac, 0, sizeof(EventMsg.mac));
         memcpy(buffer,&EventMsg,sizeof(EventMsg));
@@ -3785,7 +3716,6 @@ int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddres
     LmPresenceDetectionInfo status;
     memset(&status, 0, sizeof(LmPresenceDetectionInfo));
     PLmObjectHostIPAddress pIpAddrList;
-    errno_t rc = -1;
 
     if (!pHost || !lmHosts.enablePresence) 
         return -1;   
@@ -3820,8 +3750,7 @@ int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddres
                     char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
                     if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
                     {
-                        rc = strcpy_s (status.ipv6, sizeof(status.ipv6),pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
-                        ERR_CHK(rc);
+                        strcpy (status.ipv6,pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
                     }
                 }
             }
@@ -3835,8 +3764,7 @@ int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddres
                         char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
                         if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
                         {
-                            rc = strcpy_s (status.ipv6, sizeof(status.ipv6) , pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
-                            ERR_CHK(rc);
+                            strcpy (status.ipv6,pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
                         }
                     }
                 }
@@ -3852,8 +3780,7 @@ int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddres
                         char* ipadd = pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId];
                         if (strcmp(ipadd," ") && strcmp(ipadd,"EMPTY"))
                         {
-                            rc = strcpy_s (status.ipv6, sizeof(status.ipv6),pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
-                            ERR_CHK(rc);
+                            strcpy (status.ipv6,pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
                         }
                     }
                 }
@@ -3861,8 +3788,7 @@ int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost, BOOL isIpAddres
         }
         if ((status.ipv4Active) && (pHost->pStringParaValue[LM_HOST_IPAddressId]))
         {
-            rc = strcpy_s (status.ipv4, sizeof(status.ipv4),pHost->pStringParaValue[LM_HOST_IPAddressId]);
-            ERR_CHK(rc);
+            strcpy (status.ipv4,pHost->pStringParaValue[LM_HOST_IPAddressId]);
         }
     }
     Hosts_UpdatePresenceDetectionStatus(&status);
@@ -3919,7 +3845,6 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
 	char interface[32] = {0};
     BOOL notify_to_webpa = FALSE;
     ClientConnectState status;
-    errno_t rc = -1;
 
     if (!pHost)
         return -1;
@@ -3967,23 +3892,19 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
         if(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
         {
             if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi"))) {
-                rc = strcpy_s(interface, sizeof(interface), "WiFi");
-                ERR_CHK(rc);
+                strcpy(interface,"WiFi");
             }
             else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
             {
-                rc = strcpy_s(interface, sizeof(interface),"MoCA");
-                ERR_CHK(rc);
+                strcpy(interface,"MoCA");
             }
             else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
             {
-                rc = strcpy_s(interface, sizeof(interface),"Ethernet");
-                ERR_CHK(rc);
+                strcpy(interface,"Ethernet");
             }
             else
             {
-                rc = strcpy_s(interface, sizeof(interface),"Other");
-                ERR_CHK(rc);
+                strcpy(interface,"Other");
             }
         }
         Send_PresenceNotification(
@@ -4000,7 +3921,6 @@ BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
     EventQData EventMsg;
     mqd_t mq;
     char buffer[MAX_SIZE];
-    errno_t rc = -1;
     mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
     if (!((mqd_t)-1 != mq)) {
         CcspTraceError(("%s:%d: ", __FUNCTION__, __LINE__));
@@ -4034,8 +3954,7 @@ BOOL Presencedetection_DmlNotifyMac(char *mac,BOOL isNeedToAdd)
             return FALSE;
          }
         pthread_mutex_unlock(&LmHostObjectMutex);
-        rc = strcpy_s(EventMsg.Msg, sizeof(EventMsg.Msg),mac);
-        ERR_CHK(rc);
+        strcpy(EventMsg.Msg,mac);
     }
     else
     {
@@ -4061,15 +3980,19 @@ void Update_RFC_Presencedetection(BOOL enablePresenceFeature)
         EventQData EventMsg;
         mqd_t mq;
         char buffer[MAX_SIZE];
-        errno_t rc = -1;
         mq = mq_open(EVENT_QUEUE_NAME, O_WRONLY);
         CHECK((mqd_t)-1 != mq);
         memset(buffer, 0, MAX_SIZE);
         EventMsg.MsgType = MSG_TYPE_RFC;
 
-        rc = strcpy_s(EventMsg.Msg, sizeof(EventMsg.Msg), ((enablePresenceFeature == TRUE) ? "true" : "false"));
-        ERR_CHK(rc);
-
+        if (enablePresenceFeature)
+        {
+            strcpy(EventMsg.Msg,"true");
+        }
+        else
+        {
+            strcpy(EventMsg.Msg,"false");
+        }
         memcpy(buffer,&EventMsg,sizeof(EventMsg));
         CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
         CHECK((mqd_t)-1 != mq_close(mq));
