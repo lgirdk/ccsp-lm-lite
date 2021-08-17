@@ -32,7 +32,7 @@ AC_DISABLE_STATIC
 # Specify ccsp cpu arch
 
 AC_ARG_WITH([ccsp-arch],
-[AC_HELP_STRING([--with-ccsp-arch={arm,atom,pc,mips}],
+[AC_HELP_STRING([--with-ccsp-arch={arm,atom,mips}],
                 [specify the ccsp board CPU platform])],
 [case x"$withval" in
    xarm)
@@ -40,9 +40,6 @@ AC_ARG_WITH([ccsp-arch],
      ;;
    xatom)
      CCSP_ARCH=atom
-     ;;
-   xpc)
-     CCSP_ARCH=pc
      ;;
    xmips)
      CCSP_ARCH=mips
@@ -59,7 +56,6 @@ fi
 
 AM_CONDITIONAL(CCSP_ARCH_ARM, test "x$CCSP_ARCH" = xarm)
 AM_CONDITIONAL(CCSP_ARCH_ATOM, test "x$CCSP_ARCH" = xatom)
-AM_CONDITIONAL(CCSP_ARCH_PC, test "x$CCSP_ARCH" = xpc)
 AM_CONDITIONAL(CCSP_ARCH_MIPS, test "x$CCSP_ARCH" = xmips)
 
 # Specify ccsp platform (device)
@@ -120,9 +116,6 @@ AC_CONFIG_FILES(
 	source/Makefile
 	source/lm/Makefile
 	source/Ssp/Makefile
-	source-pc/Makefile
-	source-pc/lm/Makefile
-	source-pc/Ssp/Makefile
 	Makefile
 )
 
