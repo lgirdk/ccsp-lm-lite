@@ -16,11 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-if CCSP_ARCH_PC
-SUBDIRS = source-pc
-else
 SUBDIRS = source
-endif
 
 lib_LTLIBRARIES = liblmapi.la
 
@@ -28,11 +24,7 @@ liblmapi_la_CPPFLAGS = -D_ANSC_LINUX -D_ANSC_USER
 
 liblmapi_la_LDFLAGS = -lccsp_common 
 
-if CCSP_ARCH_PC
 liblmapi_la_SOURCES = ${SUBDIRS}/lm/lm_api.c
-else
-liblmapi_la_SOURCES = ${SUBDIRS}/lm/lm_api.c
-endif
 
 liblmapi_la_DEPENDENCIES =
 
