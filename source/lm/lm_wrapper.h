@@ -162,12 +162,16 @@ void lm_wrapper_get_dhcpv4_client();
 void Xlm_wrapper_get_info(PLmObjectHost pHost);
 
 void lm_wrapper_get_dhcpv4_reserved();
+#if 0
 BOOL SearchWiFiClients(char *phyAddr, char *ssid);
+#endif
 int mac_string_to_array(char *pStr, unsigned char array[6]);
 int ip_string_to_arrary(char* pStr, unsigned char array[4]);
 void getAddressSource(char *physAddress, char *pAddressSource);
 #ifdef USE_NOTIFY_COMPONENT
+#if 0
 void Wifi_Server_Thread_func();
+#endif
 #endif
 int getIPAddress(char *physAddress,char *IPAddress);
 int get_HostName(char *physAddress,char *HostName);
