@@ -1057,23 +1057,30 @@ RET1:
 #endif
 
 #if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
-static void _get_shell_output (char *cmd, char *out, int len)
+/*
+   Note that there are two versions of _get_shell_output() used with RDKB.
+   This version, which accepts a char * command as the first argument, is
+   the older version. The newer version accepts a FILE pointer as created
+   by a call to v_secure_popen().
+*/
+static void _get_shell_output (char *cmd, char *buf, size_t len)
 {
-    FILE * fp;
-    char   buf[256] = {0};
-    char * p;
-    fp = popen(cmd, "r");
-    if (fp)
-    {
-        fgets(buf, sizeof(buf), fp);
-        /*we need to remove the \n char in buf*/
-        if ((p = strchr(buf, '\n'))) *p = 0;
-        strncpy(out, buf, len-1);
-        pclose(fp);        
+    FILE *fp;
+
+    if (len > 0)
+        buf[0] = 0;
+    fp = popen (cmd, "r");
+    if (fp == NULL)
+        return;
+    buf = fgets (buf, len, fp);
+    pclose (fp);
+    if ((len > 0) && (buf != NULL)) {
+        len = strlen (buf);
+        if ((len > 0) && (buf[len - 1] == '\n'))
+            buf[len - 1] = 0;
     }
 }
 #endif
-
 
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray)
 {
@@ -1094,7 +1101,6 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
     // This is added to remove atom mac from the connected device list.
      if(pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
 		char *cmd = "rpcclient2 ifconfig eth0 | grep HWaddr | awk '{print $5}' | cut -c 1-18 | head -n 1";
-		memset (pAtomBRMac, 0, sizeof(pAtomBRMac));
 		_get_shell_output(cmd, pAtomBRMac, sizeof(pAtomBRMac));
 		CcspTraceWarning(("Atom mac is %s\n",pAtomBRMac));
    	}
