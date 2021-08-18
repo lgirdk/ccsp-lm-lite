@@ -66,8 +66,8 @@
 #define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
 
 extern ANSC_HANDLE bus_handle;
-char *pERTPAMComponentName = NULL;
-char *pERTPAMComponentPath = NULL;
+static char *pERTPAMComponentName = NULL;
+static char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
 extern pthread_mutex_t XLmHostObjectMutex;
 extern pthread_mutex_t HostNameMutex;
@@ -83,35 +83,30 @@ static char pAtomBRMac[32] = {0};
 #define WIFI_DM_BSSID         "Device.WiFi.SSID.1.BSSID"
 #define HASHSIZE 512
 
-
-
-char *dstComponent = NULL;
-char *dstPath = NULL;
-
 extern int consoleDebugEnable;
 extern FILE* debugLogFile;
 
 int bWifiHost = FALSE;
 static int fd;
-pthread_mutex_t GetARPEntryMutex;
+static pthread_mutex_t GetARPEntryMutex;
 
 #ifdef USE_NOTIFY_COMPONENT
-LM_wifi_hosts_t hosts;
-LM_wifi_hosts_t Xhosts;
-
-pthread_mutex_t Wifi_Hosts_mutex;
+static LM_wifi_hosts_t hosts;
+static LM_wifi_hosts_t Xhosts;
+static pthread_mutex_t Wifi_Hosts_mutex;
 #endif
 
-typedef struct mac_band_record{
-int band;
-BOOL active;
-char macAddress[18];
-struct mac_band_record *next;
-}mac_band_record;
+typedef struct mac_band_record {
+    int band;
+    BOOL active;
+    char macAddress[18];
+    struct mac_band_record *next;
+} mac_band_record;
 
-mac_band_record *Mac_to_band_mapping[HASHSIZE]={NULL};
+static mac_band_record *Mac_to_band_mapping[HASHSIZE]={NULL};
 
-int AreIPv4AddressesInSameSubnet(char* ipaddress, char* ipaddres2, char* subnetmask)
+#if 0
+static int AreIPv4AddressesInSameSubnet(char* ipaddress, char* ipaddres2, char* subnetmask)
 {
     struct in_addr addr, addr2, mask;    
     int ret = 0;
@@ -136,8 +131,9 @@ int AreIPv4AddressesInSameSubnet(char* ipaddress, char* ipaddres2, char* subnetm
 
     return ret;
 }
+#endif
 
-unsigned long hash(char *s)
+static unsigned long hash (char *s)
 {
 	unsigned long hashval=0;
 	if(s)
@@ -155,7 +151,7 @@ unsigned long hash(char *s)
         return (hashval%HASHSIZE); 
 }
 
-mac_band_record *lookup_Mac_to_band_mapping(char *macstring)
+static mac_band_record *lookup_Mac_to_band_mapping (char *macstring)
 {	
 	mac_band_record * curr=NULL, *wp=NULL;
         unsigned long hashindex;
@@ -168,7 +164,7 @@ mac_band_record *lookup_Mac_to_band_mapping(char *macstring)
        return curr;
 }
 
-void insert_Mac_to_band_mapping(char *macstring,int band)
+static void insert_Mac_to_band_mapping (char *macstring, int band)
 {
 	unsigned long hashindex;
         hashindex=hash(macstring);
@@ -252,9 +248,7 @@ void remove_Mac_to_band_mapping(char *macstring)
 	}
 }
 
-int LanManager_DiscoverComponent
-    (
-    )
+static int LanManager_DiscoverComponent (void)
 {
     char CrName[256] = {0};
     int ret = 0;
