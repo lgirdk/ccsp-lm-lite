@@ -2469,6 +2469,7 @@ static void *Hosts_LoggingThread(void *args)
 	int TotalWiFiDev = 0;
 	int Radio_2_Dev = 0;
 	int Radio_5_Dev = 0;
+        int Radio_6_Dev = 0;
 	int TotalEthDev = 0;
 	int TotalMoCADev = 0;
 
@@ -2494,7 +2495,11 @@ static void *Hosts_LoggingThread(void *args)
 
 						if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi")))
 						{
-							if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.1")))
+                                                        if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.17")))
+                                                        {
+                                                            Radio_6_Dev++;
+                                                        }
+                                                        else if((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"WiFi.SSID.1")))
 							{
 								Radio_2_Dev++;
 							}
@@ -2529,6 +2534,7 @@ static void *Hosts_LoggingThread(void *args)
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi_Clients=%d\n",TotalWiFiDev));
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-2.4G_Clients=%d\n",Radio_2_Dev));
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-5.0G_Clients=%d\n",Radio_5_Dev));
+                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-6.0G_Clients=%d\n",Radio_6_Dev));
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Ethernet_Clients=%d\n",TotalEthDev));
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_MoCA_Clients=%d\n",TotalMoCADev));
 		CcspTraceWarning(("-------------------------------------------------------------------\n"));
@@ -2546,6 +2552,7 @@ static void *Hosts_LoggingThread(void *args)
 		TotalWiFiDev = 0;
 		Radio_2_Dev = 0;
 		Radio_5_Dev = 0;
+                Radio_6_Dev = 0;
 		TotalEthDev = 0;
 		TotalMoCADev = 0;
 
