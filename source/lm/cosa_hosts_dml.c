@@ -676,30 +676,32 @@ static int IsNumberString(char *string)
     return 1;
 }
 
-static int IsProperMac(const char* mac)
+static int IsProperMac(const char* mac) //Adding input validation to address SECVULN-21127
 {
     int i = 0;
     int s = 0;
+    int count = 0;
 
     while (*mac)
     {
         if (isxdigit(*mac))
         {
             i++;
+            count++;
         }
-        else if (*mac == ':')
+        else if (*mac == ':' && count == 2)
         {
-            if (i == 0 || i / 2 - 1 != s)
-                break;
             ++s;
+            count=0;
         }
         else
         {
             s = -1;
+            break;
         }
         ++mac;
     }
-    return (i == 12 && (s == 5 || s == 0));
+    return (i == 12 && s == 5);
 }
 
 /**********************************************************************  

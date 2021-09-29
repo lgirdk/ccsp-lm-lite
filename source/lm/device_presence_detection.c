@@ -44,6 +44,7 @@
 #include "lm_util.h"
 #include "syscfg/syscfg.h"
 #include "safec_lib_common.h"
+#include "secure_wrapper.h"
 
 #define MAX_NUM_OF_DEVICE 200
 #define MAX_SIZE    512
@@ -456,11 +457,15 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
                 {
                     if (obj->ipv4Active && (!obj->ipv6Active))
                     {
-                        char cmd[256];
+                        int ret =0;
                         char buf1[64];
                         syscfg_get(NULL, "lan_ifname", buf1, sizeof(buf1));
-                        snprintf(cmd,sizeof(cmd),"ip neigh del %s dev %s",obj->ipv4,buf1);
-                        system(cmd);
+                        ret = v_secure_system("ip neigh del %s dev %s",obj->ipv4,buf1);
+                        if(ret !=0)
+                        {
+                             CcspTraceDebug(("Failed in executing the command via v_secure_system ret: %d \n",ret));
+                        }
+
                     }
                 }
  
@@ -480,7 +485,7 @@ int sendIpv4ArpMessage(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient
                 // int cnt = 0;
                 // for(cnt = 0; cnt < nPresenceDev;cnt++)
                 // {
-                // Submit request for a socket descriptor to look up interface.
+                // Submit request for a socket descriptor to look up interface.               
                 if ((sd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0) {
                     perror ("socket() failed to get socket descriptor for using ioctl() ");
                     exit (EXIT_FAILURE);
@@ -695,11 +700,14 @@ void *ReceiveArp_Thread(void *args)
         FILE *arpCache = NULL; 
         char output[ARP_BUFFER_LEN];
         char buf[64];
-        char cmd[256];
+        int ret = 0;
 
         syscfg_get(NULL, "lan_ifname", buf, sizeof(buf));
-        snprintf(cmd,sizeof(cmd),"arp -i %s -an > %s",buf,PRESENCE_ARP_CACHE);
-        system(cmd);
+        ret = v_secure_system("arp -i %s -an > "PRESENCE_ARP_CACHE,buf);
+        if(ret !=0)
+        {
+             CcspTraceDebug(("Failed in executing the command via v_secure_system ret: %d \n",ret));
+        }
 
         arpCache = fopen(PRESENCE_ARP_CACHE, "r");
         if (!arpCache)
@@ -1176,8 +1184,7 @@ void *RecvIPv6clientNotifications(void *args)
 
 int Send_ipv6_neighbourdiscovery(PLmDevicePresenceDetectionInfo pobject,BOOL bactiveclient)
 {
-    int i = 0;
-	char cmd[256] = {0};
+    int i = 0,ret = 0;
     char buf[64];
     if (pobject)
     {
@@ -1199,13 +1206,15 @@ int Send_ipv6_neighbourdiscovery(PLmDevicePresenceDetectionInfo pobject,BOOL bac
                      * otherwise considered this device is in-active.
                      */
                     if (pobj->ipv4Active && (pobj->ipv4_state != STATE_LEAVE_DETECTED))
-                    {
-                        char cmd[256];                
+                    {              
                         char buf[64];
                         pobj->ipv4_retry_count = 0;
                         syscfg_get(NULL, "lan_ifname", buf, sizeof(buf));
-                        snprintf(cmd,sizeof(cmd),"ip neigh del %s dev %s",pobj->ipv4,buf);
-                        system(cmd);
+                        ret = v_secure_system("ip neigh del %s dev %s",pobj->ipv4,buf);
+                        if(ret !=0)
+                        {
+                            CcspTraceDebug(("Failed in executing the command via v_secure_system ret: %d \n",ret));
+                        }
                         continue;
                     }
                     pobj->currentActive = FALSE;
@@ -1216,11 +1225,15 @@ int Send_ipv6_neighbourdiscovery(PLmDevicePresenceDetectionInfo pobject,BOOL bac
                     }
                     continue;
                 }
-                memset (cmd, 0, sizeof (cmd));
-                syscfg_get( NULL, "lan_ifname", buf, sizeof(buf));        
-                snprintf (cmd, sizeof (cmd), "ndisc6 %s %s -r 1 -q", pobj->ipv6,buf);
-                CcspTraceDebug(("cmd = %s\n",cmd));
-                system(cmd);
+                
+                syscfg_get( NULL, "lan_ifname", buf, sizeof(buf));
+                CcspTraceDebug(("cmd = ndisc6 %s %s -r 1 -q", pobj->ipv6,buf));
+                ret = v_secure_system("ndisc6 %s %s -r 1 -q", pobj->ipv6,buf);
+                if(ret !=0)
+                {
+                     CcspTraceDebug(("Failed in executing the command via v_secure_system ret: %d \n",ret));
+                }
+
             }
         }
     }

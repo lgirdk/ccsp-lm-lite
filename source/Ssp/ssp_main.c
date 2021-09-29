@@ -40,6 +40,7 @@
 
 #include "telemetry_busmessage_sender.h"
 #include "lm_main.h"
+#include <sys/stat.h>
 #include "ssp_global.h"
 #include "stdlib.h"
 #include "ccsp_dm_api.h"
@@ -364,7 +365,7 @@ int main(int argc, char* argv[])
 #ifdef FEATURE_SUPPORT_RDKLOG
     RDK_LOGGER_INIT();
 #endif
-    system("touch /tmp/lmlite_initialized");
+    creat("/tmp/lmlite_initialized",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 
     LM_main();
     if ( bRunAsDaemon )

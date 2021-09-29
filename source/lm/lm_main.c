@@ -84,7 +84,7 @@
 #include "ccsp_memory.h"
 #include "cosa_plugin_api.h"
 #include "safec_lib_common.h"
-
+#include "secure_wrapper.h"
 #ifdef FEATURE_SUPPORT_ONBOARD_LOGGING
 #define OnboardLog(...)                     rdk_log_onboard("LM", __VA_ARGS__)
 #else
@@ -697,7 +697,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				{
 				   if(access("/tmp/.conn_cli_flag", F_OK) != 0)
 				   {
-					system("touch /tmp/.conn_cli_flag");
+					creat("/tmp/.conn_cli_flag",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 					get_uptime(&uptime);
                   			CcspTraceWarning(("Client_Connect_complete:%d\n",uptime));	
 					OnboardLog("Client_Connect_complete:%d\n",uptime);
@@ -2617,9 +2617,13 @@ static BOOL ValidateHost (char *mac)
 {
     char buf[200];
     FILE *fp;
+    int ret =0;
 
-    snprintf(buf, sizeof(buf), "ip nei show | grep -i %s > %s", mac, ARP_CACHE);
-    system(buf);
+    ret = v_secure_system("ip nei show | grep -i %s > "ARP_CACHE, mac);
+    if(ret < 0)
+    {
+         CcspTraceError(("Failed in executing the command via v_seure_system ret: %d\n",ret));
+    }
 
     if ((fp = fopen(ARP_CACHE, "r")) == NULL)
     {
@@ -2637,8 +2641,11 @@ static BOOL ValidateHost (char *mac)
     fp = NULL;
     unlink(ARP_CACHE);
 
-    snprintf(buf, sizeof(buf), "cat %s | grep -i %s > %s", DNSMASQ_FILE, mac, DNSMASQ_CACHE);
-    system(buf);
+    ret = v_secure_system("cat "DNSMASQ_FILE" | grep -i %s > "DNSMASQ_CACHE, mac);
+    if(ret < 0)
+    {
+        CcspTraceError(("Failed in executing the command via v_seure_system ret: %d\n",ret));
+    }
 
     if ((fp = fopen(DNSMASQ_CACHE, "r")) == NULL)
     {

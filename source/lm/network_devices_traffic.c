@@ -35,7 +35,7 @@
 #include "network_devices_traffic_avropack.h"
 #include "lm_main.h"
 #include "report_common.h"
-
+#include "secure_wrapper.h"
 
 static pthread_mutex_t ndtMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t ndtCond = PTHREAD_COND_INITIALIZER;
@@ -137,7 +137,7 @@ bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size)
 int ResetEBTables()
 {
     int ret  = 0;
-    ret = system("sh /usr/ccsp/tad/rxtx_sta.sh > /dev/null");
+    ret = v_secure_system("/usr/ccsp/tad/rxtx_sta.sh > /dev/null");
 
     if(ret)
     {
@@ -586,7 +586,7 @@ void GetIPTableData()
     FILE *fp = NULL;
 
     int ret  = 0;
-    ret = system("sh /usr/ccsp/tad/rxtx_cur.sh > /dev/null");
+    ret = v_secure_system("/usr/ccsp/tad/rxtx_cur.sh > /dev/null");
 
     if(ret)
     {
