@@ -1127,7 +1127,7 @@ void read_event(int sock)
         char* token = NULL;
         char *ip = NULL;
 
-        CcspTraceDebug(("Received message payload: %s\n", NLMSG_DATA((struct nlmsghdr *) buffer)));
+        CcspTraceDebug(("Received message payload: %p\n", NLMSG_DATA((struct nlmsghdr *) buffer)));
         /* LIMITATION
          * Following strcpy() can't modified to safec strcpy_s() api
          * Because, safec has the limitation of copying only 4k ( RSIZE_MAX ) to destination pointer

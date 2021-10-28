@@ -114,7 +114,7 @@ ssp_Mbi_MessageBusEngage
         return returnStatus;
     }
 
-    CcspTraceInfo(("INFO: bus_handle: 0x%8x \n", bus_handle));
+    CcspTraceInfo(("INFO: bus_handle: 0x%8p \n", bus_handle));
     g_MessageBusHandle_Irep = bus_handle;
     rc = STRCPY_S_NOCLOBBER(g_SubSysPrefix_Irep, sizeof(g_SubSysPrefix_Irep),g_Subsystem);
     ERR_CHK(rc);
@@ -137,7 +137,7 @@ ssp_Mbi_MessageBusEngage
         ready = waitConditionReady(bus_handle, PsmName, CCSP_DBUS_PATH_PSM, component_id);
         fprintf(stderr, "Waiting loop for PSM module, ready = %d count = %d\n", ready, count );
     }
-    CcspTraceInfo(("!!! Connected to message bus... bus_handle: 0x%08X !!!\n", bus_handle));
+    CcspTraceInfo(("!!! Connected to message bus... bus_handle: 0x%8p !!!\n", bus_handle));
 
     if ( ready == true )
     {
@@ -179,7 +179,7 @@ ssp_Mbi_MessageBusEngage
 
     if ( returnStatus != CCSP_Message_Bus_OK )
     {
-        CcspTraceError((" !!! CCSP_Message_Bus_Register_Path ERROR returnStatus: %d\n!!!\n", returnStatus));
+        CcspTraceError((" !!! CCSP_Message_Bus_Register_Path ERROR returnStatus: %lu\n!!!\n", returnStatus));
 
         return returnStatus;
     }
@@ -196,7 +196,7 @@ ssp_Mbi_MessageBusEngage
 
     if ( returnStatus != CCSP_Message_Bus_OK )
     {
-         CcspTraceError((" !!! CCSP_Message_Bus_Register_Event: CurrentSessionIDSignal ERROR returnStatus: %d!!!\n", returnStatus));
+         CcspTraceError((" !!! CCSP_Message_Bus_Register_Event: CurrentSessionIDSignal ERROR returnStatus: %lu!!!\n", returnStatus));
 
         return returnStatus;
     }

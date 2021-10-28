@@ -1519,7 +1519,7 @@ void lm_wrapper_get_dhcpv4_client()
                     rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]);
                     ERR_CHK(rc);
                     lmHosts.lastActivity++;
-                    CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+                    CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %lu\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
 		    t2_event_d("SYS_INFO_Hostname_changed", 1);
 		    char buf[8];
                     snprintf(buf,sizeof(buf),"%d", (int)lmHosts.lastActivity);
@@ -1645,7 +1645,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 					rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]);
 					ERR_CHK(rc);
 					lmHosts.lastActivity++;
-					CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %d\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
+					CcspTraceWarning(("Hostname Changed <%s> <%d> : Hostname = %s HostVersionID %lu\n",__FUNCTION__, __LINE__,pHost->pStringParaValue[LM_HOST_HostNameId],lmHosts.lastActivity));
 					t2_event_d("SYS_INFO_Hostname_changed", 1);
 					char buf[8];
 					snprintf(buf,sizeof(buf),"%lu",lmHosts.lastActivity);

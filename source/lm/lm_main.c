@@ -2159,7 +2159,7 @@ static void *Event_HandlerThread(void *threadid)
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Ethernet");
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is Ethernet, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
                     do_dhcpsync = TRUE;
                 }
  
@@ -2223,7 +2223,7 @@ static void *Event_HandlerThread(void *threadid)
                 pHost->l1unReachableCnt = 1;
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
-                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+                    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s IPAddr is not updated in ARP\n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
                     do_dhcpsync = TRUE;
                }
 
