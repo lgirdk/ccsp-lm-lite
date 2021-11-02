@@ -229,7 +229,7 @@ static void *handle_parodus()
 						.client_url = NULL
 					   };
 		            
-		CcspLMLiteConsoleTrace(("RDK_LOG_INFO, Configurations => service_name : %s parodus_url : %s client_url : %s\n", cfg1.service_name, cfg1.parodus_url, cfg1.client_url ));
+		CcspLMLiteConsoleTrace(("RDK_LOG_INFO, Configurations => service_name : %s parodus_url : %s client_url : %s\n", cfg1.service_name, cfg1.parodus_url, (cfg1.client_url) ? cfg1.client_url : "" ));
 
 		CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Call parodus library init api \n"));
 
