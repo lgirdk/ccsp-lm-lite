@@ -74,7 +74,11 @@ int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPat
             bus_handle,
             CrName,
 #ifndef _XF3_PRODUCT_REQ_
+#ifdef _SKY_HUB_COMMON_PRODUCT_REQ_
+            "Device.DeviceInfo.X_COMCAST-COM_WAN_MAC",
+#else
             "Device.X_CISCO_COM_CableModem.MACAddress",
+#endif // _SKY_HUB_COMMON_PRODUCT_REQ_
 #else
             "Device.DPoE.Mac_address",
 #endif      
@@ -428,7 +432,11 @@ char * getDeviceMac()
         char deviceMACValue[32] = { '\0' };
         errno_t rc = -1;
 #ifndef _XF3_PRODUCT_REQ_
+#ifdef _SKY_HUB_COMMON_PRODUCT_REQ_ //Use X_COMCAST-COM_WAN_MAC for SKY HUBs.
+        char *getList[] = {"Device.DeviceInfo.X_COMCAST-COM_WAN_MAC"};
+#else
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
+#endif //_SKY_HUB_COMMON_PRODUCT_REQ_
 #else
         char *getList[] = {"Device.DPoE.Mac_address"};
 #endif
