@@ -261,9 +261,6 @@ void LanManager_CheckCloneCopy (char **dest, const char *src)
 {
 	size_t src_len;
 
-	if (src == NULL)
-		return;
-
 	src_len = strlen (src);
 
 	/*
