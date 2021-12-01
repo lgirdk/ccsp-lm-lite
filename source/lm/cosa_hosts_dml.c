@@ -1330,16 +1330,13 @@ Host_GetParamIntValue
 
     if (strcmp(ParamName, "LeaseTimeRemaining") == 0)
     {
-        PLmObjectHostIPAddress pCur;
         time_t currentTime = time(NULL);
         time_t LeaseTimeV4 = 0;
-
-        for (pCur = pHost->ipv4AddrArray; pCur != NULL; pCur = pCur->pNext)
+        
+        //new value is always stored in start node of PLmObjectHostIPAddress
+        if (pHost->ipv4AddrArray != NULL)
         {
-            if (LeaseTimeV4 < (time_t) pCur->LeaseTime)
-            {
-                LeaseTimeV4 = (time_t) pCur->LeaseTime;
-            }
+            LeaseTimeV4 = (time_t) pHost->ipv4AddrArray->LeaseTime;
         }
 
         if (currentTime < LeaseTimeV4)
