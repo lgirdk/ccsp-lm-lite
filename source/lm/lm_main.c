@@ -268,7 +268,11 @@ LmObjectHosts lmHosts = {
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
                                         "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
-                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface" },
+                                        "X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface"
+#ifdef VENDOR_CLASS_ID
+, "VendorClassID"
+#endif
+ },
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
@@ -281,7 +285,11 @@ LmObjectHosts XlmHosts = {
                                         "X_CISCO_COM_UPnPDevice", "X_CISCO_COM_HNAPDevice", "X_CISCO_COM_DNSRecords", "X_CISCO_COM_HardwareVendor",
                                         "X_CISCO_COM_SoftwareVendor", "X_CISCO_COM_SerialNumbre", "X_CISCO_COM_DefinedDeviceType",
                                         "X_CISCO_COM_DefinedHWVendor", "X_CISCO_COM_DefinedSWVendor", "AddressSource", "Comments",
-                                    	"X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface" },
+                                        "X_RDKCENTRAL-COM_Parent", "X_RDKCENTRAL-COM_DeviceType", "X_RDKCENTRAL-COM_Layer1Interface"
+#ifdef VENDOR_CLASS_ID
+, "VendorClassID"
+#endif
+ },
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
@@ -521,6 +529,35 @@ static void get_uptime (int *uptime)
     sysinfo( &info );
     *uptime = info.uptime;
 }
+
+#ifdef VENDOR_CLASS_ID
+static void get_vendor_class_id (char* physAddress, char* vendor_class)
+{
+    char buffer[512] ={0}, *tmp_vendor=NULL;
+    char client_mac[32] = {0};
+    FILE* fpv = fopen(DNSMASQ_VENDORCLASS_FILE, "r");
+    if(fpv != NULL)
+    {
+        while((fgets(buffer, sizeof(buffer), fpv)) != NULL)
+        {
+            memset(client_mac, 0, sizeof(client_mac));
+            sscanf(buffer, "%s", client_mac);
+            if(AnscEqualString(physAddress, client_mac, FALSE))
+            {
+                tmp_vendor = strstr(buffer, " ");
+                if(tmp_vendor)
+                {
+                    strtok(tmp_vendor, "\n");
+                    tmp_vendor++;
+                    strncpy(vendor_class, tmp_vendor, 256);
+                    break;
+                }
+            }
+        }
+        fclose(fpv);
+    }
+}
+#endif
 
 #define LM_SET_ACTIVE_STATE_TIME(x, y) LM_SET_ACTIVE_STATE_TIME_(__LINE__, x, y)
 static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
@@ -1184,7 +1221,10 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
 PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 {
     char comments[256];
-
+#ifdef VENDOR_CLASS_ID
+    char vendor_class[256] = {0};
+    char vendor_retry_count = 0;
+#endif
     if (!physAddress || (validate_mac(physAddress) != 0))
     {
         CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Invalid MacAddress ignored\n"));
@@ -1257,6 +1297,32 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 
         pHost->pStringParaValue[LM_HOST_AddressSource] = AnscCloneString("DHCP");
         pHost->bClientReady = FALSE;
+#ifdef VENDOR_CLASS_ID
+        while (vendor_retry_count < 5 )
+        {
+            get_vendor_class_id(physAddress, vendor_class);
+            if(strlen(vendor_class) != 0)
+               break;
+            vendor_retry_count++;
+            CcspTraceWarning(("Retry(%d) to fetch VendorClass ID with MAC = %s\n", vendor_retry_count, pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+            sleep(1);
+        }
+// for clients not advertising valid vendor class, we will have space character in the vendor class buffer from dnsmasq side
+// so check if its valid vendor class then only write into param
+        if(strncmp(vendor_class," ",sizeof(vendor_class)) != 0)
+        {
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_VendorClassID]), vendor_class);
+            CcspTraceInfo(("Connected Mac = %s with vendor class id = %s\n", pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_VendorClassID]));
+		}
+        if(vendor_class[0] != '\0')
+        {
+            CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Connected Mac = %s, vendor class id = %s\n", pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_VendorClassID]));
+        }
+        else
+        {
+            CcspTraceWarning(("RDKB_CONNECTED_CLIENT: Connected Mac = %s, has no vendor class id\n", pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+        }
+#endif
         //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
         lmHosts.availableInstanceNum++;
 

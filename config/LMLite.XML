@@ -196,6 +196,13 @@
               <type>string</type>
               <syntax>string</syntax>
             </parameter>
+<?ifdef VENDOR_CLASS_ID?>
+            <parameter>
+              <name>VendorClassID</name>
+              <type>string</type>
+              <syntax>string</syntax>
+            </parameter>
+<?endif?>
             <parameter>
               <name>HostName</name>
               <type>string</type>

@@ -1455,7 +1455,7 @@ void lm_wrapper_get_dhcpv4_client()
     PLmObjectHost pHost;
     errno_t rc = -1;
 
-    if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
+    if ( (fp = fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
     {
         return;
     }

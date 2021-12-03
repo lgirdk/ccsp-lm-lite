@@ -162,8 +162,12 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_RDKCENTRAL_COM_Parent                 19
 #define LM_HOST_X_RDKCENTRAL_COM_DeviceType             20
 #define LM_HOST_X_RDKCENTRAL_COM_Layer1Interface        21
-#define LM_HOST_NumStringPara                           22 
-
+#ifdef VENDOR_CLASS_ID
+#define LM_HOST_VendorClassID                           22
+#define LM_HOST_NumStringPara                           23
+#else
+#define LM_HOST_NumStringPara                           22
+#endif
 #define LM_HOST_IPAddress_IPAddressId     0
 #define LM_HOST_IPAddress_IPAddressSourceId     1
 #define LM_HOST_IPAddress_NumStringPara   2
@@ -188,7 +192,9 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_ADDRESS_SOURCE_AUTOIP_STR        "AUTOIP"
 
 #define TIME_NO_NEGATIVE(x) ((long)(x) < 0 ? 0 : (x))
-
+#ifdef VENDOR_CLASS_ID
+#define DNSMASQ_VENDORCLASS_FILE "/nvram/dnsmasq.vendorclass"
+#endif
 typedef  struct
 _LmHostInfo
 {
