@@ -3059,26 +3059,30 @@ static void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
             (nname > 0))
     {
         *pList = AnscAllocateMemory(sizeof(Name_DM_t) * nname);
-        memset(*pList, 0 , sizeof(Name_DM_t) * nname);
-        if(NULL != *pList){
+
+        if (*pList != NULL)
+        {
+            memset (*pList, 0, sizeof(Name_DM_t) * nname);
+
             for(i = 0; i < nname; i++){
-			ULONG        ulEntryNameLen = NAME_DM_LEN ;
-			parameterValStruct_t varStruct = {0};
-			UCHAR      ucEntryParamName[NAME_DM_LEN] = {0}; 
+			ULONG ulEntryNameLen;
+			parameterValStruct_t varStruct;
+			char ucEntryParamName[NAME_DM_LEN];
 			
 			rc = sprintf_s((*pList)[i].dm , sizeof((*pList)[i].dm),"%s", dmnames[i]);
 			if(rc < EOK)
 			{
 				ERR_CHK(rc);
 			}
-			rc = sprintf_s((char *)ucEntryParamName , sizeof(ucEntryParamName),"%s%s", dmnames[i], name);
+			rc = sprintf_s(ucEntryParamName , sizeof(ucEntryParamName),"%s%s", dmnames[i], name);
 			if(rc < EOK)
 			{
 				ERR_CHK(rc);
 			}
-			varStruct.parameterName = (char *)ucEntryParamName;
+			varStruct.parameterName = ucEntryParamName;
    			varStruct.parameterValue = (*pList)[i].name;
 			/*CID: 73391 Unchecked return value*/
+			ulEntryNameLen = NAME_DM_LEN;
 			if(COSAGetParamValueByPathName(bus_handle,&varStruct,&ulEntryNameLen))
 				CcspTraceError(("%s Failed to get param\n",__FUNCTION__));
 
