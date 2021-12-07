@@ -1496,7 +1496,7 @@ static void Add_IPv6_from_Dibbler (void)
 	char line[256]={0},ip[64]={0},mac[18]={0};
 	PLmObjectHost	pHost	= NULL;
 
-	if ((fptr=fopen("/etc/dibbler/server-cache.xml","r")) != NULL )
+	if ((fptr=fopen("/var/lib/dibbler/server-cache.xml","r")) != NULL )
 	{
 		while ( fgets(line, sizeof(line), fptr) != NULL )
 		{
