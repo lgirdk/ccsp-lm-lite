@@ -1462,19 +1462,8 @@ Host_GetParamStringValue
 
     pthread_mutex_lock (&LmHostObjectMutex);
 
-    for (i = 0; i < LM_HOST_NumStringPara; i++)
-    {
-        if (strcmp (ParamName, lmHosts.pHostStringParaName[i]) == 0)
-        {
-            rc = 0;
-            value = pHost->pStringParaValue[i];
-            break;
-        }
-    }
-
     /*
-       Note that (for unknown reasons) there two different ways to get
-       Layer3Interface:
+       Note that there two different ways to get Layer3Interface:
 
          pHost->Layer3Interface
          pHost->pStringParaValue[LM_HOST_Layer3InterfaceId]
@@ -1485,14 +1474,25 @@ Host_GetParamStringValue
 
          bd9d457 RDKB-35627 : CLONE - [SEC_UPLIFT] Replacing SDL banned C
 
-       Align with the new upstream approach of testing
-       pHost->pStringParaValue[LM_HOST_Layer3InterfaceId] first.
-       Fixme: to be reviewed.
+       That Comcast change turned out to be wrong. Switch back to checking
+       pHost->Layer3Interface first.
     */
-    if ((value == NULL) && (strcmp (ParamName, "Layer3Interface") == 0))
+    if (strcmp (ParamName, "Layer3Interface") == 0)
     {
         rc = 0;
         value = pHost->Layer3Interface;
+    }
+    else
+    {
+        for (i = 0; i < LM_HOST_NumStringPara; i++)
+        {
+            if (strcmp (ParamName, lmHosts.pHostStringParaName[i]) == 0)
+            {
+                rc = 0;
+                value = pHost->pStringParaValue[i];
+                break;
+            }
+        }
     }
 
     return GetParamStringValue_common (pValue, pUlSize, value, rc, &LmHostObjectMutex);
