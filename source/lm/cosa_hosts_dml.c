@@ -1266,22 +1266,11 @@ Host_GetParamIntValue
         int*                        pInt
     )
 {
-	pthread_mutex_lock(&LmHostObjectMutex);  
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-#if 0
-    int i = 0;
-    for(; i<LM_HOST_NumIntPara; i++){
-        if( AnscEqualString(ParamName, lmHosts.pHostIntParaName[i], TRUE))
-        {
-            /* collect value */
-            *pInt = pHost->iIntParaValue[i];
-            return TRUE;
-        }
-    }
-#endif
-    /* check the parameter name and return the corresponding value */
+
     if (strcmp(ParamName, "X_CISCO_COM_ActiveTime") == 0)
     {
+        pthread_mutex_lock(&LmHostObjectMutex);
         /* collect dynamic value */
         if(pHost->bBoolParaValue[LM_HOST_ActiveId]){
 	    time_t currentTime = time(NULL);
@@ -1302,6 +1291,7 @@ Host_GetParamIntValue
 
     if (strcmp(ParamName, "X_CISCO_COM_InactiveTime") == 0)
     {
+        pthread_mutex_lock(&LmHostObjectMutex);
         /* collect dynamic value */
         if(!pHost->bBoolParaValue[LM_HOST_ActiveId]){
             time_t currentTime = time(NULL);
@@ -1322,6 +1312,7 @@ Host_GetParamIntValue
 
     if (strcmp(ParamName, "X_CISCO_COM_RSSI") == 0)
     {
+        pthread_mutex_lock(&LmHostObjectMutex);
         /* collect value */
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
 		pthread_mutex_unlock(&LmHostObjectMutex); 
@@ -1333,6 +1324,7 @@ Host_GetParamIntValue
         time_t currentTime = time(NULL);
         time_t LeaseTimeV4 = 0;
         
+        pthread_mutex_lock(&LmHostObjectMutex);
         //new value is always stored in start node of PLmObjectHostIPAddress
         if (pHost->ipv4AddrArray != NULL)
         {
@@ -1359,6 +1351,7 @@ Host_GetParamIntValue
         time_t LeaseTimeV6;
         int result = 0;
 
+        pthread_mutex_lock(&LmHostObjectMutex);
         for (pCur = pHost->ipv6AddrArray; pCur != NULL; pCur = pCur->pNext)
         {
             LeaseTimeV6 = (time_t) pCur->LeaseTime;
@@ -1377,7 +1370,6 @@ Host_GetParamIntValue
     }
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
-	pthread_mutex_unlock(&LmHostObjectMutex); 
     return FALSE;
 }
 
@@ -1900,9 +1892,7 @@ Host_Commit
         ANSC_HANDLE                 hInsContext
     )
 {
-	pthread_mutex_lock(&LmHostObjectMutex);     
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-	pthread_mutex_unlock(&LmHostObjectMutex); 
     
     LMDmlHostsSetHostComment(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_Comments]);
 
@@ -1939,8 +1929,6 @@ Host_Rollback
     )
 {
 	UNREFERENCED_PARAMETER(hInsContext);
-	pthread_mutex_lock(&LmHostObjectMutex);     
-	pthread_mutex_unlock(&LmHostObjectMutex); 
 
     return 0;
 }
