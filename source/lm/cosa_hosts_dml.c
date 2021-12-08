@@ -204,37 +204,31 @@ Hosts_GetParamBoolValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    /* check the parameter name and return the corresponding value */
     char buf[8];
-    *pBool = FALSE;
-
-    memset(buf,0,sizeof(buf));
-    /* check the parameter name and return the corresponding value */
 
     if (strcmp(ParamName, "X_RDK_WebPA_PresenceNotificationEnable") == 0)
     {
-        /* collect value */
-        /*CID:60375 Array compared against 0*/
-        if(!syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf)))
-        {
-            if (strcmp(buf, "true") == 0)
-                *pBool = TRUE;
-        }
+        syscfg_get( NULL, "notify_presence_webpa", buf, sizeof(buf));
+
+        if (strcmp(buf, "true") == 0)
+            *pBool = TRUE;
+        else
+            *pBool = FALSE;
+
         return TRUE;
     }
 
     if (strcmp(ParamName, "X_RDK_PresenceDetectEnable") == 0)
     {
-        /* collect value */
-        /*CID:60375 Array compared against 0*/
-        if(!syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf)))
-        {
-            if (strcmp(buf, "true") == 0)
-                *pBool = TRUE;
-        }
+        syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
+
+        if (strcmp(buf, "true") == 0)
+            *pBool = TRUE;
+        else
+            *pBool = FALSE;
+
         return TRUE;
     }
-
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -279,7 +273,6 @@ Hosts_SetParamBoolValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    /* check the parameter name and set the corresponding value */
 
     if (strcmp(ParamName, "X_RDK_WebPA_PresenceNotificationEnable") == 0)
     {
@@ -302,7 +295,6 @@ Hosts_SetParamBoolValue
         Update_RFC_Presencedetection(bValue);
         return TRUE;
     }
-
     
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -349,7 +341,6 @@ Hosts_GetParamIntValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(pInt);
-    /* check the parameter name and return the corresponding value */
 
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -394,10 +385,10 @@ Hosts_GetParamUlongValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
+
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval") == 0)
     {
-        /* collect value */
-	    pthread_mutex_lock(&LmHostObjectMutex);   
+        pthread_mutex_lock(&LmHostObjectMutex);
         *puLong = lmHosts.param_val.ipv4CheckInterval;
         pthread_mutex_unlock(&LmHostObjectMutex);
         return TRUE;
@@ -405,8 +396,7 @@ Hosts_GetParamUlongValue
 
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries") == 0)
     {
-        /* collect value */
-	    pthread_mutex_lock(&LmHostObjectMutex);   
+        pthread_mutex_lock(&LmHostObjectMutex);
         *puLong = lmHosts.param_val.ipv4RetryCount;
         pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
@@ -414,8 +404,7 @@ Hosts_GetParamUlongValue
 
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval") == 0)
     {
-        /* collect value */
-	    pthread_mutex_lock(&LmHostObjectMutex);   
+        pthread_mutex_lock(&LmHostObjectMutex);
         *puLong = lmHosts.param_val.ipv6CheckInterval;
         pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
@@ -423,27 +412,22 @@ Hosts_GetParamUlongValue
 
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries") == 0)
     {
-        /* collect value */
-	    pthread_mutex_lock(&LmHostObjectMutex);   
+        pthread_mutex_lock(&LmHostObjectMutex);
         *puLong = lmHosts.param_val.ipv6RetryCount;
         pthread_mutex_unlock(&LmHostObjectMutex);     
         return TRUE;
     }
 
-    // To do
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval") == 0)
     {
-        /* collect value */
-        pthread_mutex_lock(&LmHostObjectMutex);   
+        pthread_mutex_lock(&LmHostObjectMutex);
         *puLong = lmHosts.param_val.bkgrndjoinInterval;
         pthread_mutex_unlock(&LmHostObjectMutex);     
         return TRUE;
     }
 
-    /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "X_CISCO_COM_ConnectedDeviceNumber") == 0)
     {
-        /* collect value */
         //*puLong = CosaDmlHostsGetOnline();
         *puLong = LM_get_online_device();
         //*puLong = HostsConnectedDeviceNum;
@@ -452,28 +436,28 @@ Hosts_GetParamUlongValue
 
     if (strcmp(ParamName, "X_CISCO_COM_ConnectedWiFiNumber") == 0)
     {
-        /* collect value */
         *puLong = 0;
         return TRUE;
     }
     
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostVersionId") == 0)
     {
-        /* collect value */
         *puLong = lmHosts.lastActivity;
         return TRUE;
     }
+
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod") == 0)
     {
-        /* collect value */
         *puLong = g_Client_Poll_interval;
         return TRUE;
     }
+
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync") == 0)
     {
-		*puLong = 0;
+        *puLong = 0;
         return TRUE;
     }
+
     /* CcspTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -490,41 +474,39 @@ Hosts_SetParamUlongValue
     BOOL updatePresenceParam = FALSE;
     HostPresenceParamUpdate flag = HOST_PRESENCE_PARAM_NONE;
 
-	pthread_mutex_lock(&LmHostObjectMutex);   
-
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV4_ARP_LEAVE_INTERVAL;
-	    lmHosts.param_val.ipv4CheckInterval = uValue;
+        pthread_mutex_lock(&LmHostObjectMutex);
+        lmHosts.param_val.ipv4CheckInterval = uValue;
     }
-
-    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries") == 0)
+    else if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv4Retries") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV4_RETRY_COUNT;
-	    lmHosts.param_val.ipv4RetryCount = uValue;
+        pthread_mutex_lock(&LmHostObjectMutex);
+        lmHosts.param_val.ipv4RetryCount = uValue;
     }
-
-    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval") == 0)
+    else if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6CheckInterval") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV6_ARP_LEAVE_INTERVAL;
-	    lmHosts.param_val.ipv6CheckInterval = uValue;
+        pthread_mutex_lock(&LmHostObjectMutex);
+        lmHosts.param_val.ipv6CheckInterval = uValue;
     }
-
-    if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries") == 0)
+    else if (strcmp(ParamName, "X_RDKCENTRAL-COM_PresenceLeaveIPv6Retries") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_IPV6_RETRY_COUNT;
-	    lmHosts.param_val.ipv6RetryCount = uValue;
+        pthread_mutex_lock(&LmHostObjectMutex);
+        lmHosts.param_val.ipv6RetryCount = uValue;
     }
-
-    // To Do
-    if (strcmp(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval") == 0)
+    else if (strcmp(ParamName, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval") == 0)
     {
         updatePresenceParam = TRUE;
         flag = HOST_PRESENCE_BKG_JOIN_INTERVAL;
+        pthread_mutex_lock(&LmHostObjectMutex);
         lmHosts.param_val.bkgrndjoinInterval = uValue;
     }
 
@@ -534,9 +516,7 @@ Hosts_SetParamUlongValue
         pthread_mutex_unlock(&LmHostObjectMutex);
         return Hosts_UpdateSysDb(ParamName,uValue);
     }
-    pthread_mutex_unlock(&LmHostObjectMutex);
 
-    /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod") == 0)
     {
         g_Client_Poll_interval = uValue;
@@ -546,11 +526,12 @@ Hosts_SetParamUlongValue
         }
         return TRUE;
     }
- 	if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync") == 0)
+
+    if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync") == 0)
     {
-	
         return TRUE;
     }
+
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -605,7 +586,6 @@ Hosts_GetParamStringValue
     UNREFERENCED_PARAMETER(pUlSize);
     errno_t  rc   = -1;
 
-    /* check the parameter name and return the corresponding value */
     if ((strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi") == 0) ||
         (strcmp(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac") == 0) ||
         (strcmp(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac") == 0))
@@ -724,7 +704,7 @@ Hosts_SetParamStringValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    /* check the parameter name and return the corresponding value */
+
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_AddPresenceNotificationMac") == 0)
     {        
         // To DO
@@ -735,7 +715,6 @@ Hosts_SetParamStringValue
         return retStatus;
     }
 
-    /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_DeletePresenceNotificationMac") == 0)
     {
         // To DO
@@ -746,7 +725,6 @@ Hosts_SetParamStringValue
         return retStatus;
     }
 
-    /* check the parameter name and set the corresponding value */
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_WiFi") == 0)
     {
         if (!pString)
@@ -978,9 +956,11 @@ Host_GetEntryCount
 {
 	UNREFERENCED_PARAMETER(hInsContext);
 	ULONG host_count = 0;
-	pthread_mutex_lock(&LmHostObjectMutex);   
+
+	pthread_mutex_lock(&LmHostObjectMutex);
 	host_count = lmHosts.numHost;
-    pthread_mutex_unlock(&LmHostObjectMutex);
+	pthread_mutex_unlock(&LmHostObjectMutex);
+
 	return host_count;
 }
 
@@ -1024,11 +1004,12 @@ Host_GetEntry
 {
 	UNREFERENCED_PARAMETER(hInsContext);
 	ANSC_HANDLE host = NULL;	
-	pthread_mutex_lock(&LmHostObjectMutex); 
-	*pInsNumber = lmHosts.hostArray[nIndex]->instanceNum;
 
-    host = (ANSC_HANDLE) (lmHosts.hostArray[nIndex]);
+	pthread_mutex_lock(&LmHostObjectMutex);
+	*pInsNumber = lmHosts.hostArray[nIndex]->instanceNum;
+	host = (ANSC_HANDLE) (lmHosts.hostArray[nIndex]);
 	pthread_mutex_unlock(&LmHostObjectMutex);
+
 	return host;
 }
 
@@ -1155,30 +1136,30 @@ Host_GetParamBoolValue
         BOOL*                       pBool
     )
 {
-    //printf("Host_GetParamBoolValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-    int i = 0;
-    for(; i<LM_HOST_NumBoolPara; i++){
+    int i;
+
+    //printf("Host_GetParamBoolValue %p, %s\n", hInsContext, ParamName);
+
+    for(i = 0; i < LM_HOST_NumBoolPara; i++) {
         if( AnscEqualString(ParamName, lmHosts.pHostBoolParaName[i], TRUE))
         {
-            /* collect value */
+            pthread_mutex_lock(&LmHostObjectMutex);
             *pBool = pHost->bBoolParaValue[i];
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+            pthread_mutex_unlock(&LmHostObjectMutex); 
             return TRUE;
         }
     }
 
     if (strcmp(ParamName, "X_CISCO_COM_TrueStaticIPClient") == 0)
     {
-        /* collect value */
+        pthread_mutex_lock(&LmHostObjectMutex);
         *pBool = pHost->bTrueStaticIPClient;
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+        pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
-	pthread_mutex_unlock(&LmHostObjectMutex); 
     return FALSE;
 }
 
@@ -1225,7 +1206,6 @@ Host_GetParamIntValue
     if (strcmp(ParamName, "X_CISCO_COM_ActiveTime") == 0)
     {
         pthread_mutex_lock(&LmHostObjectMutex);
-        /* collect dynamic value */
         if(pHost->bBoolParaValue[LM_HOST_ActiveId]){
 	    time_t currentTime = time(NULL);
             if(currentTime > pHost->activityChangeTime){
@@ -1239,14 +1219,13 @@ Host_GetParamIntValue
             pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = 0;
         }
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId];
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+        pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
 
     if (strcmp(ParamName, "X_CISCO_COM_InactiveTime") == 0)
     {
         pthread_mutex_lock(&LmHostObjectMutex);
-        /* collect dynamic value */
         if(!pHost->bBoolParaValue[LM_HOST_ActiveId]){
             time_t currentTime = time(NULL);
             if(currentTime > pHost->activityChangeTime){
@@ -1260,24 +1239,24 @@ Host_GetParamIntValue
                 pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId] = 0;
         }
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_InactiveTimeId];
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+        pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
 
     if (strcmp(ParamName, "X_CISCO_COM_RSSI") == 0)
     {
         pthread_mutex_lock(&LmHostObjectMutex);
-        /* collect value */
         *pInt = pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId];
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+        pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
 
     if (strcmp(ParamName, "LeaseTimeRemaining") == 0)
     {
-        time_t currentTime = time(NULL);
-        pthread_mutex_lock(&LmHostObjectMutex);
+        time_t currentTime;
 
+        pthread_mutex_lock(&LmHostObjectMutex);
+        currentTime = time(NULL);
         if(pHost->LeaseTime == 0xffffffff){
             *pInt = -1;
         }else if(currentTime <  (time_t)pHost->LeaseTime){
@@ -1332,32 +1311,36 @@ Host_GetParamUlongValue
         ULONG*                      puLong
     )
 {
-    //printf("Host_GetParamUlongValue %p, %s\n", hInsContext, ParamName);
-	pthread_mutex_lock(&LmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
-    int i = 0;
-    for(; i<LM_HOST_NumUlongPara; i++){
-        if( AnscEqualString(ParamName, COSA_HOSTS_Extension1_Name, TRUE))
+    int i;
+
+    //printf("Host_GetParamUlongValue %p, %s\n", hInsContext, ParamName);
+
+    for (i = 0; i < LM_HOST_NumUlongPara; i++) {
+        if ( AnscEqualString(ParamName, COSA_HOSTS_Extension1_Name, TRUE))
         {
-            time_t currentTime = time(NULL);
+            time_t currentTime;
+
+            pthread_mutex_lock(&LmHostObjectMutex);
+            currentTime = time(NULL);
             if(currentTime > pHost->activityChangeTime){
                 *puLong = currentTime - pHost->activityChangeTime;
             }else{
                 *puLong = 0;
             }
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+            pthread_mutex_unlock(&LmHostObjectMutex); 
             return TRUE;
         }
         else if( AnscEqualString(ParamName, lmHosts.pHostUlongParaName[i], TRUE))
         {
-            /* collect value */
+            pthread_mutex_lock(&LmHostObjectMutex);
             *puLong = pHost->ulUlongParaValue[i];
-			pthread_mutex_unlock(&LmHostObjectMutex); 
+            pthread_mutex_unlock(&LmHostObjectMutex); 
             return TRUE;
         }
     }
+
 #if 0
-    /* check the parameter name and return the corresponding value */
     if (strcmp(ParamName, "X_CISCO_COM_DeviceType") == 0)
     {
         /* collect value */
@@ -1378,7 +1361,6 @@ Host_GetParamUlongValue
 #endif
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
-	pthread_mutex_unlock(&LmHostObjectMutex); 
     return FALSE;
 }
 
@@ -1515,7 +1497,6 @@ Host_SetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(bValue);
-    /* check the parameter name and set the corresponding value */
     
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1562,7 +1543,6 @@ Host_SetParamIntValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(iValue);
-    /* check the parameter name and set the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1609,7 +1589,6 @@ Host_SetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(uValue);
-    /* check the parameter name and set the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -1653,12 +1632,12 @@ Host_SetParamStringValue
         char*                       pString
     )
 {
-    /* check the parameter name and set the corresponding value */
-	pthread_mutex_lock(&LmHostObjectMutex); 
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;
 
     if (strcmp(ParamName, "Comments") == 0)
     {
+        pthread_mutex_lock(&LmHostObjectMutex);
+
         /* save update to backup */
 #if defined(_HUB4_PRODUCT_REQ_)
         /* to avoid failure scenario check the parameter value is empty or not, if it is empty reset the existing value
@@ -1671,23 +1650,25 @@ Host_SetParamStringValue
         else
 #endif
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Comments]) , pString);
-		pthread_mutex_unlock(&LmHostObjectMutex); 
+
+        pthread_mutex_unlock(&LmHostObjectMutex); 
         return TRUE;
     }
-	else if (strcmp(ParamName, "AddressSource") == 0)
+
+	if (strcmp(ParamName, "AddressSource") == 0)
 	{
 		/* save update to AddressSource */
 		if( strcasecmp(pString, "DHCP") == 0 )
 		{
+			pthread_mutex_lock(&LmHostObjectMutex);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , pString);
-
 			pthread_mutex_unlock(&LmHostObjectMutex);
 			return TRUE;
 		}
 		else if ( (strcasecmp(pString, "Static") == 0) || (strcasecmp(pString, "Reserved") == 0) )
 		{
+			pthread_mutex_lock(&LmHostObjectMutex);
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]) , "Reserved");
-
 			pthread_mutex_unlock(&LmHostObjectMutex);
 			return TRUE;
 		}
@@ -1696,7 +1677,7 @@ Host_SetParamStringValue
 			AnscTraceWarning(("<%s> Enter Valid AddressSource [%s] is invalid\n",__FUNCTION__,pString));
 		}
 	}
-	pthread_mutex_unlock(&LmHostObjectMutex); 
+
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }
@@ -1857,7 +1838,7 @@ Host_IPv4Address_GetEntryCount
     )
 {
 	ULONG count = 0;		
-	pthread_mutex_lock(&LmHostObjectMutex);       
+	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     //printf("IPv4Address_GetEntryCount %d\n", pHost->numIPv4Addr);
 	count = pHost->numIPv4Addr;
@@ -1904,7 +1885,7 @@ Host_IPv4Address_GetEntry
     )
 {
 	PLmObjectHostIPAddress IPArr = NULL;
-	pthread_mutex_lock(&LmHostObjectMutex);     
+	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     //printf("IPv4Address_GetEntry %p, %ld\n", pHost, nIndex);
 	IPArr = LM_GetIPArr_FromIndex(pHost, nIndex, IP_V4);
@@ -1955,7 +1936,6 @@ Host_IPv4Address_GetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(pBool);
-    /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2002,7 +1982,6 @@ Host_IPv4Address_GetParamIntValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(pInt);
-    /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2049,7 +2028,6 @@ Host_IPv4Address_GetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(puLong);
-    /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2167,7 +2145,7 @@ Host_IPv6Address_GetEntryCount
     )
 {
 	ULONG count = 0;	
-	pthread_mutex_lock(&LmHostObjectMutex);    
+	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     //printf("IPv6Address_GetEntryCount %d\n", pHost->numIPv6Addr);
 	count = pHost->numIPv6Addr;
@@ -2214,7 +2192,7 @@ Host_IPv6Address_GetEntry
     )
 {
 	PLmObjectHostIPAddress IPArr = NULL;
-	pthread_mutex_lock(&LmHostObjectMutex);    
+	pthread_mutex_lock(&LmHostObjectMutex);
     PLmObjectHost pHost = (PLmObjectHost) hInsContext;    
     //printf("IPv6Address_GetEntry %p, %ld\n", pHost, nIndex);
 	IPArr = LM_GetIPArr_FromIndex(pHost, nIndex, IP_V6);
@@ -2265,7 +2243,6 @@ Host_IPv6Address_GetParamBoolValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(pBool);
-    /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2312,7 +2289,6 @@ Host_IPv6Address_GetParamIntValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(pInt);
-    /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
@@ -2359,7 +2335,6 @@ Host_IPv6Address_GetParamUlongValue
     UNREFERENCED_PARAMETER(hInsContext);
     UNREFERENCED_PARAMETER(ParamName);
     UNREFERENCED_PARAMETER(puLong);
-    /* check the parameter name and return the corresponding value */
 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
