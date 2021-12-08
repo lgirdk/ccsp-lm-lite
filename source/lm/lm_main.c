@@ -3535,8 +3535,8 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_WIFI;
 
-		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
-		memcpy(buffer,&EventMsg,sizeof(EventMsg));
+		memcpy(EventMsg.Msg,&hosts,sizeof(EventMsg.Msg));
+		memcpy(buffer,&EventMsg,sizeof(buffer));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
 	}
@@ -3717,8 +3717,8 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 		memset(buffer, 0, MAX_SIZE);
 		EventMsg.MsgType = MSG_TYPE_MOCA;
                 /*CID: 62979 Uninitialized scalar variable for Field hosts.parentMac*/
-		memcpy(EventMsg.Msg,&hosts,sizeof(hosts));
-		memcpy(buffer,&EventMsg,sizeof(EventMsg));
+		memcpy(EventMsg.Msg,&hosts,sizeof(EventMsg.Msg));
+		memcpy(buffer,&EventMsg,sizeof(buffer));
 		CHECK(0 <= mq_send(mq, buffer, MAX_SIZE, 0));
 		CHECK((mqd_t)-1 != mq_close(mq));
 }
