@@ -3240,6 +3240,7 @@ static void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 			char ucEntryParamName[NAME_DM_LEN];
 			
 			rc = sprintf_s((*pList)[i].dm , sizeof((*pList)[i].dm),"%s", dmnames[i]);
+			(*pList)[i].dm[strlen((*pList)[i].dm) - 1 ] = '\0';
 			if(rc < EOK)
 			{
 				ERR_CHK(rc);
