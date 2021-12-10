@@ -545,7 +545,6 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				OnboardLog("RDKB_CONNECTED_CLIENTS: Client type is WiFi, MacAddress is %s and HostName is %s appeared online\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
 
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: IP Address is  %s , address source is %s and HostName is %s \n",pHost->pStringParaValue[LM_HOST_IPAddressId],pHost->pStringParaValue[LM_HOST_AddressSource],pHost->pStringParaValue[LM_HOST_HostNameId]));
-
 				}
 			}  
 			else 
@@ -742,8 +741,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				    // single connect request and no online/offline events.
                     //CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Online  \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
                     Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_ONLINE, pHost->pStringParaValue[LM_HOST_HostNameId]);
-
-				}
+                }
 			}
 			
 		}
@@ -2592,8 +2590,6 @@ static void *Hosts_StatSyncThreadFunc(void *args)
             }
 #else
              UNREFERENCED_PARAMETER(bridgemode);
-             Send_Eth_Host_Sync_Req();
-             SyncWiFi();
 #endif
             sleep(30);
             Sendmsg_dnsmasq(lmHosts.enablePresence);
