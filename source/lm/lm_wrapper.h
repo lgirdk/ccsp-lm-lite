@@ -145,7 +145,7 @@ extern ANSC_HANDLE bus_handle;
 int lm_wrapper_init();
 int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[4]);
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray);
-int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray);
+int lm_wrapper_get_arp_entries (int *pCount, LM_host_entry_t **ppArray);
 void lm_wrapper_get_dhcpv4_client();
 void Xlm_wrapper_get_info(PLmObjectHost pHost);
 

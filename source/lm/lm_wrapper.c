@@ -1102,7 +1102,7 @@ static void _get_shell_output (FILE *fp, char *buf, size_t len)
 }
 #endif
 
-int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray)
+int lm_wrapper_get_arp_entries (int *pCount, LM_host_entry_t **ppArray)
 {
     FILE *fp = NULL;
     char buf[200] = {0};
@@ -1132,14 +1132,14 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
 #endif
 
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
-    	v_secure_system("ip -4 nei show | grep %s | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, netName,pAtomBRMac);
-        v_secure_system("ip -6 nei show | grep %s | grep -i -v %s >> "ARP_CACHE_FILE, netName, pAtomBRMac);
+    	v_secure_system("ip -4 nei show | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, pAtomBRMac);
+        v_secure_system("ip -6 nei show | grep -i -v %s >> "ARP_CACHE_FILE, pAtomBRMac);
     } else {
-	v_secure_system("ip -4 nei show | grep %s > "ARP_CACHE_FILE, netName);
+	v_secure_system("ip -4 nei show > "ARP_CACHE_FILE);
 #ifdef _HUB4_PRODUCT_REQ_
-	v_secure_system("ip -6 nei show | grep %s | grep -v fd | grep -v fc >> "ARP_CACHE_FILE, netName);
+	v_secure_system("ip -6 nei show | grep -v fd | grep -v fc >> "ARP_CACHE_FILE);
 #else
-        v_secure_system("ip -6 nei show | grep %s  >> "ARP_CACHE_FILE, netName);
+        v_secure_system("ip -6 nei show >> "ARP_CACHE_FILE);
 #endif      
     }
 
