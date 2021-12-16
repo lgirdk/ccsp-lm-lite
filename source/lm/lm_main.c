@@ -2453,35 +2453,26 @@ static PLmObjectHost Hosts_FindHostByIpAddress (char *ipAddr)
     return NULL;
 }
 
-static void Hosts_SyncArp (void)
+static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
 {
     char comments[256] = {0};
     char cmd[50];
-    int count = 0;
-    int i,cntVal;
+    int i;
 
     ping_interval += 10;
 
     PLmObjectHost pHost = NULL;
-    LM_host_entry_t *hosts = NULL;
     PLmObjectHostIPAddress pIP;
 
-    for(cntVal = 0; cntVal < 2; cntVal++)
+
+    if (count > 0)
     {
-      if(cntVal == 0)
-      {
-          lm_wrapper_get_arp_entries("brlan7", &count, &hosts);
-      }
-      else
-      {
-           lm_wrapper_get_arp_entries("brlan0", &count, &hosts);
-      }
-      if (count > 0)
-      {
         pthread_mutex_lock(&LmHostObjectMutex);
 
         for (i = 0; i < count; i++)
         {
+            if (strcmp(hosts[i].ifName, "brlan0") && strcmp(hosts[i].ifName, "brlan7"))
+                continue;
             PRINTD("%s: Process No.%d mac %s\n", __FUNCTION__, i+1, hosts[i].phyAddr);
 
             if (hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
@@ -2556,15 +2547,6 @@ static void Hosts_SyncArp (void)
 
         pthread_mutex_unlock(&LmHostObjectMutex);
     }
-
-    if ( hosts )
-    {
-        free(hosts);
-        hosts=NULL;
-    }
-
-    }
-    return;
 }
 
 static void Hosts_SyncDHCP(void)
@@ -2573,18 +2555,18 @@ static void Hosts_SyncDHCP(void)
     lm_wrapper_get_dhcpv4_reserved();
 }
 
-static void Hosts_SyncEthClient (void)
+static void Hosts_SyncEthClient (int count, LM_host_entry_t *hosts)
 {
-    int i, count = 0;
-    LM_host_entry_t *hosts = NULL;
-
-    lm_wrapper_get_arp_entries ("brlan0", &count, &hosts);
+    int i;
 
     if (count > 0)
     {
         for (i = 0; i < count; i++)
         {
             PLmObjectHost pHost;
+
+            if (strcmp(hosts[i].ifName, "brlan0"))
+                continue;
 
             if (_isIPv6Addr ((char *)hosts[i].ipAddr))
             {
@@ -2616,12 +2598,6 @@ static void Hosts_SyncEthClient (void)
                 }
             }
         }
-    }
-
-    if (hosts)
-    {
-        free (hosts);
-        hosts = NULL;
     }
 }
 
@@ -2738,8 +2714,12 @@ static void *Hosts_LoggingThread(void *args)
 static void *Hosts_StatSyncThreadFunc(void *args)
 {
     static BOOL bridgemode = FALSE;
+    int count = 0;
+    LM_host_entry_t *hosts = NULL;
 
     UNREFERENCED_PARAMETER(args);
+
+    lm_wrapper_get_arp_entries(&count, &hosts);
 
     while (1)
     {
@@ -2750,6 +2730,12 @@ static void *Hosts_StatSyncThreadFunc(void *args)
             pthread_mutex_lock(&LmHostObjectMutex);
             Hosts_RmHosts();
             pthread_mutex_unlock(&LmHostObjectMutex);
+            if (hosts)
+            {
+                free(hosts);
+                hosts = NULL;
+                count = 0;
+            }
             sleep(30);
         }
         else
@@ -2769,11 +2755,18 @@ static void *Hosts_StatSyncThreadFunc(void *args)
              Send_Eth_Host_Sync_Req();
              SyncWiFi();
 #endif
-            Hosts_SyncEthClient();
+            Hosts_SyncEthClient(count, hosts);
+            if (hosts)
+            {
+                free(hosts);
+                hosts = NULL;
+                count = 0;
+            }
             sleep(10);
             Sendmsg_dnsmasq(lmHosts.enablePresence);
             Hosts_SyncDHCP();
-            Hosts_SyncArp();
+            lm_wrapper_get_arp_entries(&count, &hosts);
+            Hosts_SyncArp(count, hosts);
             Add_IPv6_from_Dibbler();
         }
     }
@@ -2782,10 +2775,18 @@ static void *Hosts_StatSyncThreadFunc(void *args)
 
 void Hosts_PollHost (void)
 {
+    int count = 0;
+    LM_host_entry_t *hosts = NULL;
+
+    lm_wrapper_get_arp_entries(&count, &hosts);
+
     pthread_mutex_lock(&PollHostMutex);
-    Hosts_SyncArp();
+    Hosts_SyncArp(count, hosts);
     Hosts_SyncDHCP();
     pthread_mutex_unlock(&PollHostMutex);
+
+    if (hosts)
+        free(hosts);
 }
 
 static BOOL ValidateHost (char *mac)
