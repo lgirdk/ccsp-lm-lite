@@ -322,7 +322,7 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
 int Hosts_UpdateDeviceIntoPresenceDetection(PLmObjectHost pHost,BOOL val);
 PLmObjectHostIPAddress LM_GetIPArr_FromIndex(PLmObjectHost pHost, ULONG nIndex, int version);
 PLmObjectHost Hosts_FindHostByPhysAddress(char * physAddress);
-PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress);
+PLmObjectHost Hosts_AddHostByPhysAddress(char * physAddress, int port);
 int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
 int Hosts_stop_scan();
 int Hosts_EnablePresenceDetectionTask();
