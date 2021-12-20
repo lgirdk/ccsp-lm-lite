@@ -1111,13 +1111,12 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
     return NULL;
 }
 
-static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned char *mac)
+static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned char *mac, int port)
 {
     char buf[40];
     char *layer1InterfaceId = "Unknown";
-    int port = -1;
 
-    if (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK)
+    if ((port >= 0) || (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK))
     {
         /* port 0 is internal? */
         if (port >= 1)
@@ -1201,7 +1200,7 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
     return pHost;
 }
 
-PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
+PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress, int port)
 {
     char comments[256];
 
@@ -1272,7 +1271,7 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
         }
         else
         {
-            set_Layer1InterfaceId_for_ethernet (pHost, physAddress);
+            set_Layer1InterfaceId_for_ethernet (pHost, physAddress, port);
         }
 
         pHost->pStringParaValue[LM_HOST_AddressSource] = AnscCloneString("DHCP");
@@ -2177,13 +2176,20 @@ static void *Event_HandlerThread(void *threadid)
 
         if(EventMsg.MsgType == MSG_TYPE_ETH)
         {
+            int port = -1;
+
             memcpy(&EthHost,EventMsg.Msg,sizeof(EthHost));
+            if (EthHost.Active)
+            {
+                if (CcspHalEthSwLocatePortByMacAddress(EthHost.MacAddr, &port) != RETURN_OK || port == -1)
+                    port = 0;
+            }
 
             pthread_mutex_lock(&LmHostObjectMutex);
             pHost = Hosts_FindHostByPhysAddress(EthHost.MacAddr);
             if ( !pHost )
             {
-                pHost = Hosts_AddHostByPhysAddress(EthHost.MacAddr);
+                pHost = Hosts_AddHostByPhysAddress(EthHost.MacAddr, EthHost.Active ? port : -1);
 
                 if ( pHost )
                 {
@@ -2205,7 +2211,7 @@ static void *Event_HandlerThread(void *threadid)
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             if(EthHost.Active)
             {
-                set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr);
+                set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr, port);
 
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
@@ -2244,7 +2250,7 @@ static void *Event_HandlerThread(void *threadid)
             pHost = Hosts_FindHostByPhysAddress((char*)hosts.phyAddr);
             if ( !pHost )
             {
-                pHost = Hosts_AddHostByPhysAddress((char*)hosts.phyAddr);
+                pHost = Hosts_AddHostByPhysAddress((char*)hosts.phyAddr, -1);
                 if ( pHost )
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
@@ -2333,7 +2339,7 @@ static void *Event_HandlerThread(void *threadid)
             pHost = Hosts_FindHostByPhysAddress((char *)mhosts.phyAddr);
             if ( !pHost )
             {
-                pHost = Hosts_AddHostByPhysAddress((char *)mhosts.phyAddr);
+                pHost = Hosts_AddHostByPhysAddress((char *)mhosts.phyAddr, -1);
 
                 if ( pHost )
                 {
@@ -2462,6 +2468,23 @@ static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
 
     if (count > 0)
     {
+        int *swPorts = malloc(count * sizeof(int));
+        if (!swPorts)
+            return;
+        for (i = 0; i < count; i++)
+        {
+            swPorts[i] = -1;
+
+            if (strcmp(hosts[i].ifName, "brlan0") && strcmp(hosts[i].ifName, "brlan7"))
+                continue;
+
+            if (hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
+            {
+                if (CcspHalEthSwLocatePortByMacAddress(hosts[i].phyAddr, &swPorts[i]) != RETURN_OK || swPorts[i] == -1)
+                    swPorts[i] = 0;
+            }
+        }
+
         pthread_mutex_lock(&LmHostObjectMutex);
 
         for (i = 0; i < count; i++)
@@ -2472,7 +2495,7 @@ static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
 
             if (hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
             {
-                pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr);
+                pHost = Hosts_AddHostByPhysAddress(hosts[i].phyAddr, swPorts[i]);
             }
             else if (hosts[i].status == LM_NEIGHBOR_STATE_FAILED)
             {
@@ -2541,6 +2564,7 @@ static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
         }
 
         pthread_mutex_unlock(&LmHostObjectMutex);
+        free(swPorts);
     }
 }
 
