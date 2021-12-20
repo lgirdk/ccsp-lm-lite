@@ -1495,7 +1495,7 @@ void lm_wrapper_get_dhcpv4_client()
         {
             if(! (pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ' && strcasestr((const char *)dhcpHost.phyAddr,pAtomBRMac) != NULL ))
             {
-                pHost = Hosts_AddHostByPhysAddress((char *)dhcpHost.phyAddr);
+                pHost = Hosts_AddHostByPhysAddress((char *)dhcpHost.phyAddr, -1);
 
                 if ( pHost )
                 {
@@ -1596,7 +1596,7 @@ void lm_wrapper_get_dhcpv4_reserved()
 
         if ( !pHost )
         {
-            pHost = Hosts_AddHostByPhysAddress((char *)dhcpHost.phyAddr);
+            pHost = Hosts_AddHostByPhysAddress((char *)dhcpHost.phyAddr, -1);
 
             if ( pHost )
             {
