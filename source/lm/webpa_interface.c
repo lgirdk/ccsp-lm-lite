@@ -319,8 +319,6 @@ char * getDeviceMac()
     char deviceMACVal[32] = {0};
     errno_t ret_code = -1;
 
-    syscfg_init();
-
     if (syscfg_get(NULL, "wan_physical_ifname", out_value, sizeof(out_value)) == 0)
     {
         strncpy(wanPhyName, out_value, sizeof(wanPhyName));
