@@ -3112,7 +3112,6 @@ void LM_main (void)
     XlmHosts.availableInstanceNum = 1;
 	
     pComponentName = (char*)compName;
-	syscfg_init();
     Hosts_GetPresenceParamFromSysDb(&lmHosts.param_val); // update presence syscfg param into lmhost object.
     /*CID: 59596 Array compared against 0*/
     if(!syscfg_get( NULL, "X_RDKCENTRAL-COM_HostVersionId", buf, sizeof(buf)))
