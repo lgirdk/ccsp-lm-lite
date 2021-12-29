@@ -47,7 +47,16 @@ libCcspLM_la_SOURCES = cosa_hosts_dml.c \
                        cosa_managementserver_apis.c \
                        cosa_managementserver_dml.c
 
+
 libCcspLM_la_LDFLAGS = -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -ltelemetry_msgsender -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lwrp-c -llibparodus -lsecure_wrapper
 if ENABLE_SESHAT
 libCcspLM_la_LDFLAGS += -llibseshat
+endif
+
+if WAN_TRAFFIC_COUNT_SUPPORT
+libCcspLM_la_SOURCES += cosa_wantraffic_api.c \
+                        cosa_wantraffic_utils.c \
+                        wtc_rbus_handler_apis.c \
+                        wtc_rbus_apis.c
+libCcspLM_la_LDFLAGS += -lhal_platform
 endif

@@ -74,6 +74,9 @@
 #include "ccsp_base_api.h"
 #include "lm_main.h"
 #include "lm_util.h"
+#ifdef WAN_TRAFFIC_COUNT_SUPPORT
+#include "cosa_wantraffic_api.h"
+#endif
 #include "webpa_interface.h"
 #include "lm_wrapper.h"
 #include "lm_api.h"
@@ -2933,6 +2936,11 @@ void LM_main (void)
 #endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
     initparodusTask();
+
+#ifdef WAN_TRAFFIC_COUNT_SUPPORT
+    CcspTraceInfo(("%s : WanTraffic Count Support ENABLED\n",__FUNCTION__));
+    WTC_Init();
+#endif
 
     pthread_t ValidateHost_ThreadID;
     res = pthread_create(&ValidateHost_ThreadID, NULL, ValidateHost_Thread, "ValidateHost_Thread");

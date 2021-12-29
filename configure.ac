@@ -52,6 +52,16 @@ AC_ARG_ENABLE([seshat],
 esac],[ENABLE_SESHAT=false])
 AM_CONDITIONAL([ENABLE_SESHAT], [test x$ENABLE_SESHAT = xtrue])
 
+# Checks for Wan traffic count Feature Support
+AC_ARG_ENABLE([wan_traffic_count_support],
+[  --enable-wan_traffic_count_support=val Turn on wan traffic count Feature, val=true or false],
+[case "${enableval}" in
+  yes) wan_traffic_count_support=true ;;
+  no)  wan_traffic_count_support=false ;;
+  *) AC_MSG_ERROR([bad value ${enableval} for --enable-wan_traffic_count_support]) ;;
+esac],[wan_traffic_count_support=false])
+AM_CONDITIONAL(WAN_TRAFFIC_COUNT_SUPPORT, test x"$wan_traffic_count_support" = x"true")
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
