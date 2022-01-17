@@ -28,7 +28,6 @@
 #include "network_devices_status.h"
 
 /*Added for rdkb-4343*/
-#include "ccsp_custom_logs.h"
 #include "ccsp_lmliteLog_wrapper.h"
 
 #include "safec_lib_common.h"

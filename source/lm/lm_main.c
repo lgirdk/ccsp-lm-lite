@@ -553,7 +553,6 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				{
 				CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress and %s HostName gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 				OnboardLog("RDKB_CONNECTED_CLIENTS: Wifi client with %s MacAddress and %s HostName gone offline\n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]);
-				CcspWifiTrace(("RDK_LOG_WARN: Wifi client with %s MacAddress and %s HostName gone offline \n",pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
 				t2_event_d("WIFI_INFO_clientdisconnect", 1);
 				}
 #ifndef USE_NOTIFY_COMPONENT
@@ -3542,7 +3541,7 @@ static void Send_MoCA_Host_Sync_Req(void)
 
 	if(ret != CCSP_SUCCESS)
 	{
-		CcspWifiTrace(("RDK_LOG_WARN,MoCA %s : Failed ret %d\n",__FUNCTION__,ret));
+		CcspTraceWarning(("MoCA %s : Failed ret %d\n",__FUNCTION__,ret));
 		if(faultParam)
 		{
 			bus_info->freefunc(faultParam);
@@ -3577,7 +3576,7 @@ static void Send_Eth_Host_Sync_Req(void)
 
 	if(ret != CCSP_SUCCESS)
 	{
-		CcspWifiTrace(("RDK_LOG_WARN,Ethernet %s : Failed ret %d\n",__FUNCTION__,ret));
+		CcspTraceWarning(("Ethernet %s : Failed ret %d\n",__FUNCTION__,ret));
 		if(faultParam)
 		{
 			bus_info->freefunc(faultParam);

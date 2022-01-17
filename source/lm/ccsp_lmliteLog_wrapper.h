@@ -19,14 +19,10 @@
 #ifndef  _CCSP_LMLITELOG_WRPPER_H_ 
 #define  _CCSP_LMLITELOG_WRPPER_H_
 
-#include "ccsp_custom_logs.h"
-
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
 #include "mlt_malloc.h"
 #endif
-extern ANSC_HANDLE bus_handle;
-extern char g_Subsystem[32];
 extern int consoleDebugEnable;
 extern FILE* debugLogFile;
 
@@ -66,7 +62,7 @@ extern FILE* debugLogFile;
                         fprintf(debugLogFile, "%s", pTempChar1);                                    \
                         fflush(debugLogFile);                                                       \
                     }\
-                    WriteLog(pTempChar1,bus_handle,g_Subsystem,"Device.LogAgent.HarvesterLogMsg");  \
+                    Ccsplog3("com.cisco.spvtg.ccsp.harvester", (pTempChar1));  \
 }
 
 #define  CcspLMLiteEventTrace(msg)                                                               \
@@ -79,7 +75,7 @@ extern FILE* debugLogFile;
                         fprintf(debugLogFile, "%s", pTempChar1);                                    \
                         fflush(debugLogFile);                                                       \
                     }\
-                    WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.HarvesterEventLogMsg");  \
+                    Ccsplog3("com.cisco.spvtg.ccsp.harvester", (pTempChar1));  \
 }
 
 

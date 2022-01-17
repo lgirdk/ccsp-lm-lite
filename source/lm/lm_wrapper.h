@@ -40,7 +40,6 @@
 #include <lm_api.h>
 #include "moca_hal.h"
 #include "lm_main.h"
-#include "ccsp_custom_logs.h"
 /*****************
  */
 //#define LM_NETWORK_NAME_SIZE 32
@@ -138,18 +137,6 @@ typedef struct{
 }LM_host_entry_t;
 
 extern ANSC_HANDLE bus_handle;
-
-#define  CcspTraceBaseStr(arg ...)                                                             \
-            do {                                                                            \
-                snprintf(pTempChar1, 4095, arg);                                         	\
-            } while (FALSE)
-			
-#define  CcspWifiTrace(msg)                         \
-{\
-	                char pTempChar1[4096];                                     \
-                        CcspTraceBaseStr msg;                                                       \
-			WriteLog(pTempChar1,bus_handle,"eRT.","Device.LogAgent.WifiLogMsg"); \
-}
 
 /******************
  *

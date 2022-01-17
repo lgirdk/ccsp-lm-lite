@@ -211,7 +211,7 @@ void insert_Mac_to_band_mapping(char *macstring,int band)
 
 void remove_Mac_to_band_mapping(char *macstring)
 {
-	//CcspWifiTrace(("RDK_LOG_WARN,Wifi inside remove_Mac  \n"));
+	//CcspTraceWarning(("Wifi inside remove_Mac  \n"));
 	mac_band_record *prev=NULL,*curr=NULL,*next=NULL,*tmp=NULL;
         unsigned long hashindex;
         hashindex=hash(macstring);
@@ -223,7 +223,7 @@ void remove_Mac_to_band_mapping(char *macstring)
                 curr=curr->next;
 		free(tmp);
 		tmp=NULL;
-		//CcspWifiTrace(("RDK_LOG_WARN,Wifi band %d \n",curr->band));
+		//CcspTraceWarning(("Wifi band %d \n",curr->band));
 	}
  
 	else
@@ -233,13 +233,13 @@ void remove_Mac_to_band_mapping(char *macstring)
 		if (curr) next=curr->next;
 		if(curr) 
 		{
-			//CcspWifiTrace(("RDK_LOG_WARN,Wifi kb   %d \n",curr->band));
+			//CcspTraceWarning(("Wifi kb   %d \n",curr->band));
 			for (;curr!=NULL&&prev!=NULL;curr=curr->next,prev=prev->next,next=next->next)
 			{
 				if(curr && !strcmp(curr->macAddress,macstring)) 
 		
 				{
-					//CcspWifiTrace(("RDK_LOG_WARN,Wifi kb -mac %s  band %d \n",curr->macAddress,curr->band));
+					//CcspTraceWarning(("Wifi kb -mac %s  band %d \n",curr->macAddress,curr->band));
 					prev->next=next;
 					free(curr);
 					curr=NULL;
@@ -430,7 +430,7 @@ void SyncWiFi()
 	int ret = 0;	
 	CCSP_MESSAGE_BUS_INFO *bus_info = (CCSP_MESSAGE_BUS_INFO *)bus_handle;
 
-    CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Get WiFi Clients \n",__FUNCTION__));
+    CcspTraceWarning(("WIFI %s : Get WiFi Clients \n",__FUNCTION__));
 
 	ret = CcspBaseIf_setParameterValues(
 		  bus_handle,
@@ -446,7 +446,7 @@ void SyncWiFi()
 
 	if(ret != CCSP_SUCCESS)
 	{
-		CcspWifiTrace(("RDK_LOG_WARN,WIFI %s : Failed ret %d\n",__FUNCTION__,ret));
+		CcspTraceWarning(("WIFI %s : Failed ret %d\n",__FUNCTION__,ret));
 		if(faultParam)
 		{
 			bus_info->freefunc(faultParam);
@@ -941,7 +941,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
                 			else
 					{
                					insert_Mac_to_band_mapping(macstring,band);
-						CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %d GHz RSSI %d \n",hosts[i].phyAddr,band,pwifi_wsta[i].RSSI));
+						CcspTraceWarning(("Wifi Client %s connected to  band %d GHz RSSI %d \n",hosts[i].phyAddr,band,pwifi_wsta[i].RSSI));
 					}
 			     	} else continue;
 		    	}  
@@ -963,12 +963,12 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 				else
 				{
 					hash_record->band=band;
-				        CcspWifiTrace(("RDK_LOG_WARN,Wifi Client %s connected to  band %d GHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));               }
+				        CcspTraceWarning(("Wifi Client %s connected to  band %d GHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));               }
 			}
                 	else
 			{
                			insert_Mac_to_band_mapping(macstring,band);
-		        	CcspWifiTrace(("RDK_LOG_WARN, New Wifi Client %s connected to  band %d GHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
+                                CcspTraceWarning(("New Wifi Client %s connected to  band %d GHz RSSI %d \n",hosts[i].phyAddr,band,hosts[i].RSSI));
 			}
 		}
 		if(interface%2 == 0)
@@ -1045,14 +1045,14 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 			printf("%s CcspBaseIf_getParameterValues %s error %d!\n", __FUNCTION__, ssid, ret);
 			goto RET1;
 		}
-		CcspWifiTrace(("RDK_LOG_WARN, No of Wifi clients connected : %d \n",*pCount));
-		CcspWifiTrace(("RDK_LOG_WARN, Device No : %d MAC - %s interface: ath%d band %dGHz RSSI %d \n",i+1,hosts[i].phyAddr,interface-1,band,hosts[i].RSSI));
+		CcspTraceWarning(("No of Wifi clients connected : %d \n",*pCount));
+		CcspTraceWarning(("Device No : %d MAC - %s interface: ath%d band %dGHz RSSI %d \n",i+1,hosts[i].phyAddr,interface-1,band,hosts[i].RSSI));
 		if(!retval){	
-		  CcspWifiTrace(("RDK_LOG_WARN, ssid : %s Auto channel enabled, channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
+		  CcspTraceWarning(("ssid : %s Auto channel enabled, channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
 		}else {
-		 CcspWifiTrace(("RDK_LOG_WARN, ssid : %s  channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
+		 CcspTraceWarning(("ssid : %s  channel : %d \n",valStrssid[0]->parameterValue,currentChannel));
 		}	
-		CcspWifiTrace(("RDK_LOG_WARN, Security Mode : %s , Security Encryptionmode : %s \n",valStrsecmode[0]->parameterValue,valStrsecencrymode[0]->parameterValue));
+		CcspTraceWarning(("Security Mode : %s , Security Encryptionmode : %s \n",valStrsecmode[0]->parameterValue,valStrsecencrymode[0]->parameterValue));
 
 	}
 
