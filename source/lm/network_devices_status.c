@@ -38,6 +38,7 @@
 #include <stdint.h>
 #include "webpa_interface.h"
 #include "safec_lib_common.h"
+#include "secure_wrapper.h"
 
 static pthread_mutex_t ndsMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t ndsCond = PTHREAD_COND_INITIALIZER;
@@ -69,7 +70,7 @@ bool isvalueinarray(ULONG val, ULONG *arr, int size);
 
 void* StartNetworkDeviceStatusHarvesting( void *arg );
 #ifndef UTC_ENABLE
-static int _syscmd(char *cmd, char *retBuf, int retBufSize);
+static int _syscmd(FILE *f, char *retBuf, int retBufSize);
 #endif
 void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head);
 void print_list(struct networkdevicestatusdata *head);
@@ -88,22 +89,26 @@ extern ANSC_STATUS SetNDSReportingPeriodInNVRAM(ULONG pReportingVal);
 int getTimeOffsetFromUtc()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
-    char timezonecmd[128] = {0};
     char timezonearr[32] = {0};
-    int ret  = 0;
-    errno_t rc = strcpy_s(timezonecmd, sizeof(timezonecmd),"dmcli eRT getv Device.Time.TimeOffset | grep value | awk '{print $5}'");
-    if(rc != EOK)
+    int ret  = 0,pcloseret = 0;
+    FILE *f = NULL;
+    f = v_secure_popen("r","dmcli eRT getv Device.Time.TimeOffset | grep value | awk '{print $5}'");
+    if(f == NULL)
     {
-       ERR_CHK(rc);
-       return -1;
+         CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Parsing Error in popen \n", __FUNCTION__ ));
+         return -1;
     }
-    ret = _syscmd(timezonecmd, timezonearr, sizeof(timezonearr));
+    ret = _syscmd(f, timezonearr, sizeof(timezonearr));
+    pcloseret = v_secure_pclose(f);
+    if(pcloseret != 0)
+    {
+        CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Parsing Error pclose \n", __FUNCTION__ ));
+    }
     if(ret)
     {
         CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Executing Syscmd for DMCLI TimeOffset [%d] \n",__FUNCTION__, ret));
         return ret;
     }
-
     if (sscanf(timezonearr, "%d", &tm_offset) != 1)
     {
         CcspLMLiteTrace(("RDK_LOG_ERROR, LMLite %s : Parsing Error for TimeOffset \n", __FUNCTION__ ));
@@ -373,15 +378,14 @@ int SetNDSOverrideTTL(ULONG ttl)
 }
 
 #ifndef UTC_ENABLE
-static int _syscmd(char *cmd, char *retBuf, int retBufSize)
+static int _syscmd(FILE *f, char *retBuf, int retBufSize)
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-    FILE *f;
     char *ptr = retBuf;
     int bufSize = retBufSize, bufbytes = 0, readbytes = 0;
 
-    if ((f = popen(cmd, "r")) == NULL) {
+    if (f == NULL) {
         CcspLMLiteTrace(("RDK_LOG_DEBUG, LMLite %s : popen %s error\n",__FUNCTION__, cmd));
         return -1;
     }
@@ -402,7 +406,6 @@ static int _syscmd(char *cmd, char *retBuf, int retBufSize)
         bufSize -= readbytes;
         ptr += readbytes;
     }
-    pclose(f);
     retBuf[retBufSize - 1] = 0;
 
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
