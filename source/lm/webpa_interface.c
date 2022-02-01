@@ -38,6 +38,13 @@
 
 #define MAX_PARAMETERNAME_LEN   512
 
+#ifdef _SKY_HUB_COMMON_PRODUCT_REQ_
+#include <utctx/utctx.h>
+#include <utctx/utctx_api.h>
+#include <utapi/utapi.h>
+#include <utapi/utapi_util.h>
+#endif
+
 extern ANSC_HANDLE bus_handle;
 pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -421,6 +428,32 @@ char * getDeviceMac()
     // of this function on RPI puts calling thread in infinite wait.
     return deviceMAC;
 #endif
+  
+#ifdef _SKY_HUB_COMMON_PRODUCT_REQ_
+    char wanPhyName[32] = {0};
+    char out_value[32] = {0};
+    char deviceMACVal[32] = {0};
+    errno_t ret_code = -1;
+
+    syscfg_init();
+
+    if (syscfg_get(NULL, "wan_physical_ifname", out_value, sizeof(out_value)) == 0)
+    {
+        strncpy(wanPhyName, out_value, sizeof(wanPhyName));
+        CcspTraceInfo(("%s %d - WanPhyName=%s \n", __FUNCTION__,__LINE__, wanPhyName));
+    }
+    else
+    {
+        strncpy(wanPhyName, "erouter0", sizeof(wanPhyName));
+        CcspTraceInfo(("%s %d - WanPhyName=%s \n", __FUNCTION__,__LINE__, wanPhyName));
+    }
+    s_get_interface_mac(wanPhyName, deviceMACVal, sizeof(deviceMACVal));
+    ret_code = STRCPY_S_NOCLOBBER(fullDeviceMAC, sizeof(fullDeviceMAC),deviceMACVal);
+    ERR_CHK(ret_code);
+    AnscMacToLower(deviceMAC, deviceMACVal, sizeof(deviceMAC));
+    CcspTraceInfo(("%s %d -  deviceMAC is - %s \n", __FUNCTION__,__LINE__, deviceMAC));
+    return deviceMAC;
+#endif //_SKY_HUB_COMMON_PRODUCT_REQ_
 
     while(!strlen(deviceMAC))
     {
@@ -432,11 +465,7 @@ char * getDeviceMac()
         char deviceMACValue[32] = { '\0' };
         errno_t rc = -1;
 #ifndef _XF3_PRODUCT_REQ_
-#ifdef _SKY_HUB_COMMON_PRODUCT_REQ_ //Use X_COMCAST-COM_WAN_MAC for SKY HUBs.
-        char *getList[] = {"Device.DeviceInfo.X_COMCAST-COM_WAN_MAC"};
-#else
         char *getList[] = {"Device.X_CISCO_COM_CableModem.MACAddress"};
-#endif //_SKY_HUB_COMMON_PRODUCT_REQ_
 #else
         char *getList[] = {"Device.DPoE.Mac_address"};
 #endif
