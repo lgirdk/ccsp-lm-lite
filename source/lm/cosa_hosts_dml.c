@@ -287,7 +287,7 @@ Hosts_SetParamBoolValue
     if (strcmp(ParamName, "X_RDK_WebPA_PresenceNotificationEnable") == 0)
     {
         char buf[8];
-        memset (buf,0,sizeof(buf));
+
         syscfg_get( NULL, "PresenceDetectEnabled", buf, sizeof(buf));
 
         if (strcmp(buf, "false") == 0)
@@ -296,16 +296,7 @@ Hosts_SetParamBoolValue
             return FALSE;
         }
 
-        /* collect value */
-        if( bValue == TRUE)
-        {
-            syscfg_set(NULL, "notify_presence_webpa", "true");
-        }
-        else
-        {
-            syscfg_set(NULL, "notify_presence_webpa", "false");
-        }
-        syscfg_commit();
+        syscfg_set_commit(NULL, "notify_presence_webpa", (bValue == TRUE) ? "true" : "false");
         return TRUE;
     }
 
@@ -552,16 +543,10 @@ Hosts_SetParamUlongValue
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_HostCountPeriod") == 0)
     {
         g_Client_Poll_interval = uValue;
-        if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostCountPeriod", uValue) != 0) {
-				     return FALSE;
-             } else {
-
-                    if (syscfg_commit() != 0)
-						{
-                            CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
-							return FALSE;
-						}
-			 }
+        if (syscfg_set_u_commit(NULL, "X_RDKCENTRAL-COM_HostCountPeriod", uValue) != 0) {
+            CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_set failed\n"));
+            return FALSE;
+        }
         return TRUE;
     }
  	if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync") == 0)
@@ -1832,16 +1817,8 @@ Host_SetParamStringValue
 
 		snprintf(buf1, sizeof(buf1), "host_friendly_name_%s", pHost->pStringParaValue[LM_HOST_PhysAddressId]);
 
-		if (syscfg_set(NULL, buf1, pString) != 0)
+		if (syscfg_set_commit(NULL, buf1, pString) != 0)
 		{
-			pthread_mutex_unlock(&LmHostObjectMutex);
-			return FALSE;
-		}
-
-		if (syscfg_commit() != 0)
-		{
-			CcspTraceWarning(("X_LGI-COM_FriendlyName syscfg_commit failed\n"));
-
 			pthread_mutex_unlock(&LmHostObjectMutex);
 			return FALSE;
 		}

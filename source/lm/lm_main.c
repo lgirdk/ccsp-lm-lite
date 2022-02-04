@@ -733,17 +733,9 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 						}
 					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
-					if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
+					if (syscfg_set_u_commit(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0)
 					{
 						AnscTraceWarning(("syscfg_set failed\n"));
-					}
-					else 
-					{
-						if (syscfg_commit() != 0) 
-						{
-							AnscTraceWarning(("syscfg_commit failed\n"));
-						}
-		
 					}
 					pHost->bNotify = TRUE;
 					clientState = CLIENT_STATE_CONNECT;
@@ -893,16 +885,9 @@ static void Hosts_RmHosts (void)
     lmHosts.sizeHost = 0;
     lmHosts.lastActivity++;
 
-	if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
+	if (syscfg_set_u_commit(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0)
 		{
 			AnscTraceWarning(("syscfg_set failed\n"));
-		}
-	else 
-		{
-			if (syscfg_commit() != 0) 
-				{
-					AnscTraceWarning(("syscfg_commit failed\n"));
-				}
 		}
 
     return;
@@ -3126,16 +3111,9 @@ void LM_main (void)
 	else
 		{
 			g_Client_Poll_interval = 60;
-			if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostCountPeriod", g_Client_Poll_interval) != 0) {
+			if (syscfg_set_u_commit(NULL, "X_RDKCENTRAL-COM_HostCountPeriod", g_Client_Poll_interval) != 0) {
 				return;
-             } else {
-
-                    if (syscfg_commit() != 0)
-						{
-                            CcspTraceWarning(("X_RDKCENTRAL-COM_HostCountPeriod syscfg_commit failed\n"));
-							return;
-						}
-			 }
+			}
 		}
 
 #ifdef FEATURE_SUPPORT_RDKLOG
@@ -3846,15 +3824,8 @@ PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAd
 
 BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
 {
-    if (syscfg_set_u(NULL, paramName, uValue) != 0) {
+    if (syscfg_set_u_commit(NULL, paramName, uValue) != 0) {
         return FALSE;
-    } else {
-
-        if (syscfg_commit() != 0)
-        {
-            CcspTraceWarning(("%s syscfg_commit failed\n",paramName));
-            return FALSE;
-        }
     }
     return TRUE;
 
