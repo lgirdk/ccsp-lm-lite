@@ -44,6 +44,7 @@
 #include "ssp_global.h"
 #include "stdlib.h"
 #include "ccsp_dm_api.h"
+#include "cap.h"
 
 #ifdef INCLUDE_BREAKPAD
 #include "breakpad_wrapper.h"
@@ -59,7 +60,7 @@ extern char*                                pComponentName;
 char                                        g_Subsystem[32]         = {0};
 int consoleDebugEnable = 0;
 FILE* debugLogFile;
-
+static cap_user appcaps;
 int  cmd_dispatch(int  command)
 {
     ANSC_STATUS  returnStatus    = ANSC_STATUS_SUCCESS;
@@ -247,6 +248,13 @@ int main(int argc, char* argv[])
 #if defined(_ENABLE_EPON_SUPPORT_)
     setlogmask(LOG_UPTO(LOG_INFO));
 #endif
+    appcaps.caps = NULL;
+    appcaps.user_name = NULL;
+    if(!isBlocklisted()){
+        if(!drop_root_priv(&appcaps)){
+	    CcspTraceInfo(("droproot function failed!\n"));
+        }
+    }
     for (idx = 1; idx < argc; idx++)
     {
         if ( (strcmp(argv[idx], "-subsys") == 0) )
@@ -293,7 +301,6 @@ int main(int argc, char* argv[])
 
         }        
     }
-
     pComponentName          = CCSP_COMPONENT_NAME_LMLITE;
 #ifdef INCLUDE_BREAKPAD
     breakpad_ExceptionHandler();
@@ -366,7 +373,6 @@ int main(int argc, char* argv[])
     RDK_LOGGER_INIT();
 #endif
     creat("/tmp/lmlite_initialized",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-
     LM_main();
     if ( bRunAsDaemon )
     {

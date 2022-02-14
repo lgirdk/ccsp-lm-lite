@@ -47,7 +47,7 @@
 #define LM_MAX_INTERFACE_NUMBER 10
 
 #define DEVICE_WIFI_ACCESS_POINT "Device.WiFi.AccessPoint." 
-#define ARP_CACHE_FILE "/var/arp_cache"
+#define ARP_CACHE_FILE "/tmp/arp_cache"
 #define DNSMASQ_LEASES_FILE "/nvram/dnsmasq.leases"
 #define DNSMASQ_RESERVED_FILE "/etc/dhcp_static_hosts"
 
