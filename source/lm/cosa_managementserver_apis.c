@@ -204,7 +204,6 @@ PCOSA_DML_MANG_DEV CosaDmlGetManageableDevices(ULONG *tableEntryCount, char *fil
     {
         return NULL;
     }
-    AnscZeroMemory(pMangDevTable, sizeof(COSA_DML_MANG_DEV) * lines);
     FILE *fp = fopen(filename, "r");
     if (fp)
     {

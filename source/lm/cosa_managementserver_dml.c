@@ -429,7 +429,7 @@ ManageableDevice_Synchronize
                 returnStatus =  ANSC_STATUS_RESOURCES;
                 break;
             }
-            AnscZeroMemory(pCxtLink, sizeof(COSA_CONTEXT_LINK_OBJ));
+
             pMangDevEntry = AnscAllocateMemory(sizeof(COSA_DML_MANG_DEV));
             if (!pMangDevEntry)
             {
@@ -437,7 +437,7 @@ ManageableDevice_Synchronize
                 returnStatus =  ANSC_STATUS_RESOURCES;
                 break;
             }
-            AnscZeroMemory(pMangDevEntry, sizeof(COSA_DML_MANG_DEV));
+
             /* Now we have this link content */
             if (g_pReports->MangDevNextInsNum == 0)
             {
