@@ -3241,8 +3241,6 @@ static void _init_DM_List(int *num, Name_DM_t **pList, char *path, char *name)
 
         if (*pList != NULL)
         {
-            memset (*pList, 0, sizeof(Name_DM_t) * nname);
-
             for(i = 0; i < nname; i++){
 			ULONG ulEntryNameLen;
 			parameterValStruct_t varStruct;
