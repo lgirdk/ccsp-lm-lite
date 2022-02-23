@@ -133,7 +133,6 @@ int PresenceDetection_Init()
     pDetectionObject =  LanManager_Allocate(sizeof(LmDevicePresenceDetectionInfo));
     if (pDetectionObject)
     {        
-        memset(pDetectionObject,0, sizeof(LmDevicePresenceDetectionInfo));
         pDetectionObject->ppdevlist = LanManager_Allocate(MAX_NUM_OF_DEVICE * sizeof(PLmPresenceDeviceInfo));
         if (!pDetectionObject->ppdevlist)
         {   LanManager_Free(pDetectionObject);
