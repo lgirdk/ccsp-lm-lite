@@ -274,8 +274,8 @@ static int LanManager_DiscoverComponent (void)
         ret = -1;
     }
     else{
-        pERTPAMComponentName = LanManager_CloneString(components[0]->componentName);
-        pERTPAMComponentPath = LanManager_CloneString(components[0]->dbusPath);
+        pERTPAMComponentName = AnscCloneString(components[0]->componentName);
+        pERTPAMComponentPath = AnscCloneString(components[0]->dbusPath);
         CcspTraceInfo(("LanManager_DiscoverComponent find eRT PAM component %s--%s\n", pERTPAMComponentName, pERTPAMComponentPath));
     }
     free_componentStruct_t(bus_handle, compNum, components);
@@ -391,8 +391,8 @@ int lm_wrapper_init(){
                 "ccsp.lmbusclient",
                 CCSP_MSG_BUS_CFG,
                 &bus_handle,
-                LanManager_Allocate,
-                LanManager_Free
+                AnscAllocateMemory,
+                AnscFreeMemory
             );
 
     if ( ret != ANSC_STATUS_SUCCESS )
@@ -995,7 +995,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		currentChannel = atoi(valStrchannel[1]->parameterValue);
 		
 		snprintf(secMode, sizeof(secMode), WIFI_DM_BSS_SECURITY_MODE,interface);
-		paramNames[0] = LanManager_CloneString(secMode);;
+		paramNames[0] = AnscCloneString(secMode);;
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
 		    pWiFiComponentName,
@@ -1011,7 +1011,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		} 
 
 		snprintf(secEncMode, sizeof(secEncMode),WIFI_DM_BSS_SECURITY_ENCRYMODE,interface);
-                paramNames[0] = LanManager_CloneString(secEncMode);
+                paramNames[0] = AnscCloneString(secEncMode);
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
 		    pWiFiComponentName,
@@ -1027,7 +1027,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 		} 
 
 		snprintf(ssid, sizeof(ssid),WIFI_DM_SSID,interface);
-	        paramNames[0] = LanManager_CloneString(ssid);
+	        paramNames[0] = AnscCloneString(ssid);
 		ret = CcspBaseIf_getParameterValues(
 		    bus_handle,
 		    pWiFiComponentName,
@@ -1486,7 +1486,7 @@ void lm_wrapper_get_dhcpv4_client()
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                     {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        AnscFreeMemory(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
                         pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
                     }
                 }   
@@ -1589,7 +1589,7 @@ void lm_wrapper_get_dhcpv4_reserved()
             {
                 if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                 {
-                    LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                    AnscFreeMemory(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
                     pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
                 }
 
