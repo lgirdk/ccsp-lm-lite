@@ -751,7 +751,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 #endif
 } 
 
-#define LM_SET_PSTRINGPARAVALUE(var, val) if((var)) LanManager_Free(var);var = LanManager_CloneString(val);
+#define LM_SET_PSTRINGPARAVALUE(var, val) if((var)) AnscFreeMemory(var);var = AnscCloneString(val);
 
 /***********************************************************************
 
@@ -829,20 +829,20 @@ static void Hosts_FreeHost (PLmObjectHost pHost)
     for(i=0; i<LM_HOST_NumStringPara; i++)
     {
         if(NULL != pHost->pStringParaValue[i])
-            LanManager_Free(pHost->pStringParaValue[i]);
+            AnscFreeMemory(pHost->pStringParaValue[i]);
         pHost->pStringParaValue[i] = NULL;
     }
     if(pHost->objectName != NULL)
-        LanManager_Free(pHost->objectName);
+        AnscFreeMemory(pHost->objectName);
     if(pHost->Layer3Interface != NULL)
-        LanManager_Free(pHost->Layer3Interface);
+        AnscFreeMemory(pHost->Layer3Interface);
 
     pHost->objectName = NULL;
     pHost->Layer3Interface = NULL;
     Host_FreeIPAddress(pHost, 4);
     Host_FreeIPAddress(pHost, 6);
 
-	LanManager_Free(pHost);
+	AnscFreeMemory(pHost);
 	pHost = NULL;
 
 	lmHosts.numHost--;
@@ -859,7 +859,7 @@ static void Hosts_RmHosts (void)
         Hosts_FreeHost(lmHosts.hostArray[i]);
         lmHosts.hostArray[i] = NULL;
     }
-    LanManager_Free(lmHosts.hostArray);
+    AnscFreeMemory(lmHosts.hostArray);
     lmHosts.availableInstanceNum = 1;
     lmHosts.hostArray = NULL;
     lmHosts.numHost = 0;
@@ -877,7 +877,7 @@ static void Hosts_RmHosts (void)
 static PLmObjectHost XHosts_AddHost (int instanceNum)
 {
     //printf("in XHosts_AddHost %d \n", instanceNum);
-    PLmObjectHost pHost = LanManager_Allocate(sizeof(LmObjectHost));
+    PLmObjectHost pHost = AnscAllocateMemory(sizeof(LmObjectHost));
     if(pHost == NULL)
     {
         return NULL;
@@ -892,17 +892,17 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
     if(rc != EOK)
     {
        ERR_CHK(rc);
-       LanManager_Free(pHost);
+       AnscFreeMemory(pHost);
        return NULL;
     }
     rc = strcat_s(objectName, sizeof(objectName),instanceNumStr);
     if(rc != EOK)
     {
         ERR_CHK(rc);
-        LanManager_Free(pHost);
+        AnscFreeMemory(pHost);
         return NULL;
     }
-    pHost->objectName = LanManager_CloneString(objectName);
+    pHost->objectName = AnscCloneString(objectName);
 
     pHost->ipv4AddrArray = NULL;
     pHost->numIPv4Addr = 0;
@@ -926,13 +926,13 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
 
     if(XlmHosts.numHost >= XlmHosts.sizeHost){
         XlmHosts.sizeHost += LM_HOST_ARRAY_STEP;
-        PLmObjectHost *newArray = LanManager_Allocate(XlmHosts.sizeHost * sizeof(PLmObjectHost));
+        PLmObjectHost *newArray = AnscAllocateMemory(XlmHosts.sizeHost * sizeof(PLmObjectHost));
         for(i=0; i<XlmHosts.numHost; i++){
             newArray[i] = XlmHosts.hostArray[i];
         }
         PLmObjectHost *backupArray = XlmHosts.hostArray;
         XlmHosts.hostArray = newArray;
-        if(backupArray) LanManager_Free(backupArray);
+        if(backupArray) AnscFreeMemory(backupArray);
     }
     pHost->id = XlmHosts.numHost;
     XlmHosts.hostArray[pHost->id] = pHost;
@@ -983,7 +983,7 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	if(lmHosts.numHost < HOST_OBJECT_SIZE)/* RDKB-23038, max client support to 200 */
 	{	
 	    //printf("in Hosts_AddHost %d \n", instanceNum);
-	    PLmObjectHost pHost = LanManager_Allocate(sizeof(LmObjectHost));
+	    PLmObjectHost pHost = AnscAllocateMemory(sizeof(LmObjectHost));
 	    if(pHost == NULL)
 	    {
 	        return NULL;
@@ -998,18 +998,18 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	    if(rc != EOK)
 	    {
 	       ERR_CHK(rc);
-	       LanManager_Free(pHost);
+	       AnscFreeMemory(pHost);
 	       return NULL;
 	    }
 	    rc = strcat_s(objectName, sizeof(objectName),instanceNumStr);
 	    if(rc != EOK)
 	    {
 	       ERR_CHK(rc);
-	       LanManager_Free(pHost);
+	       AnscFreeMemory(pHost);
 	       return NULL;
 	    }
 
-	    pHost->objectName = LanManager_CloneString(objectName);
+	    pHost->objectName = AnscCloneString(objectName);
 
 	    pHost->l3unReachableCnt = 0;
 	    pHost->l1unReachableCnt = 0;
@@ -1035,13 +1035,13 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	    for(i=0; i<LM_HOST_NumStringPara; i++) pHost->pStringParaValue[i] = NULL;
 	    if(lmHosts.numHost >= lmHosts.sizeHost){
 	        lmHosts.sizeHost += LM_HOST_ARRAY_STEP;
-	        PLmObjectHost *newArray = LanManager_Allocate(lmHosts.sizeHost * sizeof(PLmObjectHost));
+	        PLmObjectHost *newArray = AnscAllocateMemory(lmHosts.sizeHost * sizeof(PLmObjectHost));
 	        for(i=0; i<lmHosts.numHost; i++){
 	            newArray[i] = lmHosts.hostArray[i];
 	        }
 	        PLmObjectHost *backupArray = lmHosts.hostArray;
 	        lmHosts.hostArray = newArray;
-	        if(backupArray) LanManager_Free(backupArray);
+	        if(backupArray) AnscFreeMemory(backupArray);
 	    }
 	    pHost->id = lmHosts.numHost;
 	    lmHosts.hostArray[pHost->id] = pHost;
@@ -1131,18 +1131,18 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
 
     if (pHost)
     {
-        pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
-        pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_PhysAddressId] = AnscCloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_HostNameId] = AnscCloneString(physAddress);
 
         comments[0] = 0;
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
         {
-            pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
+            pHost->pStringParaValue[LM_HOST_Comments] = AnscCloneString(comments);
         }
 
-        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Device.WiFi.SSID.3");
-        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
+        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString("Device.WiFi.SSID.3");
+        pHost->pStringParaValue[LM_HOST_AddressSource] = AnscCloneString("DHCP");
         pHost->bClientReady = FALSE;
         //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
         XlmHosts.availableInstanceNum++;
@@ -1184,14 +1184,14 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 
     if (pHost)
     {
-        pHost->pStringParaValue[LM_HOST_PhysAddressId] = LanManager_CloneString(physAddress);
-        pHost->pStringParaValue[LM_HOST_HostNameId] = LanManager_CloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_PhysAddressId] = AnscCloneString(physAddress);
+        pHost->pStringParaValue[LM_HOST_HostNameId] = AnscCloneString(physAddress);
 
         comments[0] = 0;
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
         {
-            pHost->pStringParaValue[LM_HOST_Comments] = LanManager_CloneString(comments);
+            pHost->pStringParaValue[LM_HOST_Comments] = AnscCloneString(comments);
         }
 
         pHost->bBoolParaValue[LM_HOST_PresenceNotificationEnabledId] = Hosts_GetPresenceNotificationEnableStatus(physAddress);
@@ -1203,12 +1203,12 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 
             if(SearchWiFiClients(physAddress,ssid))
             {
-                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString(ssid);
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString(ssid);
                 bWifiHost = FALSE;
             }
             else
             {
-                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+                pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString("Ethernet");
             }
 
         }
@@ -1220,14 +1220,14 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
             (strncasecmp (physAddress, "b8:ee:0e:", 9) == 0) ||
             (strncasecmp (physAddress, "b8:d9:4d:", 9) == 0))
         {
-            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Mesh");
+            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString("Mesh");
         }
         else
         {
-            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = LanManager_CloneString("Ethernet");
+            pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = AnscCloneString("Ethernet");
         }
 
-        pHost->pStringParaValue[LM_HOST_AddressSource] = LanManager_CloneString("DHCP");
+        pHost->pStringParaValue[LM_HOST_AddressSource] = AnscCloneString("DHCP");
         pHost->bClientReady = FALSE;
         //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: pHost->bClientReady = %d \n",pHost->bClientReady));
         lmHosts.availableInstanceNum++;
@@ -1259,10 +1259,10 @@ static void Host_FreeIPAddress(PLmObjectHost pHost, int version)
     *num = 0;
     while(pIpAddrList != NULL)
     {
-        LanManager_Free(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
+        AnscFreeMemory(pIpAddrList->pStringParaValue[LM_HOST_IPAddress_IPAddressId]);
         pCur = pIpAddrList;
         pIpAddrList = pIpAddrList->pNext;
-        LanManager_Free(pCur); /*RDKB-7348, CID-33198, free current list*/
+        AnscFreeMemory(pCur); /*RDKB-7348, CID-33198, free current list*/
         pCur = NULL;
         *ppHeader = NULL;
     }
@@ -1285,11 +1285,11 @@ static PLmObjectHostIPAddress Add_Update_IPv4Address (PLmObjectHost pHost, char 
         }
     }
 	if (pCur == NULL){
-		pCur = LanManager_Allocate(sizeof(LmObjectHostIPAddress));
+		pCur = AnscAllocateMemory(sizeof(LmObjectHostIPAddress));
 		if(pCur == NULL){
 			return NULL;
 	}
-	pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(ipAddress);
+	pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = AnscCloneString(ipAddress);
         pCur->pNext = *ppHeader;
         *ppHeader = pCur;
         (*num)++;
@@ -1322,15 +1322,15 @@ static PLmObjectHostIPAddress Add_Update_IPv6Address (PLmObjectHost pHost, char 
 
 		for(i=0;i<3;i++)
 		{
-			temp=LanManager_Allocate(sizeof(LmObjectHostIPAddress));
+			temp=AnscAllocateMemory(sizeof(LmObjectHostIPAddress));
 			if(temp == NULL)
 			{
 				return NULL;
 			}
 			else
 			{
-				//temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString("EMPTY");
-				temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = LanManager_CloneString(" "); // fix for RDKB-19836
+				//temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = AnscCloneString("EMPTY");
+				temp->pStringParaValue[LM_HOST_IPAddress_IPAddressId] = AnscCloneString(" "); // fix for RDKB-19836
 				(*num)++;
 				temp->instanceNum = *num;
 				temp->pNext=prev;
@@ -1662,21 +1662,21 @@ Host_AddIPv6Address
         }
     }
 
-    PLmObjectHostIPv6Address pIPv6Address = LanManager_Allocate(sizeof(LmObjectHostIPv6Address));
+    PLmObjectHostIPv6Address pIPv6Address = AnscAllocateMemory(sizeof(LmObjectHostIPv6Address));
     pIPv6Address->instanceNum = instanceNum;
-    pIPv6Address->pStringParaValue[LM_HOST_IPv6Address_IPAddressId] = LanManager_CloneString(ipv6Address);
+    pIPv6Address->pStringParaValue[LM_HOST_IPv6Address_IPAddressId] = AnscCloneString(ipv6Address);
     if(pHost->availableInstanceNumIPv6Address <= pIPv6Address->instanceNum)
         pHost->availableInstanceNumIPv6Address = pIPv6Address->instanceNum + 1;
 
     if(pHost->numIPv6Addr >= pHost->sizeIPv6Addr){
         pHost->sizeIPv6Addr += LM_HOST_ARRAY_STEP;
-        PLmObjectHostIPv6Address *newArray = LanManager_Allocate(pHost->sizeIPv6Addr * sizeof(PLmObjectHostIPv6Address));
+        PLmObjectHostIPv6Address *newArray = AnscAllocateMemory(pHost->sizeIPv6Addr * sizeof(PLmObjectHostIPv6Address));
         for(i=0; i<pHost->numIPv6Addr; i++){
             newArray[i] = pHost->ipv6AddrArray[i];
         }
         PLmObjectHostIPv6Address *backupArray = pHost->ipv6AddrArray;
         pHost->ipv6AddrArray = newArray;
-        if(backupArray) LanManager_Free(backupArray);
+        if(backupArray) AnscFreeMemory(backupArray);
     }
     pIPv6Address->id = pHost->numIPv6Addr;
     pHost->ipv6AddrArray[pIPv6Address->id] = pIPv6Address;
@@ -2135,7 +2135,7 @@ static void *Event_HandlerThread(void *threadid)
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                     {
-                         LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                         AnscFreeMemory(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
                          pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
                     }
                 }
@@ -2192,7 +2192,7 @@ static void *Event_HandlerThread(void *threadid)
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                     {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        AnscFreeMemory(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
                         pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
                     }
                 }
@@ -2270,7 +2270,7 @@ static void *Event_HandlerThread(void *threadid)
                 {
                     if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
                     {
-                        LanManager_Free(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        AnscFreeMemory(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
                         pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
                     }
                 }
@@ -2895,14 +2895,14 @@ void LM_main (void)
     pthread_mutex_init(&HostNameMutex,0);
     pthread_mutex_init(&LmRetryHostListMutex, 0);
     lm_wrapper_init();
-    lmHosts.hostArray = LanManager_Allocate(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
+    lmHosts.hostArray = AnscAllocateMemory(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
     lmHosts.sizeHost = LM_HOST_ARRAY_STEP;
     lmHosts.numHost = 0;
     lmHosts.lastActivity = 0;
     lmHosts.availableInstanceNum = 1;
     lmHosts.enablePresence = FALSE;
 
-	XlmHosts.hostArray = LanManager_Allocate(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
+	XlmHosts.hostArray = AnscAllocateMemory(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
 	XlmHosts.sizeHost = LM_HOST_ARRAY_STEP;
 	XlmHosts.numHost = 0;
 	XlmHosts.lastActivity = 0;

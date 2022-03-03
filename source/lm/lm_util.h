@@ -90,21 +90,6 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
     const char * ipv6Address
 );
 
-void * LanManager_Allocate
-(
-    size_t size
-);
-
-void LanManager_Free
-(
-    void *p
-);
-
-char * LanManager_CloneString
-    (
-    const char * src
-    );
-
 void LanManager_CheckCloneCopy (char **dest, const char *src);
 
 #endif
