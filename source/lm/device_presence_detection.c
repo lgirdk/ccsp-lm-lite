@@ -130,12 +130,12 @@ int PresenceDetection_Init()
 {
     int ret = 0;
 
-    pDetectionObject =  LanManager_Allocate(sizeof(LmDevicePresenceDetectionInfo));
+    pDetectionObject =  AnscAllocateMemory(sizeof(LmDevicePresenceDetectionInfo));
     if (pDetectionObject)
     {        
-        pDetectionObject->ppdevlist = LanManager_Allocate(MAX_NUM_OF_DEVICE * sizeof(PLmPresenceDeviceInfo));
+        pDetectionObject->ppdevlist = AnscAllocateMemory(MAX_NUM_OF_DEVICE * sizeof(PLmPresenceDeviceInfo));
         if (!pDetectionObject->ppdevlist)
-        {   LanManager_Free(pDetectionObject);
+        {   AnscFreeMemory(pDetectionObject);
             pDetectionObject = NULL;
             return -1;
         }
@@ -162,14 +162,14 @@ int PresenceDetection_DeInit()
             {
                 if (pDetectionObject->ppdevlist[index])
                 {
-                    LanManager_Free(pDetectionObject->ppdevlist[index]);
+                    AnscFreeMemory(pDetectionObject->ppdevlist[index]);
                     pDetectionObject->ppdevlist[index] = NULL;
                 }
             }    
-            LanManager_Free(pDetectionObject->ppdevlist);
+            AnscFreeMemory(pDetectionObject->ppdevlist);
             pDetectionObject->ppdevlist = NULL;
         } 
-        LanManager_Free(pDetectionObject);
+        AnscFreeMemory(pDetectionObject);
         pDetectionObject = NULL;
     }
     pthread_mutex_unlock(&PresenceDetectionMutex);
@@ -327,7 +327,7 @@ int PresenceDetection_AddDevice(LmPresenceDeviceInfo *pinfo)
         {
             if (pobject->ppdevlist)
             {
-                pDev =  LanManager_Allocate(sizeof(LmPresenceDeviceInfo));
+                pDev =  AnscAllocateMemory(sizeof(LmPresenceDeviceInfo));
                 if (pDev)
                 {
                     memcpy (pDev,pinfo,sizeof(LmPresenceDeviceInfo));
@@ -383,7 +383,7 @@ int PresenceDetection_RemoveDevice(char *mac)
         return 0;
     }
 
-    LanManager_Free(pDev);
+    AnscFreeMemory(pDev);
     pDev = NULL;
     CcspTraceWarning(("RDKB_PRESENCE:  Mac %s Removed from monitor \n",mac));
     if (pobject && (pobject->numOfDevice > 0))
