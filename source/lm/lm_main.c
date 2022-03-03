@@ -304,7 +304,7 @@ static void Hosts_SyncDHCP(void);
 static void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 static void Send_Eth_Host_Sync_Req(void);
 
-#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 static void Send_MoCA_Host_Sync_Req(void);
 #endif
 
@@ -2597,7 +2597,7 @@ static void *Hosts_StatSyncThreadFunc(void *args)
             if(bridgemode)
             {
                 Send_Eth_Host_Sync_Req(); 
-#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
                 Send_MoCA_Host_Sync_Req(); 
 #endif
                 SyncWiFi();
@@ -3029,7 +3029,7 @@ void LM_main (void)
 #endif
 	if(!Hosts_stop_scan()) {
 		 Send_Eth_Host_Sync_Req();
-#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 		 Send_MoCA_Host_Sync_Req();
 #endif
 		 SyncWiFi( );
@@ -3537,7 +3537,7 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 }
 
 
-#if !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
 static void Send_MoCA_Host_Sync_Req(void)
 {
         parameterValStruct_t value = {"Device.MoCA.X_RDKCENTRAL-COM_MoCAHost_Sync", "true", ccsp_boolean};
