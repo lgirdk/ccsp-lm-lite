@@ -277,16 +277,16 @@ void LanManager_CheckCloneCopy (char **dest, const char *src)
 		return;
 
 	/*
-	   If dest has already been allocated then free the old buffer (unless
-	   it happens to exactly match the new string, in which case we can
-	   return early - although unless there's a common case for repeatedly
-	   setting a string to the same value the benefit of checking for that
-	   probably doesn't outweigh the overhead or complexity).
+	   If dest has already been allocated and the new string is the same
+	   length or shorter than the old one then reuse the old buffer. Else
+	   free the buffer and allocate again.
 	*/
 	if (*dest) {
 		size_t dest_len = strlen (*dest);
-		if ((dest_len == src_len) && (memcmp (*dest, src, src_len + 1) == 0))
+		if (src_len <= dest_len) {
+			memcpy (*dest, src, src_len + 1);
 			return;
+		}
 		free (*dest);
 	}
 
