@@ -1458,7 +1458,7 @@ Host_GetParamStringValue
        pHost->Layer3Interface seems to be NULL in some (or all?) cases.
        Fixme: to be reviewed.
     */
-    if (AnscEqualString (ParamName, "Layer3Interface", TRUE))
+    if (strcmp (ParamName, "Layer3Interface") == 0)
     {
         rc = 0;
         value = pHost->Layer3Interface;
@@ -1467,7 +1467,7 @@ Host_GetParamStringValue
     {
         for (i = 0; i < LM_HOST_NumStringPara; i++)
         {
-            if (AnscEqualString (ParamName, lmHosts.pHostStringParaName[i], TRUE))
+            if (strcmp (ParamName, lmHosts.pHostStringParaName[i]) == 0)
             {
                 rc = 0;
                 value = pHost->pStringParaValue[i];
