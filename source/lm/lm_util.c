@@ -44,6 +44,7 @@
 #endif
 #include "safec_lib_common.h"
 
+#if 0
 
 /* Listent to value change signal on the following parameters:
  * Device.DHCPv4.Server.Pool.{i}.ClientNumberOfEntries
@@ -253,6 +254,8 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
     mac[16] = interfaceId[18];
     return AnscCloneString(mac);
 }
+
+#endif
 
 void LanManager_CheckCloneCopy (char **dest, const char *src)
 {
