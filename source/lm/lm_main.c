@@ -480,6 +480,19 @@ static int FindHostInLeases (char *Temp, char *FileName)
 
 #endif
 
+static void LanManager_StringToLower (char *pstring)
+{
+    int i;
+
+    for (i = 0; pstring[i] != '\0'; i++)
+    {
+        if ((pstring[i] >= 'A') && (pstring[i] <= 'Z'))
+        {
+            pstring[i] += ('a' - 'A');
+        }
+    }
+}
+
 static int logOnlineDevicesCount (void)
 {
     PLmObjectHost pHost;
