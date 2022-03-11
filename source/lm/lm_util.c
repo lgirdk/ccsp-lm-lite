@@ -44,17 +44,6 @@
 #endif
 #include "safec_lib_common.h"
 
-void LanManager_StringToLower( char *pstring )
-{
-    ULONG i;
-
-    for ( i = 0; pstring[i] != '\0' ; i++ )
-    {
-        if ( pstring[i] >= 'A' && pstring[i] <= 'Z' )
-            pstring[i] += 32; // convert to lower case
-    }
-}
-
 
 /* Listent to value change signal on the following parameters:
  * Device.DHCPv4.Server.Pool.{i}.ClientNumberOfEntries
