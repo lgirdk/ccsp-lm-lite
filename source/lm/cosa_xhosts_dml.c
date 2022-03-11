@@ -161,13 +161,13 @@ XHosts_GetParamUlongValue
     )
 {
     UNREFERENCED_PARAMETER(hInsContext);
-    /* check the parameter name and return the corresponding value */
+
     if (strcmp(ParamName, "X_CISCO_COM_ConnectedDeviceNumber") == 0)
     {
-
         *puLong = XLM_get_online_device(); 
         return TRUE;
     }
+
     return FALSE;
 }
 
@@ -675,7 +675,7 @@ XHost_GetParamStringValue
         }
     }
 
-    if( AnscEqualString(ParamName, "Layer3Interface", TRUE))
+    if (strcmp(ParamName, "Layer3Interface") == 0)
     {
         /* collect value */
         rc = strcpy_s(pValue, *pUlSize, pHost->Layer3Interface);
