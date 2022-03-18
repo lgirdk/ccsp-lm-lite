@@ -216,11 +216,16 @@ void sig_handler(int sig)
     	signal(SIGPIPE, sig_handler); /* reset it to this function */
     	CcspTraceInfo(("SIGPIPE received!\n"));
     }
+    else if ( sig == SIGSEGV ) {
+        signal(SIGSEGV, SIG_DFL); /* reset it to default action */
+        CcspTraceInfo(("SIGSEGV received!\n"));
+
+    }
     else {
     	/* get stack trace first */
     	_print_stack_backtrace();
     	CcspTraceInfo(("Signal %d received, exiting!\n", sig));
-    	//exit(0);
+        exit(0);
     }
 
 }
