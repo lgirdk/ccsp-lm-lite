@@ -3613,7 +3613,10 @@ void convert_ssid_to_radio(char *ssid, char *radio)
         CcspTraceWarning(("Empty ssid\n"));
     }
     else{
-        if(strstr(ssid,".1") || strstr(ssid,".3")){
+        if(strstr(ssid,".17")) {
+               AnscCopyString(radio,"Device.WiFi.Radio.3");
+        }
+        else if(strstr(ssid,".1") || strstr(ssid,".3")){
                AnscCopyString(radio,"Device.WiFi.Radio.1");
         }
         else if(strstr(ssid,".2") || strstr(ssid,".4")){
