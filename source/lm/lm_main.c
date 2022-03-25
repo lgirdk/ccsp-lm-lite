@@ -219,6 +219,7 @@ extern int bWifiHost;
 extern char*                                pComponentName;
 
 int g_Client_Poll_interval;
+BOOL lan_client_update  = FALSE;
 
 /***********************************************************************
  IMPORTANT NOTE:
@@ -305,6 +306,7 @@ pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
 pthread_mutex_t XLmHostObjectMutex;
 pthread_mutex_t LmRetryHostListMutex;
+pthread_mutex_t LmLanClientFlagMutex;
 
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
 static void Host_FreeIPAddress(PLmObjectHost pHost, int version);
@@ -574,8 +576,14 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	memset(interface,0,sizeof(interface));
 		if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )	
 		{
-			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
-      			  LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , IPAddress);
+			getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
+			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_IPAddressId],IPAddress,FALSE))
+			{
+				pthread_mutex_lock(&LmLanClientFlagMutex);
+				lan_client_update = TRUE;
+				pthread_mutex_unlock(&LmLanClientFlagMutex);
+			}
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , IPAddress);
 		}
 /*
 		getAddressSource(pHost->pStringParaValue[LM_HOST_PhysAddressId], addressSource);
@@ -786,11 +794,18 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 
 						if(0 == strcmp(pHost->pStringParaValue[LM_HOST_HostNameId],pHost->pStringParaValue[LM_HOST_PhysAddressId]))
 						{
-						char HostName[50];
-						if(get_HostName(pHost->pStringParaValue[LM_HOST_PhysAddressId],HostName))
-						LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), HostName);
-
-						CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+							char HostName[50];
+							if(get_HostName(pHost->pStringParaValue[LM_HOST_PhysAddressId],HostName))
+							{
+								if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],HostName,FALSE))
+								{
+									pthread_mutex_lock(&LmLanClientFlagMutex);
+									lan_client_update  = TRUE;
+									pthread_mutex_unlock(&LmLanClientFlagMutex);
+								}
+								LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), HostName);
+								CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Client type is %s, MacAddress is %s and HostName is %s Connected \n",interface,pHost->pStringParaValue[LM_HOST_PhysAddressId],pHost->pStringParaValue[LM_HOST_HostNameId]));
+							}
 						}
 					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
@@ -974,6 +989,9 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
     pHost->ipv6AddrArray = NULL;
     pHost->numIPv6Addr = 0;
 	pHost->pStringParaValue[LM_HOST_IPAddressId] = NULL;
+	pthread_mutex_lock(&LmLanClientFlagMutex);
+	lan_client_update = TRUE;
+	pthread_mutex_unlock(&LmLanClientFlagMutex);
     /* Default it is inactive. */
     pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
     pHost->ipv4Active = FALSE;
@@ -1084,6 +1102,9 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	    pHost->ipv6AddrArray = NULL;
 	    pHost->numIPv6Addr = 0;
 		pHost->pStringParaValue[LM_HOST_IPAddressId] = NULL;
+        pthread_mutex_lock(&LmLanClientFlagMutex);
+        lan_client_update = TRUE;
+        pthread_mutex_unlock(&LmLanClientFlagMutex);
 	    /* Default it is inactive. */
 	    pHost->bBoolParaValue[LM_HOST_ActiveId] = FALSE;
 	    pHost->ipv4Active = FALSE;
@@ -1199,6 +1220,9 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = AnscCloneString(physAddress);
         pHost->pStringParaValue[LM_HOST_HostNameId] = AnscCloneString(physAddress);
 
+        pthread_mutex_lock(&LmLanClientFlagMutex);
+        lan_client_update  = TRUE;
+        pthread_mutex_unlock(&LmLanClientFlagMutex);
         comments[0] = 0;
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
@@ -1254,7 +1278,9 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
     {
         pHost->pStringParaValue[LM_HOST_PhysAddressId] = AnscCloneString(physAddress);
         pHost->pStringParaValue[LM_HOST_HostNameId] = AnscCloneString(physAddress);
-
+        pthread_mutex_lock(&LmLanClientFlagMutex);
+        lan_client_update  = TRUE;
+        pthread_mutex_unlock(&LmLanClientFlagMutex);
         comments[0] = 0;
         _getLanHostComments(physAddress, comments);
         if ( comments[0] != 0 )
@@ -1548,6 +1574,13 @@ PLmObjectHostIPAddress Host_AddIPAddress (PLmObjectHost pHost, char *ipAddress, 
     if(version == 4)
 	{
 		pCur = Add_Update_IPv4Address(pHost,ipAddress);
+
+		if(!AnscEqualString(ipAddress, pHost->pStringParaValue[LM_HOST_IPAddressId], FALSE))
+		{
+			pthread_mutex_lock(&LmLanClientFlagMutex);
+			lan_client_update = TRUE;
+			pthread_mutex_unlock(&LmLanClientFlagMutex);
+		}
 		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_IPAddressId]) , ipAddress);
     }
 	else
@@ -2476,6 +2509,22 @@ static void Hosts_SyncArp (void)
 
             pHost = Hosts_FindHostByPhysAddress((char *)hosts[i].phyAddr);
 
+           if ( !pHost )
+            {
+
+                pHost = Hosts_AddHostByPhysAddress((char *)hosts[i].phyAddr);
+                if ( pHost )
+                {
+                    if ( pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] )
+                    {
+                        AnscFreeMemory(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]);
+                        pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] = NULL;
+                    }
+                    LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "Static");
+                    pIP = Host_AddIPv4Address(pHost, (char *)hosts[i].ipAddr);
+                }
+            }
+
             if ( pHost )
             {
                 if ( _isIPv6Addr((char *)hosts[i].ipAddr) )
@@ -2650,6 +2699,7 @@ static void *Hosts_LoggingThread(void *args)
 static void *Hosts_StatSyncThreadFunc(void *args)
 {
     static BOOL bridgemode = FALSE;
+    FILE *fp;
 
     UNREFERENCED_PARAMETER(args);
 
@@ -2684,6 +2734,26 @@ static void *Hosts_StatSyncThreadFunc(void *args)
             Hosts_SyncDHCP();
             Hosts_SyncArp();
             Add_IPv6_from_Dibbler();
+            pthread_mutex_lock(&LmLanClientFlagMutex);
+			if( lan_client_update == TRUE)
+			{
+				v_secure_system("rm /tmp/lanClients_new");
+				fp=fopen("/tmp/lanClients_new","a+");
+				if (NULL == fp)
+				{
+					CcspTraceError(("%s:%d: /tmp/lanClients_new  not opened\n", __FUNCTION__, __LINE__));
+					pthread_mutex_unlock(&LmLanClientFlagMutex);
+					return NULL;
+				}
+				for(int i=0; i<lmHosts.numHost; i++){
+					fprintf(fp,"%s %s %s\n",lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId],lmHosts.hostArray[i]->pStringParaValue[LM_HOST_HostNameId],lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId]);
+				}
+				fclose(fp);
+				lan_client_update = FALSE;
+			}
+			pthread_mutex_unlock(&LmLanClientFlagMutex);
+			v_secure_system("[ -f /tmp/lanClients ] || touch /tmp/lanClients");
+			v_secure_system("/etc/utopia/service.d/portmapping.sh &");
         }
     }
     return NULL;
@@ -2988,6 +3058,7 @@ void LM_main (void)
 	pthread_mutex_init(&XLmHostObjectMutex,0);
     pthread_mutex_init(&HostNameMutex,0);
     pthread_mutex_init(&LmRetryHostListMutex, 0);
+    pthread_mutex_init(&LmLanClientFlagMutex, 0);
     lm_wrapper_init();
     lmHosts.hostArray = AnscAllocateMemory(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
     lmHosts.sizeHost = LM_HOST_ARRAY_STEP;
