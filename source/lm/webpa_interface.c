@@ -24,7 +24,7 @@
 #include "ccsp_lmliteLog_wrapper.h"
 #include "lm_util.h"
 #include <sysevent/sysevent.h>
-#include <libparodus.h>
+#include <libparodus/libparodus.h>
 #include "webpa_pd.h"
 #include <math.h>
 #include "syscfg/syscfg.h"
