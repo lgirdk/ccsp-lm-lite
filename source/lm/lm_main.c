@@ -719,7 +719,9 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 					}
 					//CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:  %s pHost->bClientReady = %d \n",interface,pHost->bClientReady));
 					Send_Notification(interface, pHost->pStringParaValue[LM_HOST_PhysAddressId], CLIENT_STATE_CONNECT, pHost->pStringParaValue[LM_HOST_HostNameId]);
-					if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
+					char buf[12] = {0};
+					snprintf(buf,sizeof(buf)-1,"%lu",lmHosts.lastActivity);
+					if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
 					{
 						AnscTraceWarning(("syscfg_set failed\n"));
 					}
@@ -861,8 +863,9 @@ static void Hosts_RmHosts (void)
     lmHosts.numHost = 0;
     lmHosts.sizeHost = 0;
     lmHosts.lastActivity++;
-
-	if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostVersionId", lmHosts.lastActivity) != 0) 
+	char buf[12] = {0};
+	snprintf(buf,sizeof(buf)-1,"%lu",lmHosts.lastActivity);
+	if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostVersionId", buf) != 0) 
 		{
 			AnscTraceWarning(("syscfg_set failed\n"));
 		}
@@ -2927,7 +2930,9 @@ void LM_main (void)
 	else
 		{
 			g_Client_Poll_interval = 60;
-			if (syscfg_set_u(NULL, "X_RDKCENTRAL-COM_HostCountPeriod", g_Client_Poll_interval) != 0) {
+			errno_t rc = strcpy_s(buf1, sizeof(buf1),"60");
+			ERR_CHK(rc);
+			if (syscfg_set(NULL, "X_RDKCENTRAL-COM_HostCountPeriod" , buf1) != 0) {
 				return;
              } else {
 
@@ -3646,7 +3651,10 @@ PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAd
 
 BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
 {
-    if (syscfg_set_u(NULL, paramName, uValue) != 0) {
+    char buf1[16];
+
+    snprintf(buf1,sizeof(buf1),"%d", (int)uValue);
+    if (syscfg_set(NULL, paramName , buf1) != 0) {
         return FALSE;
     } else {
 
