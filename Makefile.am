@@ -20,7 +20,7 @@ SUBDIRS = source
 
 lib_LTLIBRARIES = liblmapi.la
 
-liblmapi_la_CPPFLAGS = -D_ANSC_LINUX -D_ANSC_USER
+liblmapi_la_CPPFLAGS =
 
 liblmapi_la_LDFLAGS = -lccsp_common 
 

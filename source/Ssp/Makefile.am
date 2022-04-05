@@ -16,8 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ##########################################################################
-AM_CFLAGS = -D_ANSC_LINUX
-AM_CFLAGS += -D_ANSC_USER
+AM_CFLAGS =
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -35,5 +34,5 @@ CcspLMLite_CPPFLAGS = \
 
 CcspLMLite_CFLAGS = $(SYSTEMD_CFLAGS)
 CcspLMLite_SOURCES = ssp_messagebus_interface.c ssp_main.c ssp_action.c dm_pack_datamodel.c
-CcspLMLite_LDFLAGS = -lccsp_common -ldl -rdynamic $(SYSTEMD_LDFLAGS)
+CcspLMLite_LDFLAGS = -lccsp_common -lprivilege -ldl -rdynamic $(SYSTEMD_LDFLAGS)
 CcspLMLite_LDADD = ${top_builddir}/source/lm/libCcspLM.la ${top_builddir}/liblmapi.la
