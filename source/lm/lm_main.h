@@ -330,4 +330,5 @@ int LM_get_host_info();
 int LMDmlHostsSetHostComment(char* pMac, char* pComment);
 int XLM_get_host_info();
 int XLM_get_online_device();
+void LM_get_host_state_behind_pod(void);
 #endif
