@@ -3529,6 +3529,43 @@ int XLM_get_host_info()
 
 }
 
+void LM_get_host_state_behind_pod (void)
+{
+    int i;
+
+    for (i = 0; i < lmHosts.numHost; i++)
+    {
+        PLmObjectHost pHost = lmHosts.hostArray[i];
+
+        if (pHost &&
+            (pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) &&
+            ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) && (strcasecmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == 0)))
+        {
+            if (pHost->pStringParaValue[LM_HOST_IPAddressId])
+            {
+                char cmd[50];
+
+                sprintf(cmd, "ping -c1 -W1 %s > /dev/null", (char *) pHost->pStringParaValue[LM_HOST_IPAddressId]);
+
+                if (system(cmd) == 0)
+                {
+                    if (!pHost->bBoolParaValue[LM_HOST_ActiveId])
+                    {
+                        LM_SET_ACTIVE_STATE_TIME(pHost, TRUE);
+                    }
+                }
+                else
+                {
+                    if (pHost->bBoolParaValue[LM_HOST_ActiveId])
+                    {
+                        LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status)
 {
 	char *Xpos2 = NULL;
