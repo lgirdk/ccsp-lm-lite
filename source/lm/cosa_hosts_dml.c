@@ -1138,6 +1138,7 @@ Host_Synchronize
         (gotEvent == FALSE))
     {
         LM_get_host_info();
+        LM_get_host_state_behind_pod();
     }
 
     HostsUpdateTime = AnscGetTickInSeconds();
