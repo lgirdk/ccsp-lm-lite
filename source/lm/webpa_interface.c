@@ -29,6 +29,7 @@
 #include <math.h>
 #include "syscfg/syscfg.h"
 #include "ccsp_memory.h"
+#include "platform_hal.h"
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -57,7 +58,13 @@ char fullDeviceMAC[32]={'\0'};
 
 libpd_instance_t client_instance;
 static void *handle_parodus();
+
+#if 0
+static void waitForEthAgentComponentReady();
+static void checkComponentHealthStatus(char * compName, char * dbusPath, char *status, int *retStatus);
 static int check_ethernet_wan_status();
+#endif
+
 int s_sysevent_connect(token_t *out_se_token);
 
 int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
@@ -287,6 +294,7 @@ char * getFullDeviceMac()
     return fullDeviceMAC;
 }
 
+#if 0
 static int check_ethernet_wan_status()
 {
     int ret = -1;
@@ -301,6 +309,7 @@ static int check_ethernet_wan_status()
 
     return ret;
 }
+#endif
 
 char * getDeviceMac()
 {
@@ -344,6 +353,20 @@ char * getDeviceMac()
     return deviceMAC;
 #endif //_SKY_HUB_COMMON_PRODUCT_REQ_
 
+    char deviceMACStr[32] = {0};
+    if(!strlen(deviceMAC))
+    {
+        if(platform_hal_GetBaseMacAddress(deviceMACStr) != 0)
+        {
+            CcspTraceError(("%s Failed to get BaseMacAddress from HAL API\n",__FUNCTION__));
+            return NULL;
+        }
+        strncpy(fullDeviceMAC, deviceMACStr, sizeof(fullDeviceMAC));
+        AnscMacToLower(deviceMAC, deviceMACStr, sizeof(deviceMAC));
+        CcspTraceInfo(("%s %d -  deviceMAC is - %s fullDeviceMAC %s\n", __FUNCTION__,__LINE__, deviceMAC, fullDeviceMAC));
+    }
+    return deviceMAC;
+#if 0
     while(!strlen(deviceMAC))
     {
         pthread_mutex_lock(&device_mac_mutex);
@@ -358,7 +381,7 @@ char * getDeviceMac()
 #else
         char *getList[] = {"Device.DPoE.Mac_address"};
 #endif
-        
+
         if (strlen(deviceMAC))
         {
             pthread_mutex_unlock(&device_mac_mutex);
@@ -435,4 +458,5 @@ char * getDeviceMac()
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT\n", __FUNCTION__ ));
 
     return deviceMAC;
+#endif
 }
