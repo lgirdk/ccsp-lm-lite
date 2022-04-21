@@ -205,8 +205,10 @@ Hosts_GetParamBoolValue
 {
     UNREFERENCED_PARAMETER(hInsContext);
     /* check the parameter name and return the corresponding value */
-     char buf[8];
+    char buf[8];
+    *pBool = FALSE;
 
+    memset(buf,0,sizeof(buf));
     /* check the parameter name and return the corresponding value */
 
     if (strcmp(ParamName, "X_RDK_WebPA_PresenceNotificationEnable") == 0)
@@ -217,10 +219,8 @@ Hosts_GetParamBoolValue
         {
             if (strcmp(buf, "true") == 0)
                 *pBool = TRUE;
-            else
-                *pBool = FALSE;
-            return TRUE;
         }
+        return TRUE;
     }
 
     if (strcmp(ParamName, "X_RDK_PresenceDetectEnable") == 0)
@@ -231,10 +231,8 @@ Hosts_GetParamBoolValue
         {
             if (strcmp(buf, "true") == 0)
                 *pBool = TRUE;
-            else
-                *pBool = FALSE;
-            return TRUE;
         }
+        return TRUE;
     }
 
 
