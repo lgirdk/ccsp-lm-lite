@@ -2305,7 +2305,7 @@ static void *Event_HandlerThread(void *threadid)
                     {
                         DelAndShuffleAssoDevIndx(pHost);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_Layer1Interface]), radio);
-                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), radio);
+                        LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), "Unknown");
                         //LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), hosts.AssociatedDevice);
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId]), " "); // fix for RDKB-19836
                         LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
@@ -3414,7 +3414,7 @@ void LM_get_host_state_behind_pod (void)
         PLmObjectHost pHost = lmHosts.hostArray[i];
 
         if (pHost &&
-            (pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) &&
+            ((pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) || AnscEqualString(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], " ", FALSE)) &&
             AnscEqualString(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown", FALSE))
         {
             if (pHost->pStringParaValue[LM_HOST_IPAddressId])
