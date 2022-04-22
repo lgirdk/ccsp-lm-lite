@@ -1829,6 +1829,13 @@ Host_SetParamStringValue
 		pthread_mutex_unlock(&LmHostObjectMutex);
 		return TRUE;
 	}
+	else if (strcmp(ParamName, "X_RDKCENTRAL-COM_DeviceType") == 0)
+	{
+		LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]) , pString);
+
+		pthread_mutex_unlock(&LmHostObjectMutex);
+		return TRUE;
+	}
 
 	pthread_mutex_unlock(&LmHostObjectMutex); 
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
