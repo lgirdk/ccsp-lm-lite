@@ -3414,7 +3414,7 @@ void LM_get_host_state_behind_pod (void)
         PLmObjectHost pHost = lmHosts.hostArray[i];
 
         if (pHost &&
-            ((pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) || AnscEqualString(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], " ", FALSE)) &&
+            ((pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) || (strcmp(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], " ") == 0)) &&
             AnscEqualString(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown", FALSE))
         {
             if (pHost->pStringParaValue[LM_HOST_IPAddressId])
