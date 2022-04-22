@@ -259,7 +259,7 @@
               <name>X_RDKCENTRAL-COM_DeviceType</name>
               <type>string(64)</type>
               <syntax>string</syntax>
-              <writable>false</writable>
+              <writable>true</writable>
             </parameter>                        
             <parameter>
               <name>X_RDKCENTRAL-COM_Layer1Interface</name>
