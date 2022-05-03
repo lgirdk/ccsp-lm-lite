@@ -2953,6 +2953,15 @@ void LM_main (void)
     RDK_LOGGER_INIT();
 #endif
     CcspTraceWarning(("LMLite:rdk initialzed!\n"));
+
+#ifdef WAN_FAILOVER_SUPPORTED
+    if(checkRbusEnabled()) {
+        CcspTraceDebug(("RBUS mode. lmliteRbusInit\n"));
+	lmliteRbusInit(LMLITE_COMPONENT_NAME);  // Initiating the Rbus 
+	get_WanManager_ActiveInterface();  
+	subscribeTo_InterfaceActiveStatus_Event();  
+    }	     
+#endif
     initparodusTask();
 
 #ifdef WAN_TRAFFIC_COUNT_SUPPORT

@@ -63,7 +63,7 @@ static char AvroSerializedBuf[ WRITER_BUF_SIZE ];
 static avro_value_iface_t  *iface = NULL;
 
 // local data, load it with real data if necessary
-char ReportSourceNDT[] = "LMLite";
+char ReportSourceNDT[72] = "LMLite";
 char CPE_TYPE_STRING_NDT[] = "Gateway";
 
 #ifdef EXTENDER_CODE
@@ -78,6 +78,17 @@ char PARENT_CPE_TYPE_STRING[] = "BBParent ExtenderBB";
 extern int getTimeOffsetFromUtc();
 #endif
 
+#ifdef WAN_FAILOVER_SUPPORTED
+void set_ReportSourceNDT(char * value)
+{
+     strncpy(ReportSourceNDT, value, sizeof(ReportSourceNDT));
+}
+
+char * get_ReportSourceNDT(void)
+{
+     return ReportSourceNDT;
+}
+#endif
 
 char* GetNDTrafficSchemaBuffer()
 {
@@ -544,7 +555,11 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, AvroSerializedSize: %d\n", (int)AvroSerializedSize));
   // Send data from LMLite to webpa using CCSP bus interface
   sendWebpaMsg(serviceName, dest, trans_id, contentType, AvroSerializedBuf, AvroSerializedSize);
+  #ifdef WAN_FAILOVER_SUPPORTED
+  CcspTraceWarning(("NetworkDevicesTraffic report sent to Webpa, Destination=%s, Transaction-Id=%s, source=%s\n",dest,trans_id,ReportSourceNDT));
+  #else
   CcspTraceWarning(("NetworkDevicesTraffic report sent to Webpa, Destination=%s, Transaction-Id=%s  \n",dest,trans_id));
+  #endif
   CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, After ND WebPA SEND message call\n"));
 
 

@@ -30,6 +30,9 @@
 #include "syscfg/syscfg.h"
 #include "ccsp_memory.h"
 #include "platform_hal.h"
+#ifdef WAN_FAILOVER_SUPPORTED
+#include "network_devices_traffic_avropack.h"
+#endif
 
 #ifdef MLT_ENABLED
 #include "rpl_malloc.h"
@@ -63,6 +66,20 @@ static void *handle_parodus();
 static void waitForEthAgentComponentReady();
 static void checkComponentHealthStatus(char * compName, char * dbusPath, char *status, int *retStatus);
 static int check_ethernet_wan_status();
+#endif
+
+#ifdef WAN_FAILOVER_SUPPORTED
+static rbusHandle_t rbus_handle;
+
+static void eventReceiveHandler(
+    rbusHandle_t rbus_handle,
+    rbusEvent_t const* event,
+    rbusEventSubscription_t* subscription);
+
+static void subscribeAsyncHandler(
+    rbusHandle_t rbus_handle,
+    rbusEventSubscription_t* subscription,
+    rbusError_t error);
 #endif
 
 int s_sysevent_connect(token_t *out_se_token);
@@ -460,3 +477,190 @@ char * getDeviceMac()
     return deviceMAC;
 #endif
 }
+
+#ifdef WAN_FAILOVER_SUPPORTED
+static bool isRbus = false ;
+char newSource[72] = { '\0' };
+
+//Checking the Rbus active status
+bool checkRbusEnabled()
+{
+        if(RBUS_ENABLED == rbus_checkStatus())
+	{
+		isRbus = true;
+	}
+	else
+	{
+		isRbus = false;
+	}
+	CcspTraceInfo(("LMLite RBUS mode active status = %s\n", isRbus ? "true":"false"));
+	return isRbus;
+}
+
+//Initiate Rbus
+LMLITE_STATUS lmliteRbusInit(const char *pComponentName)
+{
+	int ret = RBUS_ERROR_SUCCESS;
+        CcspTraceDebug(("rbus_open for component %s\n", pComponentName));
+	ret = rbus_open(&rbus_handle, pComponentName);
+	if(ret != RBUS_ERROR_SUCCESS)
+	{
+		CcspTraceError(("LMLiteRbusInit failed with error code %d\n", ret));
+		return LMLITE_FAILURE;
+	}
+	CcspTraceInfo(("LMLiteRbusInit is success. ret is %d\n", ret));
+	return LMLITE_SUCCESS;
+}
+
+//Filter the active Interfaces
+char* get_ActiveInterface(char *interface) {
+    char* token;
+    int n = -1;
+    char activeInterface[64] = { '\0' };
+    char interfaceUp[10][16] = { '\0' };
+    char c;
+    char buffer[100] = { '\0' };
+    int i;
+    int len = 0;
+
+    token = strtok(interface, "|"); // spliting with delimiter "|"
+    while (token != NULL) {
+	    CcspTraceDebug(("token : %s\n", token));
+	    c = token[strlen(token)-1]; // last char in token
+	    if(c == '1') { // checking last char in token is '1', means it is active interface
+		    n++;
+		    strncpy(interfaceUp[n], token, strlen(token)-2); // adding the active interfaces in InterfaceUp
+		    CcspTraceDebug(("InterfaceUp : %s\n", interfaceUp[n]));
+            }
+	    token = strtok(NULL, "|");
+    } 	    
+    
+    for(i=0; i<=n; i++) {
+	    snprintf(buffer, sizeof(buffer), "%s,", interfaceUp[i]); // appending all active interface with comma
+	    strcat(activeInterface, buffer);  
+    } 
+    if(strlen(activeInterface) > 0) {
+            len = strlen(activeInterface);
+	    activeInterface[len-1] = '\0';  // Removing the last comma
+            CcspTraceDebug(("Active Interfaces: %s\n", activeInterface));
+            snprintf(newSource, sizeof(newSource), "LMLite/%s", activeInterface); // Adding all active interfaces in newSource
+            CcspTraceInfo(("Source with Active Interfaces : %s\n", newSource)); // For ex: Source with Active Interfaces : LMLite/DOCSIS1,ETH3,REMOTE_LTE1
+    }
+    else {
+	    CcspTraceDebug(("activeInterface is null\n"));
+	    snprintf(newSource, sizeof(newSource), "LMLite"); // If all interface status are '0', add "LMLite" to newSurce
+            CcspTraceInfo(("Source with Active Interfaces : %s\n", newSource));
+    }
+    return newSource;
+}
+
+
+static void eventReceiveHandler(
+    rbusHandle_t rbus_handle,
+    rbusEvent_t const* event,
+    rbusEventSubscription_t* subscription)
+{
+    (void)rbus_handle;
+    rbusValue_t newValue = rbusObject_GetValue(event->data, "value");
+    rbusValue_t oldValue = rbusObject_GetValue(event->data, "oldValue");
+    CcspTraceInfo(("Consumer received ValueChange event for param %s\n", event->name));
+
+    if(newValue!=NULL && oldValue!=NULL) {
+            CcspTraceInfo(("New Value: %s Old Value: %s\n", rbusValue_GetString(newValue, NULL), rbusValue_GetString(oldValue, NULL)));
+    }
+    else {
+	    if(newValue == NULL) {
+		    CcspTraceError(("NewValue is NULL\n"));
+	    }
+	    if(oldValue == NULL) {
+		    CcspTraceError(("oldValue is NULL\n"));
+	    }
+     }    
+     if(newValue) {
+ 	 char *newActiveInterface = NULL;
+	 char * val = NULL;
+	 val = (char *) rbusValue_GetString(newValue, NULL);
+	 if(val != NULL) {  
+		CcspTraceDebug(("%s value is : %s\n", subscription->eventName, val));
+		newActiveInterface = get_ActiveInterface(val);
+		if(newActiveInterface!=NULL) { 
+        		set_ReportSourceNDT(newActiveInterface); // setting the new source with active interfaces
+				if(get_ReportSourceNDT() != NULL) {
+        	       			CcspTraceInfo(("ReportSourceNDT value is : %s\n", get_ReportSourceNDT()));
+	 			}			
+				else {	
+		       			CcspTraceError(("ReportSourceNDT value is NULL\n"));
+				}
+		}
+		else {
+			CcspTraceError(("newActiveInterface is NULL\n"));
+		}
+         }      
+         else {
+		CcspTraceError(("val is NULL\n"));  	
+         }
+     }	 
+}
+
+static void subscribeAsyncHandler(
+    rbusHandle_t rbus_handle,
+    rbusEventSubscription_t* subscription,
+    rbusError_t error)
+{
+  (void)rbus_handle;
+
+  CcspTraceWarning(("subscribeAsyncHandler event %s, error %d - %s\n", subscription->eventName, error, rbusError_ToString(error)));
+}
+
+//To get the current value of Device.X_RDK_WanManager.InterfaceActiveStatus
+void get_WanManager_ActiveInterface()
+{
+  rbusValue_t value;
+  int rc = RBUS_ERROR_SUCCESS;
+  char* val = NULL;
+  char *newActiveInterface = NULL;
+  rc = rbus_get(rbus_handle, LMLITE_INTERFACE_ACTIVESTATUS_PARAM, &value);
+  if(rc == RBUS_ERROR_SUCCESS) 
+  { 
+	  val = rbusValue_ToString(value,0,0);
+	  if(val != NULL) {
+	  	CcspTraceDebug(("%s value is : %s\n", LMLITE_INTERFACE_ACTIVESTATUS_PARAM, val));  // For ex: LMLITE_INTERFACE_ACTIVESTATUS_PARAM value is : DOCSIS1,1|DSL1,0|ETH3,1|GPON1,0|REMOTE_LTE1,1
+		newActiveInterface = get_ActiveInterface(val);
+		if(newActiveInterface != NULL) {
+	  	        set_ReportSourceNDT(newActiveInterface); // setting new source with active interfaces
+	  	        CcspTraceInfo(("ReportSourceNDT value is : %s\n", get_ReportSourceNDT()));  // For ex: ReportSourceNDT value is : LMLite/DOCSIS1,ETH3,REMOTE_LTE1
+		}
+		else {
+			CcspTraceError(("newActiveInterface is NULL\n"));
+		}	
+          }
+          else {
+		  CcspTraceError(("val is NULL\n"));
+	  }			  
+  } 	  
+  else {
+	   CcspTraceError(("rbus_get failed for param : %s, rc : %d - %s\n", LMLITE_INTERFACE_ACTIVESTATUS_PARAM, rc, rbusError_ToString(rc)));
+  }  
+}	
+
+// Subscribe for Device.X_RDK_WanManager.InterfaceActiveStatus
+int subscribeTo_InterfaceActiveStatus_Event()
+{
+      int rc = RBUS_ERROR_SUCCESS;
+      CcspTraceDebug(("Subscribing to %s Event\n", LMLITE_INTERFACE_ACTIVESTATUS_PARAM));
+      rc = rbusEvent_SubscribeAsync (
+        rbus_handle,
+        LMLITE_INTERFACE_ACTIVESTATUS_PARAM,
+        eventReceiveHandler,
+	subscribeAsyncHandler,
+        "LMLite_InterfaceActiveStatus",
+        10*20);
+      if(rc != RBUS_ERROR_SUCCESS) {
+	      CcspTraceError(("%s subscribe failed : %d - %s\n", LMLITE_INTERFACE_ACTIVESTATUS_PARAM, rc, rbusError_ToString(rc)));
+      }
+      else {
+	      CcspTraceInfo((" %s subscribe success\n", LMLITE_INTERFACE_ACTIVESTATUS_PARAM));
+      }	      
+      return rc;
+}
+#endif

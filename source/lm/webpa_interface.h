@@ -20,6 +20,30 @@
 #ifndef WEB_INTERFACE_H_
 #define WEB_INTERFACE_H_
 
+#ifdef WAN_FAILOVER_SUPPORTED
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <rbus/rbus.h>
+#include <rbus/rbus_object.h>
+#include <rbus/rbus_property.h>
+#include <rbus/rbus_value.h>
+#include <rbus-core/rbus_core.h>
+#include <rbus-core/rbus_session_mgr.h>
+
+#define LMLITE_COMPONENT_NAME "lmlite"
+#define LMLITE_INTERFACE_ACTIVESTATUS_PARAM "Device.X_RDK_WanManager.InterfaceActiveStatus"
+
+typedef enum
+{
+    LMLITE_SUCCESS = 0,
+    LMLITE_FAILURE
+} LMLITE_STATUS;
+
+#endif
 /**
  * @brief To send message to webpa and further upstream
  *
@@ -44,5 +68,13 @@ char * getDeviceMac();
 */
 char * getFullDeviceMac();
 void initparodusTask();
+
+#ifdef WAN_FAILOVER_SUPPORTED
+bool checkRbusEnabled();
+LMLITE_STATUS lmliteRbusInit(const char *pComponentName);
+char* getInterface(char *interface);
+void get_WanManager_ActiveInterface();
+int subscribeTo_InterfaceActiveStatus_Event();
+#endif
 
 #endif /* WEB_INTERFACE_H_ */

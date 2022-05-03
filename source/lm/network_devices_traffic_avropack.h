@@ -46,4 +46,8 @@ struct networkdevicetrafficdata *next;
 */
 void network_devices_traffic_report(struct networkdevicetrafficdata *ptr, struct timeval *reset_timestamp);
 void ndt_avro_cleanup(); // Avro Cleanup
+#ifdef WAN_FAILOVER_SUPPORTED
+void set_ReportSourceNDT(char * value);
+char * get_ReportSourceNDT(void);
+#endif
 #endif /* !NETWORK_DEVICES_TRAFFIC_AVROPACK_H */
