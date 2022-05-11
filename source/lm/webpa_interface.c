@@ -51,7 +51,9 @@
 
 extern ANSC_HANDLE bus_handle;
 static pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
+#if 0
 static pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 static char deviceMAC[32]={'\0'}; 
 static char fullDeviceMAC[32]={'\0'};
@@ -85,6 +87,7 @@ static void subscribeAsyncHandler(
 
 int s_sysevent_connect(token_t *out_se_token);
 
+#if 0
 static int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
 {
     char CrName[256] = {0};
@@ -128,6 +131,7 @@ static int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcompo
 
     return ret;
 }
+#endif
 
 void sendWebpaMsg(char *serviceName, char *dest, char *trans_id, char *contentType, char *payload, unsigned int payload_len)
 {
