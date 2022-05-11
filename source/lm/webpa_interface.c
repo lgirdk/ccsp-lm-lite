@@ -46,22 +46,22 @@
 #endif
 
 extern ANSC_HANDLE bus_handle;
-pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t device_mac_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-char deviceMAC[32]={'\0'}; 
-char fullDeviceMAC[32]={'\0'};
+static char deviceMAC[32]={'\0'}; 
+static char fullDeviceMAC[32]={'\0'};
 #define ETH_WAN_STATUS_PARAM "Device.Ethernet.X_RDKCENTRAL-COM_WAN.Enabled"
 #define RDKB_ETHAGENT_COMPONENT_NAME                  "com.cisco.spvtg.ccsp.ethagent"
 #define RDKB_ETHAGENT_DBUS_PATH                       "/com/cisco/spvtg/ccsp/ethagent"
 
-libpd_instance_t client_instance;
-static void *handle_parodus();
+static libpd_instance_t client_instance;
 
+static void *handle_parodus();
 static int check_ethernet_wan_status();
 int s_sysevent_connect(token_t *out_se_token);
 
-int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
+static int WebpaInterface_DiscoverComponent(char** pcomponentName, char** pcomponentPath )
 {
     char CrName[256] = {0};
     int ret = 0;
