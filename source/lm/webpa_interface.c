@@ -451,6 +451,12 @@ char * getDeviceMac()
     ret_code = STRCPY_S_NOCLOBBER(fullDeviceMAC, sizeof(fullDeviceMAC),deviceMACVal);
     ERR_CHK(ret_code);
     AnscMacToLower(deviceMAC, deviceMACVal, sizeof(deviceMAC));
+    // Removing the \n at the end of mac
+    if((strlen(deviceMAC) == 13) && (deviceMAC[12] == '\n'))
+    {
+        deviceMAC[12] = '\0';
+        CcspTraceInfo(("%s %d - removed new line at the end of deviceMAC %s \n", __FUNCTION__,__LINE__, deviceMAC));
+    }
     CcspTraceInfo(("%s %d -  deviceMAC is - %s \n", __FUNCTION__,__LINE__, deviceMAC));
     return deviceMAC;
 #endif //_SKY_HUB_COMMON_PRODUCT_REQ_
