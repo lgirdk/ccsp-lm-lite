@@ -50,6 +50,7 @@
 
 #include "ansc_platform.h"
 #include "ccsp_base_api.h"
+#include "ccsp_psm_helper.h"
 #include "lm_wrapper.h"
 #include "syscfg/syscfg.h"
 #include "lm_util.h"
@@ -66,6 +67,7 @@
 #define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
 
 extern ANSC_HANDLE bus_handle;
+extern char g_Subsystem[32];
 static char *pERTPAMComponentName = NULL;
 static char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
@@ -1385,6 +1387,9 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
     char buf[200] = {0};
     int ret;
     LM_host_entry_t dhcpHost;
+    char *strValue = NULL;
+    int retPsmGet = CCSP_SUCCESS;
+    char ip[13] = {0};
 
     if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
     {
@@ -1408,20 +1413,27 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
         if(ret != 4)
             continue;
 
-		if(strstr((const char *)dhcpHost.ipAddr,"172.16.12.") && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
-		{
-			pthread_mutex_lock(&XLmHostObjectMutex);
-                        /*CID: 68185 Array compared against 0*/
-			if( AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-			else
-			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
-			Host_AddIPv4Address ( pHost, (char *)dhcpHost.ipAddr);
-			pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
+        retPsmGet = PSM_Get_Record_Value2(bus_handle,g_Subsystem, "dmsb.l3net.5.V4Addr", NULL, &strValue);
+        if(retPsmGet == CCSP_SUCCESS)
+        {
+            sprintf(ip, "%.12s", strValue);
+           ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
+        }
 
-			pthread_mutex_unlock(&XLmHostObjectMutex);
-			break;
-		}            
+        if(strstr((const char *)dhcpHost.ipAddr, ip) && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
+        {
+            pthread_mutex_lock(&XLmHostObjectMutex);
+                        /*CID: 68185 Array compared against 0*/
+            if( AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+            else
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
+            Host_AddIPv4Address ( pHost, (char *)dhcpHost.ipAddr);
+            pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
+
+            pthread_mutex_unlock(&XLmHostObjectMutex);
+            break;
+        }
     }
 
     fclose(fp);
