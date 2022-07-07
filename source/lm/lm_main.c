@@ -1189,6 +1189,7 @@ static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned ch
 {
     char buf[40];
     char *layer1InterfaceId = "Ethernet";
+    int unknown = 1;
     int port = -1;
 
     if (CcspHalEthSwLocatePortByMacAddress (mac, &port) == RETURN_OK)
@@ -1198,7 +1199,15 @@ static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned ch
         {
             snprintf (buf, sizeof(buf), "Device.Ethernet.Interface.%d", port);
             layer1InterfaceId = buf;
+            unknown = 0;
         }
+    }
+
+    /* Sanity check... something is wrong with the HAL? */
+    if (unknown && (pHost->bBoolParaValue[LM_HOST_ActiveId] == TRUE))
+    {
+        CcspTraceError(("%s: Trying to set layer1Interface to Unknown for [%s] but Host is active\n", __FUNCTION__, mac));
+        return;
     }
 
     LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), layer1InterfaceId);
