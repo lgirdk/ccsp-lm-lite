@@ -1126,6 +1126,12 @@ static void set_Layer1InterfaceId_for_ethernet (LmObjectHost *pHost, unsigned ch
         }
     }
 
+    if( TRUE == pHost->bBoolParaValue[LM_HOST_ActiveId] && !strcmp(layer1InterfaceId,"Unknown"))
+    {
+        CcspTraceError(("%s : Trying to set layer1Interface to Unknown for [%s] But Host is active \n",__FUNCTION__,mac));
+        return;
+    }
+
     LanManager_CheckCloneCopy (&(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]), layer1InterfaceId);
 }
 
@@ -2211,7 +2217,6 @@ static void *Event_HandlerThread(void *threadid)
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             if(EthHost.Active)
             {
-                set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr, port);
 
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
@@ -2225,7 +2230,9 @@ static void *Event_HandlerThread(void *threadid)
             {
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }
-           
+
+            set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr, port);
+
 #ifndef USE_NOTIFY_COMPONENT
             pthread_mutex_unlock(&LmHostObjectMutex);
 #endif
