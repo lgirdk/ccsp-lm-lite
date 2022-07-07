@@ -2365,7 +2365,6 @@ static void *Event_HandlerThread(void *threadid)
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_X_RDKCENTRAL_COM_DeviceType]), "empty");
             if(EthHost.Active)
             {
-                set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr, port);
 
                 if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )
                 {
@@ -2379,7 +2378,9 @@ static void *Event_HandlerThread(void *threadid)
             {
                 LM_SET_ACTIVE_STATE_TIME(pHost, FALSE);
             }
-           
+
+            set_Layer1InterfaceId_for_ethernet (pHost, EthHost.MacAddr, port);
+
 #ifndef USE_NOTIFY_COMPONENT
             pthread_mutex_unlock(&LmHostObjectMutex);
 #endif
