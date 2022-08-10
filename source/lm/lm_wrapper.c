@@ -1674,5 +1674,7 @@ void lm_wrapper_get_dhcpv4_reserved()
     return;
 }
 
-
+int lm_wrap_checkIPv4AddressInRange(char* ipaddress, char* ipaddres2, char* subnetmask) {
+	return AreIPv4AddressesInSameSubnet(ipaddress, ipaddres2, subnetmask);
+}
 

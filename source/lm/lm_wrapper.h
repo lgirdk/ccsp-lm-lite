@@ -164,4 +164,5 @@ int getIPAddress(char *physAddress,char *IPAddress);
 int get_HostName(char *physAddress,char *HostName);
 int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray);
 void SyncWiFi();
+int lm_wrap_checkIPv4AddressInRange(char* ipaddress, char* ipaddres2, char* subnetmask);
 #endif
