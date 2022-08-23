@@ -1422,11 +1422,12 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
         if(strstr((const char *)dhcpHost.ipAddr, ip) && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
         {
             pthread_mutex_lock(&XLmHostObjectMutex);
-                        /*CID: 68185 Array compared against 0*/
-            if(strcmp((char*) dhcpHost.hostName, "*") ==0)
+
+            if (strcmp((char *) dhcpHost.hostName, "*") == 0)
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             else
-            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
+
             Host_AddIPv4Address ( pHost, (char *)dhcpHost.ipAddr);
             pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
 
