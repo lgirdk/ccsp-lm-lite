@@ -860,10 +860,11 @@ static void Hosts_FreeHost (PLmObjectHost pHost)
     Host_FreeIPAddress(pHost, 4);
     Host_FreeIPAddress(pHost, 6);
 
-	AnscFreeMemory(pHost);
-	pHost = NULL;
+    AnscFreeMemory(pHost);
+    pHost = NULL;
 
-	lmHosts.numHost--;
+    lmHosts.numHost--;
+    lmHosts.availableInstanceNum--;
 }
 
 static void Hosts_RmHosts (void)
@@ -961,41 +962,42 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
 static void Clean_Host_Table (void)
 {
 
-	if(lmHosts.numHost < HOST_ENTRY_LIMIT)
-		return;
+    if(lmHosts.numHost < HOST_ENTRY_LIMIT)
+        return;
 
-	time_t currentTime = time(NULL);
-	int count,count1,total_count = lmHosts.numHost;
-	for(count=0 ; count < total_count; count++)
-	{
-		PLmObjectHost pHost = lmHosts.hostArray[count];
+    time_t currentTime = time(NULL);
+    int count,count1,total_count = lmHosts.numHost;
+    for(count=0 ; count < total_count; count++)
+    {
+        PLmObjectHost pHost = lmHosts.hostArray[count];
 
-		if((pHost->bBoolParaValue[LM_HOST_ActiveId] == FALSE) &&
-			(AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "DHCP", TRUE)) &&
-			((pHost->LeaseTime == 0xFFFFFFFF) || (currentTime >= (time_t)pHost->LeaseTime)))
-		{
-			CcspTraceWarning((" Freeing Host %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-			Hosts_FreeHost(pHost);
-			lmHosts.hostArray[count] = NULL;
-		}
-	}
+        if((pHost->bBoolParaValue[LM_HOST_ActiveId] == FALSE) &&
+            (AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "DHCP", TRUE)) &&
+            ((pHost->LeaseTime == 0xFFFFFFFF) || (currentTime >= (time_t)pHost->LeaseTime)))
+        {
+            CcspTraceWarning((" Freeing Host %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+            Hosts_FreeHost(pHost);
+            lmHosts.hostArray[count] = NULL;
+        }
+    }
 
-	for(count=0 ; count < total_count; count++)
-	{
-		if(lmHosts.hostArray[count]) continue;
-		for(count1=count+1; count1 < total_count; count1++)
-		{
-			if(lmHosts.hostArray[count1]) break;
-		}
-		if(count1 >= total_count) break;
-		lmHosts.hostArray[count] = lmHosts.hostArray[count1];
-		lmHosts.hostArray[count1] = NULL;
-	}
-
+    for(count=0 ; count < total_count; count++)
+    {
+        if(lmHosts.hostArray[count]) continue;
+        for(count1=count+1; count1 < total_count; count1++)
+        {
+            if(lmHosts.hostArray[count1]) break;
+        }
+        if(count1 >= total_count) break;
+        lmHosts.hostArray[count] = lmHosts.hostArray[count1];
+        lmHosts.hostArray[count]->instanceNum = count+1;
+        lmHosts.hostArray[count1] = NULL;
+    }
 }
 
 static PLmObjectHost Hosts_AddHost (int instanceNum)
 {
+        UNREFERENCED_PARAMETER(instanceNum);
 	Clean_Host_Table();
 
 	if(lmHosts.numHost < HOST_OBJECT_SIZE)/* RDKB-23038, max client support to 200 */
@@ -1006,7 +1008,8 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	    {
 	        return NULL;
 	    }
-	    pHost->instanceNum = instanceNum;
+	    pHost->instanceNum = lmHosts.availableInstanceNum;
+	    //pHost->instanceNum = instanceNum;
 	    /* Compose Host object name. */
 	    char objectName[100] = LM_HOST_OBJECT_NAME_HEADER;
 	    char instanceNumStr[50] = {0};
