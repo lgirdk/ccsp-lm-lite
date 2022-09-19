@@ -359,6 +359,8 @@ pstDSCPInfo_t DeleteDscpTree(pstDSCPInfo_t DscpTree)
         if (DscpTree->ClientList != NULL)
             free(DscpTree->ClientList);
         free(DscpTree);
+	/* CID: 279988  Use after free (USE_AFTER_FREE) */
+	return NULL;
     }
     return DscpTree;
 }
@@ -537,7 +539,7 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                         {
                             memcpy(DscpTree->ClientList[j].Mac,
                                    CliList->DSCP_Element[k].Client[i].mac,
-                                   sizeof(DscpTree->ClientList[j].Mac));
+                                   sizeof(CliList->DSCP_Element[k].Client[i].mac));
                             DscpTree->ClientList[j].RxBytes =
                                         CliList->DSCP_Element[k].Client[i].rxBytes;
                             DscpTree->ClientList[j].TxBytes =

@@ -984,8 +984,9 @@ void RecvHCPv4ClientConnects()
 		close(sd);
 		return;
 	}
-	/* CID: 135473 String not null terminated*/
-	buffer[valread] = '\0';
+	/* CID: 135473 String not null terminated*/ 
+	/* CID: 164055 Out-of-bounds write */
+	buffer[valread - 1] = '\0';
         printf("\n %s\n",buffer ); 
         printf("\n Hello message sent\n");
         if(strlen(buffer) != 0)

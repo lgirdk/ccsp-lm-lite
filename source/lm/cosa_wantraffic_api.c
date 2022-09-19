@@ -368,13 +368,15 @@ VOID WTC_ApplyStateChange
             break;
         case WTC_THRD_RUNNING:
             WTC_LOG_INFO("Thread in RUNNING state");
-            UINT i = GetEthWANIndex()-1;
+            UINT i = GetEthWANIndex();
             if (i == INVALID_MODE)
             {
                 WTC_LOG_ERROR("INVALID WAN MODE");
                 WTC_SetThreadState(index,WTC_THRD_DISMISS);
                 return;
             }
+	    /* CID: 280135 Out-of-bounds read (OVERRUN) && CID: 280286 Out-of-bounds read  */
+	    i--;
             if (WTCinfo->WTCConfigFlag[index] & WTC_WANMODE_CHANGE)
             {
                 if ((WTCinfo->WTCConfigFlag[i] & WTC_DSCP_CONFIGURED) &&
@@ -965,6 +967,10 @@ static inline VOID WTC_SetThreadState
         eWTCThreadState_t   newState
     )
 {
+    if(index >= 2)
+    {
+        return;
+    }
     switch(newState)
     {
         case WTC_THRD_NONE:
@@ -1023,6 +1029,11 @@ static inline VOID WTC_SetThreadStatus
         eWTCThreadStatus_t    newStatus
     )
 {
+    /* CID: 280269  Out-of-bounds access (OVERRUN) */
+    if(index >= 2)
+    {
+        return;
+    }
     if( WanTrafficCountInfo_t[index]->ThreadStatus != newStatus )
     {
         WanTrafficCountInfo_t[index]->ThreadStatus = newStatus;
@@ -1045,7 +1056,12 @@ static VOID WTC_CreateThread
         VOID
     )
 {
-    UINT index = WTCinfo->WanMode-1;
+    /* CID: 280142 Out-of-bounds read (OVERRUN) */
+    UINT index = 0;
+    if(WTCinfo->WanMode)
+    {
+        index = WTCinfo->WanMode-1;
+    }
     if(!WTCinfo->WanTrafficThreadId)
     {
         INT res = pthread_create(&WTCinfo->WanTrafficThreadId, NULL, WTC_Thread, NULL);
@@ -1074,11 +1090,19 @@ static VOID* WTC_Thread()
 {
     DSCP_list_t CliList;
     errno_t rc = -1;
-    UINT index = WTCinfo->WanMode-1;
+    /* CID: 280269  Out-of-bounds access (OVERRUN) */
+    UINT index = 0;
+    if(WTCinfo->WanMode)
+    {
+        index = WTCinfo->WanMode-1;
+    }
 
     WTC_LOG_INFO("Successfully created Thread");
     while(1)
     {
+        /* CID: 280271 Out-of-bounds read (OVERRUN) */
+        if(index < 2)
+        {
         switch(WanTrafficCountInfo_t[index]->ThreadState)
         {
             case WTC_THRD_NONE:
@@ -1221,8 +1245,11 @@ static VOID* WTC_Thread()
                 WTC_DeInit(FALSE);
                 WTC_SetThreadStatus(index, WTC_THRD_SUSPENDED);
                 WTCinfo->WanMode = GetEthWANIndex();
-                
-                index = WTCinfo->WanMode-1;
+              /*  CID: 280133 Out-of-bounds read (OVERRUN) */
+		if(WTCinfo->WanMode)
+                {
+                    index = WTCinfo->WanMode-1;
+                }
                 sleep(DEFAULT_THREAD_SLEEP);
                 continue;
             case WTC_THRD_DISMISS:
@@ -1236,7 +1263,6 @@ static VOID* WTC_Thread()
                 sleep(DEFAULT_THREAD_SLEEP);
                 continue;
         }
-
         if ( RETURN_OK != platform_hal_getDscpClientList(WTCinfo->WanMode, &CliList) )
         {
             WTC_LOG_ERROR("Platform get failed. Sleep and try on the next cycle");
@@ -1262,6 +1288,11 @@ static VOID* WTC_Thread()
         WTC_SendTrafficCountRbus(index);
         sleep(WanTrafficCountInfo_t[index]->SleepInterval);
         continue;
+        }
+        else
+        {
+            continue;
+        }  
     }
 
 wtc_exit:
