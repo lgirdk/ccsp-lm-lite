@@ -784,7 +784,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
     /* get SSID reference
      * like Device.WiFi.SSID.1. */
-    parameterValStruct_t **parametervalSSIDRef;
+    parameterValStruct_t **parametervalSSIDRef = NULL;
     int ref_size = 0 ;
     ret = CcspBaseIf_getParameterValues(
             bus_handle,
@@ -802,7 +802,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
     /* get Associated Device Number
      * Device.WiFi.AccessPoint.1.AssociatedDevice. */
-    parameterValStruct_t **parametervalAssociatedDeviceNum;
+    parameterValStruct_t **parametervalAssociatedDeviceNum = NULL;
     int num_size = 0;
     ret = CcspBaseIf_getParameterValues(
             bus_handle,
@@ -885,10 +885,10 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
 
     rVal = 0;
 
-    parameterValStruct_t **valStrchannel;
-	parameterValStruct_t **valStrsecmode;
-	parameterValStruct_t **valStrsecencrymode;
-	parameterValStruct_t **valStrssid;
+    parameterValStruct_t **valStrchannel = NULL;
+	parameterValStruct_t **valStrsecmode = NULL;
+	parameterValStruct_t **valStrsecencrymode = NULL;
+	parameterValStruct_t **valStrssid = NULL;
 	int nval, retval,retband;
 	char str[2][80];
 	char * name[2] = {(char*) str[0], (char*) str[1]};  
