@@ -172,8 +172,10 @@ rbusError_t WTC_TableUlongEventSubHandler(rbusHandle_t handle, rbusEventSubActio
     else
     {
         WTC_LOG_ERROR("Invalid instance '%d' requested", instNum);
-        free(param);
     }
+    /* CID :280138 Resource leak */
+    free(param);
+    param = NULL;
     return RBUS_ERROR_SUCCESS;
 }
 
@@ -210,6 +212,9 @@ rbusError_t WTC_TableStringGetHandler(rbusHandle_t handle, rbusProperty_t proper
         if(!value)
         {
             WTC_LOG_ERROR("Malloc failure");
+	    /* CID :280128 Resource leak */
+            free(param);
+            param = NULL;
             return RBUS_ERROR_BUS_ERROR;
         }
         rc = memset_s(value, BUFLEN_1024, 0, BUFLEN_1024);
@@ -222,6 +227,9 @@ rbusError_t WTC_TableStringGetHandler(rbusHandle_t handle, rbusProperty_t proper
         if(!value)
         {
             WTC_LOG_ERROR("Malloc failure");
+	    /* CID :280128 Resource leak */
+	    free(param);
+            param = NULL;
             return RBUS_ERROR_BUS_ERROR;
         }
         rc = memset_s(value, BUFLEN_10240, 0, BUFLEN_10240);
@@ -234,6 +242,9 @@ rbusError_t WTC_TableStringGetHandler(rbusHandle_t handle, rbusProperty_t proper
         if(!value)
         {
             WTC_LOG_ERROR("Malloc failure");
+	    /* CID :280128 Resource leak */
+            free(param);
+            param = NULL;
             return RBUS_ERROR_BUS_ERROR;
         }
         rc = memset_s(value, BUFLEN_20480, 0, BUFLEN_20480);
@@ -319,6 +330,9 @@ rbusError_t WTC_TableStringSetHandler(rbusHandle_t handle, rbusProperty_t proper
         pstWanTrafficCountInfo_t p_WanTrafficTable = WanTrafficCountInfo_t[instNum-1];
         rc = Stats_SetParamStringValue(p_WanTrafficTable, param, pValue);
         free(param);
+        param = NULL;
+        free(pValue);
+        pValue = NULL;
         if(!rc)
         {
             WTC_LOG_ERROR("Stats_SetParamStringValue failed");
@@ -329,6 +343,10 @@ rbusError_t WTC_TableStringSetHandler(rbusHandle_t handle, rbusProperty_t proper
     {
         WTC_LOG_ERROR("Invalid instance '%d' requested", instNum);
         free(param);
+        param = NULL;
+	/* CID :280132  Resource leak  */
+	free(pValue);
+        pValue = NULL;
         return RBUS_ERROR_INVALID_INPUT;
     }
     return RBUS_ERROR_SUCCESS;
@@ -374,8 +392,10 @@ rbusError_t WTC_TableStringEventSubHandler(rbusHandle_t handle, rbusEventSubActi
     else
     {
         WTC_LOG_ERROR("Invalid instance '%d' requested", instNum);
-        free(param);
     }
+    /* CID :280139 Resource leak */
+    free(param);
+    param = NULL;
     return RBUS_ERROR_SUCCESS;
 }
 

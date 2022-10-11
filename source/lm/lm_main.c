@@ -726,7 +726,12 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				{
 				   if(access("/tmp/.conn_cli_flag", F_OK) != 0)
 				   {
-					creat("/tmp/.conn_cli_flag",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+					/* CID :257716 Resource leak */
+					int fd;
+					if ((fd = creat("/tmp/.conn_cli_flag",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0)
+                                        {
+                                            close(fd);
+                                        }
 					get_uptime(&uptime);
                   			CcspTraceWarning(("Client_Connect_complete:%d\n",uptime));	
 					OnboardLog("Client_Connect_complete:%d\n",uptime);
