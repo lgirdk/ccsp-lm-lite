@@ -312,6 +312,7 @@ char* FindMACByIPAddress(char * ip_address);
 void Wifi_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status );
 void convert_ssid_to_radio(char *ssid, char *radio);
 PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAddress );
+PLmObjectHostIPAddress LM_FindIPv6BaseFromLink( PLmObjectHost pHost, char * ipAddress );
 BOOL Hosts_GetPresenceNotificationEnableStatus(char *Mac);
 BOOL Hosts_CheckAndUpdatePresenceDeviceMac(char *Mac, BOOL val);
 BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue);
