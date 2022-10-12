@@ -2636,14 +2636,20 @@ static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
             {
                 if ( _isIPv6Addr((char *)hosts[i].ipAddr) )
                 {
-                    pIP = Host_AddIPv6Address(pHost, (char *)hosts[i].ipAddr);
                     if ( hosts[i].status == LM_NEIGHBOR_STATE_REACHABLE)
                     {
+                        /* Add reachable IPv6 host in "Device.Hosts.Host.1.IPv6Address" */
+                        pIP = Host_AddIPv6Address(pHost, (char *)hosts[i].ipAddr);
                         Host_SetIPAddress(pIP, 0, "NONE"); 
                     }
                     else
                     {
-                        Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE"); 
+                        /* We need to update non-reachable IP in host details */
+                        pIP = LM_FindIPv6BaseFromLink( pHost, (char *)hosts[i].ipAddr );
+                        if (pIP != NULL)
+                        {
+                            Host_SetIPAddress(pIP, LM_HOST_RETRY_LIMIT, "NONE");
+                        }
                     }
                 }
                 else
@@ -2910,7 +2916,15 @@ static void *Hosts_StatSyncThreadFunc(void *args)
             Hosts_SyncDHCP();
             lm_wrapper_get_arp_entries(&count, &hosts);
             Hosts_SyncArp(count, hosts);
-            Add_IPv6_from_Dibbler();
+
+            /* call Add_IPv6_from_Dibbler() in stateful mode only */
+            char buf[5];
+            syscfg_get(NULL, "router_managed_flag", buf, sizeof(buf));
+            if (strcmp(buf, "1") == 0)
+            {
+                /* stateless, don't use server-cache.xml to update hosts */
+                Add_IPv6_from_Dibbler();
+            }
         }
     }
     return NULL;
@@ -4020,6 +4034,24 @@ PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAd
 	  }
 
 		return NULL;
+}
+
+/* LM_FindIPv6BaseFromLink(  ) */
+PLmObjectHostIPAddress LM_FindIPv6BaseFromLink( PLmObjectHost pHost, char * ipAddress )
+{
+    PLmObjectHostIPAddress pIpAddrList = NULL, pCur = NULL;
+
+    pIpAddrList = pHost->ipv6AddrArray;
+
+    for( pCur = pIpAddrList; pCur != NULL; pCur = pCur->pNext )
+    {
+        if (strcasecmp(pCur->pStringParaValue[LM_HOST_IPv6Address_IPAddressId], ipAddress) == 0)
+        {
+            return pCur;
+        }
+    }
+
+    return NULL;
 }
 
 BOOL Hosts_UpdateSysDb(char *paramName,ULONG uValue)
