@@ -2733,7 +2733,8 @@ static void Hosts_SyncEthClient (int count, LM_host_entry_t *hosts)
             if ((pHost) && (pHost->pStringParaValue[LM_HOST_Layer1InterfaceId]))
             {
                 if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") == NULL) &&
-                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL))
+                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "WiFi") == NULL) &&
+                    (strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Ethernet") != NULL))
                 {
                     if (hosts[i].status != LM_NEIGHBOR_STATE_FAILED)
                     {
