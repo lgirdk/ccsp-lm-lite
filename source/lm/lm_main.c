@@ -454,7 +454,8 @@ static void Send_Notification (char *interface, char *mac, ClientConnectState st
     }
 }
 
-#if 0
+#endif
+
 static int FindHostInLeases (char *Temp, char *FileName)
 {
     char buf[200];
@@ -479,9 +480,6 @@ static int FindHostInLeases (char *Temp, char *FileName)
 
     return ret;
 }
-#endif
-
-#endif
 
 static void LanManager_StringToLower (char *pstring)
 {
@@ -627,21 +625,27 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			rc = strcpy_s(interface, sizeof(interface),"Other");
 			ERR_CHK(rc);
 		}
-		/*Report if connected clients assigned IPv4 addresses are out of DHCP subnet range - RDKB-42363*/
-		if(pHost->ipv4Active == TRUE) {
-			if (state) {
-				char lan_ip_address[32] = {0};
-				char lan_net_mask[32] = {0};
 
-				syscfg_get( NULL, "lan_ipaddr", lan_ip_address, sizeof(lan_ip_address));
-				syscfg_get( NULL, "lan_netmask", lan_net_mask, sizeof(lan_net_mask));
-				if(!lm_wrap_checkIPv4AddressInRange(lan_ip_address, pHost->pStringParaValue[LM_HOST_IPAddressId], lan_net_mask))
-				{
-					CcspTraceWarning(("<%s> IPAddress out of range : IPAddress = %s, MAC Addr = %s \n",__FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId], pHost->pStringParaValue[LM_HOST_PhysAddressId]));
-					t2_event_d("SYS_INFO_IPAddrOutOfRange", 1);
-				}
-			}
-		}
+        if(pHost->ipv4Active == TRUE) {
+            if (state) {
+                if(0 == FindHostInLeases(pHost->pStringParaValue[LM_HOST_IPAddressId], DNS_LEASE)){
+                    char lan_ip_address[32] = {0};
+                    char lan_net_mask[32] = {0};
+
+                    syscfg_get( NULL, "lan_ipaddr", lan_ip_address, sizeof(lan_ip_address));
+                    syscfg_get( NULL, "lan_netmask", lan_net_mask, sizeof(lan_net_mask));
+                    
+                    if(!lm_wrap_checkIPv4AddressInRange(lan_ip_address, pHost->pStringParaValue[LM_HOST_IPAddressId], lan_net_mask))
+                    {
+                        CcspTraceWarning(("<%s> IPAddress out of range : IPAddress = %s, MAC Addr = %s \n",__FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId], pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+                        t2_event_d("SYS_ERROR_IPAOR", 1);
+                    }
+                }
+                else {
+                    CcspTraceWarning(("<%s> IPAddress not found in lease file : IPAddress = %s, MAC Addr = %s \n",__FUNCTION__, pHost->pStringParaValue[LM_HOST_IPAddressId], pHost->pStringParaValue[LM_HOST_PhysAddressId]));
+                }
+            }
+        }
         pHost->bBoolParaValue[LM_HOST_ActiveId] = state;
         pHost->activityChangeTime = time((time_t*)NULL);
 		logOnlineDevicesCount();
@@ -938,7 +942,6 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
     pHost->ipv4Active = FALSE;
     pHost->ipv6Active = FALSE;
     pHost->activityChangeTime  = time(NULL);
-
     pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
     pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
 
@@ -1049,7 +1052,6 @@ static PLmObjectHost Hosts_AddHost (int instanceNum)
 	    pHost->ipv4Active = FALSE;
 	    pHost->ipv6Active = FALSE;
 	    pHost->activityChangeTime  = time(NULL);
-
 	    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_ActiveTimeId] = -1;
 	    pHost->iIntParaValue[LM_HOST_X_CISCO_COM_RSSIId] = -200;
 
