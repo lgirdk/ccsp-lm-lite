@@ -238,7 +238,7 @@ BOOL Stats_GetParamStringValue
         return FALSE;
     }
 
-    if( AnscEqualString(ParamName, "DscpCountEnable", TRUE))
+    if (strcmp(ParamName, "DscpCountEnable") == 0)
     {
         if(!CosaGetCfg("DscpEnabledList", pValue, client->InstanceNum))
         {
@@ -256,7 +256,7 @@ BOOL Stats_GetParamStringValue
             WTC_LOG_ERROR("Dscp list syscfg get FAILURE");
         }
     }
-    else if( AnscEqualString(ParamName, "DscpCountPerInterval", TRUE))
+    else if (strcmp(ParamName, "DscpCountPerInterval") == 0)
     {
         if(client->InstanceNum == WTCinfo->WanMode)
         {
@@ -276,7 +276,7 @@ BOOL Stats_GetParamStringValue
                                     Do not call GetWantrafficCount");
         }
     }
-    else if( AnscEqualString(ParamName, "DscpCountTotal", TRUE))
+    else if (strcmp(ParamName, "DscpCountTotal") == 0)
     {
         if(client->InstanceNum == WTCinfo->WanMode)
         {
@@ -333,7 +333,7 @@ BOOL Stats_GetParamUlongValue
         return FALSE;
     }
 
-    if( AnscEqualString(ParamName, "DscpCountInterval", TRUE))
+    if (strcmp(ParamName, "DscpCountInterval") == 0)
     {
         CHAR buf[BUFLEN_32] = {0};
         if(!CosaGetCfg("DscpSleepInterval", buf, client->InstanceNum))
@@ -388,7 +388,7 @@ BOOL Stats_SetParamStringValue
     }
 
     //WTCinfo->WanMode = GetEthWANIndex();
-    if( AnscEqualString(ParamName, "DscpCountEnable", TRUE))
+    if (strcmp(ParamName, "DscpCountEnable") == 0)
     {
         if(!CheckIfValidDscp(pString))
         {
@@ -451,7 +451,7 @@ BOOL Stats_SetParamUlongValue
         return FALSE;
     }
 
-    if( AnscEqualString(ParamName, "DscpCountInterval", TRUE))
+    if (strcmp(ParamName, "DscpCountInterval") == 0)
     {
         CHAR buf[BUFLEN_32] = {0};
         snprintf(buf, sizeof(buf), "%lu", iValue);
