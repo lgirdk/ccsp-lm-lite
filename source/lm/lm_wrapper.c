@@ -1423,7 +1423,7 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
         {
             pthread_mutex_lock(&XLmHostObjectMutex);
                         /*CID: 68185 Array compared against 0*/
-            if( AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
+            if(strcmp((char*) dhcpHost.hostName, "*") ==0)
 			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             else
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
@@ -1516,8 +1516,7 @@ void lm_wrapper_get_dhcpv4_client()
                 rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
                 ERR_CHK(rc);
             }
-            /*CID: 54682 Array compared against 0*/
-            if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
+            if (strcmp((char *) dhcpHost.hostName, "*") == 0)
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }else
@@ -1618,8 +1617,8 @@ void lm_wrapper_get_dhcpv4_reserved()
 				rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				ERR_CHK(rc);
             }
-            /*CID: 71041 Array compared against 0*/				
-            if(AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
+
+            if (strcmp((char *) dhcpHost.hostName, "*") == 0)
             {
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }
