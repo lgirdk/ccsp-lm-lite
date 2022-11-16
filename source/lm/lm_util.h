@@ -53,6 +53,7 @@
 
 #include "ccsp_base_api.h"
 
+#if 0
 
 #define BoolStringTrue  "true"
 #define BoolStringFalse "false"
@@ -89,6 +90,8 @@ char * LanManager_GetMACAddrFromIPv6LinkLocalAddr
 (
     const char * ipv6Address
 );
+
+#endif
 
 void LanManager_CheckCloneCopy (char **dest, const char *src);
 
