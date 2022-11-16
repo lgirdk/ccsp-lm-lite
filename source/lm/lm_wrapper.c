@@ -64,7 +64,6 @@
 /* Fix RDKB-499 */
 #define DHCPV4_RESERVED_FORMAT  "%17[^,],%63[^,],%63[^,]"
 #define LM_DHCP_CLIENT_FORMAT   "%63d %17s %63s %63s"      
-#define LM_ARP_ENTRY_FORMAT  "%63s %63s %63s %63s %17s %63s"
 
 extern ANSC_HANDLE bus_handle;
 extern char g_Subsystem[32];
@@ -1178,7 +1177,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
         192.168.1.206 dev brlan0 lladdr f0:de:f1:0b:39:65 REACHABLE
         192.168.100.3 dev lan0 lladdr 00:13:20:fa:72:25 STALE
         */
-        ret = sscanf(buf, LM_ARP_ENTRY_FORMAT,
+        ret = sscanf(buf, "%63s %63s %63s %63s %17s %31s",
                  hosts[index].ipAddr,
                  stub,
                  hosts[index].ifName,
