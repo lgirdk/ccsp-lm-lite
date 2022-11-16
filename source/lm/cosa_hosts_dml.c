@@ -837,7 +837,7 @@ Hosts_SetParamStringValue
                 CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > Not a proper mac address in ParamString  \n",__FUNCTION__,__LINE__));
           return FALSE;
           }
-       if(AnscEqualString(status, "true", TRUE))
+       if (strcmp(status, "true") == 0)
 	   {
 		   active = 1;
 	   }
@@ -2430,7 +2430,7 @@ Host_IPv6Address_GetParamStringValue
 
     for (i = 0; i < LM_HOST_IPv6Address_NumStringPara; i++)
     {
-        if (AnscEqualString (ParamName, lmHosts.pIPv6AddressStringParaName[i], TRUE))
+        if (strcmp (ParamName, lmHosts.pIPv6AddressStringParaName[i]) == 0)
         {
             rc = 0;
             value = pIPv6Address->pStringParaValue[i];
