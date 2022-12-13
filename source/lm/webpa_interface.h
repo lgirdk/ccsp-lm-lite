@@ -28,11 +28,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <rbus/rbus.h>
-#include <rbus/rbus_object.h>
-#include <rbus/rbus_property.h>
-#include <rbus/rbus_value.h>
-#include <rbus-core/rbus_core.h>
-#include <rbus-core/rbus_session_mgr.h>
 
 #define LMLITE_COMPONENT_NAME "lmlite"
 #define LMLITE_INTERFACE_ACTIVESTATUS_PARAM "Device.X_RDK_WanManager.InterfaceActiveStatus"
