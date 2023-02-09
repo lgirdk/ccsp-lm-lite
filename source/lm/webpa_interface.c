@@ -282,7 +282,7 @@ static void *handle_parodus()
 		    CcspLMLiteConsoleTrace(("RDK_LOG_INFO, ret is %d\n",ret));
 		    if(ret ==0)
 		    {
-		        CcspTraceDebug(("LMLite: Init for parodus Success..!!\n"));
+		        CcspTraceWarning(("LMLite: Init for parodus Success..!!\n"));
 		        break;
 		    }
 		    else
