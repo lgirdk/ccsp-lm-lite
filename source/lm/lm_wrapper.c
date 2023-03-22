@@ -72,7 +72,6 @@ static char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
 extern pthread_mutex_t XLmHostObjectMutex;
 extern pthread_mutex_t HostNameMutex;
-extern pthread_mutex_t LmLanClientFlagMutex;
 
 extern LmObjectHosts lmHosts;
 
@@ -86,7 +85,6 @@ static char pAtomBRMac[32] = {0};
 
 extern int consoleDebugEnable;
 extern FILE* debugLogFile;
-extern BOOL  lan_client_update;
 
 int bWifiHost = FALSE;
 static int fd;
@@ -1425,32 +1423,16 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
         {
             pthread_mutex_lock(&XLmHostObjectMutex);
                         /*CID: 68185 Array compared against 0*/
-			if( AnscEqualString((char*)dhcpHost.hostName, "*", FALSE))
-			{
-				if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
-				{
-					pthread_mutex_lock(&LmLanClientFlagMutex);
-					lan_client_update = TRUE;
-					pthread_mutex_unlock(&LmLanClientFlagMutex);
-				}
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-			}
-			else
-			{
-				if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],( char *)dhcpHost.hostName,FALSE))
-				{
-					pthread_mutex_lock(&LmLanClientFlagMutex);
-					lan_client_update  = TRUE;
-					pthread_mutex_unlock(&LmLanClientFlagMutex);
-				}
-				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
-			}
-			Host_AddIPv4Address ( pHost, (char *)dhcpHost.ipAddr);
-			pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
+            if(strcmp((char*) dhcpHost.hostName, "*") ==0)
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
+            else
+            LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (const char *)dhcpHost.hostName);
+            Host_AddIPv4Address ( pHost, (char *)dhcpHost.ipAddr);
+            pHost->LeaseTime  = (dhcpHost.LeaseTime == 0 ? 0xFFFFFFFF: (unsigned int)dhcpHost.LeaseTime);
 
-			pthread_mutex_unlock(&XLmHostObjectMutex);
-			break;
-        }            
+            pthread_mutex_unlock(&XLmHostObjectMutex);
+            break;
+        }
     }
 
     fclose(fp);
@@ -1536,24 +1518,10 @@ void lm_wrapper_get_dhcpv4_client()
             }
             if (strcmp((char *) dhcpHost.hostName, "*") == 0)
             {
-                if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
-                {
-                        pthread_mutex_lock(&LmLanClientFlagMutex);
-                        lan_client_update = TRUE;
-                        pthread_mutex_unlock(&LmLanClientFlagMutex);
-                }
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
-            }
-            else
-            {
-                if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],(char *)dhcpHost.hostName,FALSE))
-                {
-                    pthread_mutex_lock(&LmLanClientFlagMutex);
-                    lan_client_update = TRUE;
-                    pthread_mutex_unlock(&LmLanClientFlagMutex);
-                }
+            }else
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
-            }
+
             
             if((pHost->backupHostname)&&(pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
                 {
@@ -1652,12 +1620,6 @@ void lm_wrapper_get_dhcpv4_reserved()
 
             if (strcmp((char *) dhcpHost.hostName, "*") == 0)
             {
-                if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
-                {
-                    pthread_mutex_lock(&LmLanClientFlagMutex);
-                    lan_client_update =  TRUE;
-                    pthread_mutex_unlock(&LmLanClientFlagMutex);
-                }
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
             }
             else
@@ -1665,13 +1627,6 @@ void lm_wrapper_get_dhcpv4_reserved()
                 // copy only if not empty.
                 if (dhcpHost.hostName[0] != '\0')
                 {
-
-                    if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],(char *)dhcpHost.hostName,FALSE))
-                    {
-                        pthread_mutex_lock(&LmLanClientFlagMutex);
-                        lan_client_update  = TRUE;
-                        pthread_mutex_unlock(&LmLanClientFlagMutex);
-                    }
                     LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
                 }
                 else
@@ -1679,13 +1634,6 @@ void lm_wrapper_get_dhcpv4_reserved()
                     // Copy Mac address if there is no host name exist already.
                     if (pHost->pStringParaValue[LM_HOST_HostNameId] == NULL)
                     {
-
-                        if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_HostNameId],pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
-                        {
-                            pthread_mutex_lock(&LmLanClientFlagMutex);
-                            lan_client_update  = TRUE;
-                            pthread_mutex_unlock(&LmLanClientFlagMutex);
-                        }
                         LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), pHost->pStringParaValue[LM_HOST_PhysAddressId]);
                     }
                 }
