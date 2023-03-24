@@ -88,6 +88,7 @@
 /*
  * Global definitions
  */
+DSCP_list_t  CliList;
 pstWTCInfo_t WTCinfo;
 pstWanTrafficCountInfo_t WanTrafficCountInfo_t[SUPPORTED_WAN_MODES];
 
@@ -103,6 +104,8 @@ static CHAR wanMode[SUPPORTED_WAN_MODES][BUFLEN_4] = { "DCS",  /*   Docsis      
                                                        /* "STL"     STARLINK :) */
                                                      };
 
+static CHAR gPrintBuf[BUFLEN_20480] = {0};
+
 /*
  * Static function prototypes
  */
@@ -114,14 +117,20 @@ static VOID* WTC_Thread();
 static VOID  WTC_DeInit(BOOL doUnSubscribe);
 static VOID  WTC_EventHandler(rbusHandle_t handle, rbusEvent_t const* event,
                                 rbusEventSubscription_t* subscription);
-static pstDSCPInfo_t PrintDscpTree(CHAR* pValue, ULONG* pUlSize, UINT* offset,
-                                   BOOL countPerInterval, pstDSCPInfo_t DscpTree);
 static inline CHAR* WTC_ThreadStateToStr(eWTCThreadState_t threadState);
 static inline CHAR* WTC_ThreadStatusToStr(eWTCThreadStatus_t threadStatus);
 static inline VOID  WTC_SetThreadState(UINT index, eWTCThreadState_t newState);
 static inline VOID  WTC_SetThreadStatus(UINT index, eWTCThreadStatus_t newStatus);
 
-
+static pstDSCPInfo_t PrintDscpTree(CHAR* pValue, ULONG* pUlSize, UINT* offset,
+                                   BOOL countPerInterval, pstDSCPInfo_t DscpTree);
+#if 0
+// Retaining these changes as backup incase of future need.
+// better if moved to utils
+static VOID  PrintDscpTreeLinearly(CHAR* pValue, ULONG* pUlSize,
+                                    BOOL countPerInterval,pstDSCPInfo_t DscpTree);
+static pstDSCPInfo_t GetLinearHeadFromTree(pstDSCPInfo_t DscpTree);
+#endif
 /*
  * External function definitions
  */
@@ -209,8 +218,8 @@ VOID WTC_Init
             CHAR buf[BUFLEN_256] = {0};
             CHAR buf1[BUFLEN_32] = {0};
 
-            if( !CosaGetCfg("DscpEnabledList", buf, i+1) &&
-                !CosaGetCfg("DscpSleepInterval", buf1, i+1) )
+            if( !WTC_GetConfig("DscpEnabledList", buf, sizeof(buf), i+1) &&
+                !WTC_GetConfig("DscpSleepInterval", buf1, sizeof(buf1), i+1) )
             {
                 if(*buf && atoi(buf1))
                 {
@@ -324,14 +333,21 @@ VOID WTC_ApplyStateChange
 {
     UINT index = WTCinfo->WanMode-1;
     UINT i;
+    eWTCThreadStatus_t thrdStatus = WTC_THRD_IDLE;
 
-    switch(WanTrafficCountInfo_t[index]->ThreadStatus)
+    pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);
+       thrdStatus = WanTrafficCountInfo_t[index]->ThreadStatus;
+    pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+
+    switch(thrdStatus)
     {
         case WTC_THRD_IDLE:
         case WTC_THRD_DISMISSED:
             if(WTCinfo->WTCConfigFlag[index] & WTC_WANMODE_CHANGE)
             {
-                WTC_LOG_INFO("WAN Mode flag is SET, unset it");
+                WTC_LOG_INFO("[%s-%s] WAN Mode flag is SET, unset it"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
                 WTCinfo->WTCConfigFlag[index] &= ~WTC_WANMODE_CHANGE;
                 WTCinfo->WanMode = GetEthWANIndex();
                 CHK_WAN_MODE(WTCinfo->WanMode);
@@ -339,16 +355,20 @@ VOID WTC_ApplyStateChange
             }
             else if(WTCinfo->WTCConfigFlag[index] & WTC_LANMODE_CHANGE)
             {
-                WTC_LOG_INFO("LAN Mode flag is SET, unset it");
+                WTC_LOG_INFO("[%s-%s] LAN Mode flag is SET, unset it"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
                 WTCinfo->WTCConfigFlag[index] &= ~WTC_LANMODE_CHANGE;
             }
-            if ((!WTCinfo->LanMode) && (WTCinfo->WTCConfigFlag[index] & WTC_DSCP_CONFIGURED) &&
+            if ((!WTCinfo->LanMode) &&
+                (WTCinfo->WTCConfigFlag[index] & WTC_DSCP_CONFIGURED) &&
                 (WTCinfo->WTCConfigFlag[index] & WTC_SLEEPINTRVL_CONFIGURED))
             {
                 WanTrafficCountInfo_t[index]->IsDscpListSet = TRUE;
                 WanTrafficCountInfo_t[index]->IsSleepIntvlSet = TRUE;
-                WTC_LOG_INFO("Both Enabled list and sleep interval present,"
-                               "set thread state to INITIALIZE and start thread");
+                WTC_LOG_INFO("[%s-%s] Configs are present, starting thread"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
                 WTC_CreateThread();
             }
             else
@@ -357,21 +377,28 @@ VOID WTC_ApplyStateChange
                 {
                     WTC_RbusUnsubscribe(index);
                 }
-                WTC_LOG_INFO("DscpList/SleepInterval is Not Configured");
+                WTC_LOG_INFO("[%s-%s] DscpList/SleepInterval is Not Configured"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
                 WTC_SetThreadState(index, WTC_THRD_NONE);
             }
             break;
         case WTC_THRD_INITIALIZING:
         case WTC_THRD_INITIALIZED:
-            WTC_LOG_INFO("In Initialize state, do nothing");
+            WTC_LOG_INFO("[%s-%s] Do nothing"
+                         , wanMode[index]
+                         , WTC_ThreadStatusToStr(thrdStatus));
             break;
         case WTC_THRD_SUSPENDED:
-            WTC_LOG_INFO("In SUSPENDED state, set state to INITIALIZE");
+            WTC_LOG_INFO("[%s-%s] set state to INITIALIZE"
+                         , wanMode[index]
+                         , WTC_ThreadStatusToStr(thrdStatus));
             WanTrafficCountInfo_t[index]->IsDscpListSet = TRUE;
             WanTrafficCountInfo_t[index]->IsSleepIntvlSet = TRUE;
             WTC_SetThreadState(index, WTC_THRD_INITIALIZE);
             break;
         case WTC_THRD_RUNNING:
+         {
             WTC_LOG_INFO("Thread in RUNNING state");
             i = GetEthWANIndex();
             if (i == INVALID_MODE)
@@ -380,22 +407,32 @@ VOID WTC_ApplyStateChange
                 WTC_SetThreadState(index,WTC_THRD_DISMISS);
                 return;
             }
-	    /* CID: 280135 Out-of-bounds read (OVERRUN) && CID: 280286 Out-of-bounds read  */
-	    i--;
+            i--;
+
             if (WTCinfo->WTCConfigFlag[index] & WTC_WANMODE_CHANGE)
             {
                 if ((WTCinfo->WTCConfigFlag[i] & WTC_DSCP_CONFIGURED) &&
                     (WTCinfo->WTCConfigFlag[i] & WTC_SLEEPINTRVL_CONFIGURED))
                 {
-                    WTC_LOG_INFO("Dscp & Sleep Interval is Configured, set state to SUSPEND");
-                    WTC_SetThreadState(index,WTC_THRD_SUSPEND);
+                    WTC_LOG_INFO("[%s-%s] Dscp & Sleep Interval is Configured,"
+                                 "[%s-%s] switch to SUSPEND"
+                                 , wanMode[i]
+                                 , WTC_ThreadStatusToStr(WanTrafficCountInfo_t[i]->ThreadStatus)
+                                 , wanMode[index]
+                                 , WTC_ThreadStatusToStr(thrdStatus));
                     WanTrafficCountInfo_t[i]->IsDscpListSet = TRUE;
                     WanTrafficCountInfo_t[i]->IsSleepIntvlSet = TRUE;
+                    WTC_SetThreadState(index,WTC_THRD_SUSPEND);
                     WTC_SetThreadState(i, WTC_THRD_INITIALIZE);
                 }
                 else
                 {
-                    WTC_LOG_INFO("Dscp/Sleep Interval is Not Configured, Set state to DISMISS");
+                    WTC_LOG_INFO("[%s-%s] Dscp/Sleep Interval is not Configured,"
+                                 "[%s-%s] switch to DISMISS"
+                                 , wanMode[i]
+                                 , WTC_ThreadStatusToStr(WanTrafficCountInfo_t[i]->ThreadStatus)
+                                 , wanMode[index]
+                                 , WTC_ThreadStatusToStr(thrdStatus));
                     WTC_SetThreadState(index,WTC_THRD_DISMISS);
                     WTCinfo->WanMode = GetEthWANIndex();
                     CHK_WAN_MODE(WTCinfo->WanMode);
@@ -404,23 +441,32 @@ VOID WTC_ApplyStateChange
             }
             else if (WTCinfo->WTCConfigFlag[index] & WTC_LANMODE_CHANGE)
             {
-                WTC_LOG_INFO("Lan mode change flag is set in RUNNING STATE, switch to DISMISS");
+                WTC_LOG_INFO("[%s-%s] Lan mode change flag is set, switch to DISMISS"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
                 WTC_SetThreadState(index, WTC_THRD_DISMISS);
                 WTCinfo->WTCConfigFlag[index] &= ~WTC_LANMODE_CHANGE;
             }
             else if (WTCinfo->WTCConfigFlag[index] & WTC_INPUT_CHANGE)
             {
-                WTC_LOG_INFO("Input change flag is set, change state to initialize");
+                WTC_LOG_INFO("[%s-%s] Input change flag is set, switch to INITIALIZE"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
                 WTC_SetThreadState(index, WTC_THRD_INITIALIZE);
             }
             else
             {
-                WTC_LOG_INFO("In Running state, No Flag is set");
+                WTC_LOG_INFO("[%s-%s] No Flag is set"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
             }
             break;
+         }
         case WTC_THRD_ERROR:
         default:
-            WTC_LOG_WARNING("Default/ERROR case");
+            WTC_LOG_WARNING("[%s-%s] Default/ERROR case"
+                             , wanMode[index]
+                             , WTC_ThreadStatusToStr(thrdStatus));
     }
 }
 
@@ -449,6 +495,9 @@ VOID WTC_GetCount
     {
         UINT offset = 0;
         PrintDscpTree(pValue, pUlSize, &offset, countPerInterval, WAN_Traffic->DscpTree);
+#if 0
+        PrintDscpTreeLinearly(pValue, pUlSize, countPerInterval, WAN_Traffic->DscpTree);
+#endif
     }
     return;
 }
@@ -533,7 +582,7 @@ rbusError_t WTC_EventPublish
 
 /**********************************************************************
     function:
-        CosaSetCfg
+        WTC_SetConfig
     description:
         This function is called to set syscfg parameters.
     argument:
@@ -543,7 +592,7 @@ rbusError_t WTC_EventPublish
     return:
         VOID
 **********************************************************************/
-RETURN_STATUS CosaSetCfg
+RETURN_STATUS WTC_SetConfig
     (
         CHAR*           param,
         CHAR*           value,
@@ -568,7 +617,7 @@ RETURN_STATUS CosaSetCfg
 
 /**********************************************************************
     function:
-        CosaGetCfg
+        WTC_GetConfig
     description:
         This function is called to get syscfg parameters.
     argument:
@@ -579,10 +628,11 @@ RETURN_STATUS CosaSetCfg
         1 - success
         0 - failure
 **********************************************************************/
-RETURN_STATUS CosaGetCfg
+RETURN_STATUS WTC_GetConfig
     (
         CHAR*           param,
         CHAR*           value,
+        ULONG           valueLen,
         WAN_INTERFACE   ethWanMode
     )
 {
@@ -590,7 +640,7 @@ RETURN_STATUS CosaGetCfg
     snprintf(buf1, BUFLEN_32, "%s_%d", param, ethWanMode);
 
     //syscfg_get
-    if (!syscfg_get(NULL, buf1, value, sizeof(buf1)))
+    if (!syscfg_get(NULL, buf1, value, valueLen))
     {
         WTC_LOG_INFO("syscfg_get %s:%s success", buf1, value);
         return STATUS_SUCCESS;
@@ -847,18 +897,24 @@ static pstDSCPInfo_t PrintDscpTree
 {
     if (DscpTree)
     {
-        CHAR pLocal[BUFLEN_20480] = {0};
         ULONG lOffset = 0;
 
         PrintDscpTree(pValue, pUlSize, offset, countPerInterval, DscpTree->Left);
 
         for (UINT i=0; i<DscpTree->NumClients; i++)
         {
+            // Additional guarding to avoid intcs-631 crash
+            if (!DscpTree->ClientList)
+            {
+                WTC_LOG_ERROR("ClientList is Null. # of clients : %d", DscpTree->NumClients);
+                break;
+            }
+
             if (countPerInterval)
             {
                 if ((DscpTree->ClientList[i].RxBytes!=0) || (DscpTree->ClientList[i].TxBytes!=0))
                 {
-                    lOffset += snprintf(pLocal + lOffset, BUFLEN_10240 - lOffset, "|%s,%lu,%lu",
+                    lOffset += snprintf(gPrintBuf + lOffset, *pUlSize - lOffset, "|%s,%lu,%lu",
                                         DscpTree->ClientList[i].Mac,
                                         DscpTree->ClientList[i].RxBytes / UNIT_KB,
                                         DscpTree->ClientList[i].TxBytes / UNIT_KB);
@@ -866,7 +922,7 @@ static pstDSCPInfo_t PrintDscpTree
             }
             else
             {
-                lOffset += snprintf(pLocal + lOffset, BUFLEN_20480 - lOffset, "|%s,%lu,%lu",
+                lOffset += snprintf(gPrintBuf + lOffset, *pUlSize - lOffset, "|%s,%lu,%lu",
                                     DscpTree->ClientList[i].Mac,
                                     DscpTree->ClientList[i].RxBytesTot / UNIT_KB,
                                     DscpTree->ClientList[i].TxBytesTot / UNIT_KB);
@@ -880,7 +936,7 @@ static pstDSCPInfo_t PrintDscpTree
                 *offset += snprintf(pValue + *offset, *pUlSize - *offset, ";");
             }
             *offset += snprintf(pValue + *offset, *pUlSize - *offset, "%d", DscpTree->Dscp);
-            *offset += snprintf(pValue + *offset, *pUlSize - *offset, "%s", pLocal);
+            *offset += snprintf(pValue + *offset, *pUlSize - *offset, "%s", gPrintBuf);
         }
 
         PrintDscpTree(pValue, pUlSize, offset, countPerInterval, DscpTree->Right);
@@ -888,6 +944,96 @@ static pstDSCPInfo_t PrintDscpTree
 
     return DscpTree;
 }
+
+#if 0
+/**********************************************************************
+    function:
+        GetLinearHeadFromTree
+    description:
+        This function is called to get the dscp tree head node.
+    argument:
+        pstDSCPInfo_t   DscpTree           - Dscp tree
+    return:
+        pstDSCPInfo_t
+**********************************************************************/
+static pstDSCPInfo_t GetLinearHeadFromTree
+    (
+        pstDSCPInfo_t  DscpTree
+    )
+{
+  if (DscpTree)
+  {
+      for ( ;DscpTree->Left; DscpTree = DscpTree->Left);
+  }
+  return DscpTree;
+}
+
+/**********************************************************************
+    function:
+        PrintDscpTreeLinearly
+    description:
+        This function is called to Print the dscp tree.
+    argument:
+        CHAR*           pValue,            - Dscp, Mac and its Rx,Tx count
+        ULONG*          pUlSize,           - pValue size
+        BOOL            countPerInterval   - Per Interval/Total count
+        pstDSCPInfo_t   DscpTree           - Dscp tree
+    return:
+        VOID
+**********************************************************************/
+static VOID PrintDscpTreeLinearly
+    (
+        CHAR*          pValue,
+        ULONG*         pUlSize,
+        BOOL           countPerInterval,
+        pstDSCPInfo_t  DscpTree
+    )
+{
+    if (DscpTree)
+    {
+        UINT offset = 0;
+        for (pstDSCPInfo_t ListItr=GetLinearHeadFromTree(DscpTree); ListItr; ListItr=ListItr->Next)
+        {
+            UINT firstClient = 1;
+            for (UINT i=0; i < ListItr->NumClients; i++)
+            {
+                if (countPerInterval)
+                {
+                    if ((ListItr->ClientList[i].RxBytes!=0) ||
+                        (ListItr->ClientList[i].TxBytes!=0))
+                    {
+                        if (firstClient)
+                        {
+                            offset += snprintf(pValue+offset, *pUlSize-offset, "%d", ListItr->Dscp);
+                        }
+                        offset += snprintf(pValue + offset, *pUlSize - offset, "|%s,%lu,%lu",
+                                           ListItr->ClientList[i].Mac,
+                                           ListItr->ClientList[i].RxBytes / UNIT_KB,
+                                           ListItr->ClientList[i].TxBytes / UNIT_KB);
+                        firstClient = 0;
+                    }
+                }
+                else
+                {
+                    if (firstClient)
+                    {
+                        offset += snprintf(pValue+offset, *pUlSize-offset, "%d", ListItr->Dscp);
+                    }
+                    offset += snprintf(pValue + offset, *pUlSize - offset, "|%s,%lu,%lu",
+                                       ListItr->ClientList[i].Mac,
+                                       ListItr->ClientList[i].RxBytesTot / UNIT_KB,
+                                       ListItr->ClientList[i].TxBytesTot / UNIT_KB);
+                    firstClient = 0;
+                }
+            }
+            if (!firstClient)
+            {
+                offset += snprintf(pValue + offset, *pUlSize - offset, ";");
+            }
+        }
+    }
+}
+#endif
 
 /**********************************************************************
     function:
@@ -972,12 +1118,14 @@ static inline VOID WTC_SetThreadState
         eWTCThreadState_t   newState
     )
 {
-    if(index >= 2)
+    if(index >= SUPPORTED_WAN_MODES)
     {
         return;
     }
-    switch(newState)
-    {
+
+    pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);
+      switch(newState)
+      {
         case WTC_THRD_NONE:
         case WTC_THRD_INITIALIZE:
             WanTrafficCountInfo_t[index]->ThreadState = newState;
@@ -1011,10 +1159,11 @@ static inline VOID WTC_SetThreadState
             }
             break;
         default:
-            WanTrafficCountInfo_t[index]->ThreadState = WTC_THRD_ERROR;
+            WanTrafficCountInfo_t[index]->ThreadStatus = WTC_THRD_ERROR;
             WTC_LOG_INFO("Invalid Thread State %d", newState);
             break;
-    }
+      }
+    pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
 }
 
 /**********************************************************************
@@ -1034,16 +1183,21 @@ static inline VOID WTC_SetThreadStatus
         eWTCThreadStatus_t    newStatus
     )
 {
-    /* CID: 280269  Out-of-bounds access (OVERRUN) */
-    if(index >= 2)
+    if(index >= SUPPORTED_WAN_MODES)
     {
         return;
     }
-    if( WanTrafficCountInfo_t[index]->ThreadStatus != newStatus )
-    {
-        WanTrafficCountInfo_t[index]->ThreadStatus = newStatus;
-        WTC_LOG_INFO("%s - %s", wanMode[index],WTC_ThreadStatusToStr(newStatus));
-    }
+
+    pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);
+       if( WanTrafficCountInfo_t[index]->ThreadStatus != newStatus )
+       {
+           WTC_LOG_INFO("[%s]  %s -> %s"
+                        , wanMode[index]
+                        , WTC_ThreadStatusToStr(WanTrafficCountInfo_t[index]->ThreadStatus)
+                        , WTC_ThreadStatusToStr(newStatus));
+           WanTrafficCountInfo_t[index]->ThreadStatus = newStatus;
+       }
+    pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
 }
 
 /**********************************************************************
@@ -1093,37 +1247,40 @@ static VOID WTC_CreateThread
 **********************************************************************/
 static VOID* WTC_Thread()
 {
+    eWTCThreadState_t  thrdState = WTC_THRD_NONE;
     DSCP_list_t CliList;
     errno_t rc = -1;
     /* CID: 280269  Out-of-bounds access (OVERRUN) */
     UINT index = 0;
-    BOOL doDismiss = FALSE;
-    BOOL isDscpUpdated = FALSE;
-    CHAR dscpStr[BUFLEN_256] = {0};
-    CHAR dscpStr_1[BUFLEN_256] = {0};
+
     if(WTCinfo->WanMode)
     {
         index = WTCinfo->WanMode-1;
     }
 
     WTC_LOG_INFO("Successfully created Thread");
+
     while(1)
     {
-        /* CID: 280271 Out-of-bounds read (OVERRUN) */
-        if(index < 2)
+        if(index < SUPPORTED_WAN_MODES)
         {
-        switch(WanTrafficCountInfo_t[index]->ThreadState)
+          pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);
+             thrdState = WanTrafficCountInfo_t[index]->ThreadState;
+          pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+
+        switch(thrdState)
         {
             case WTC_THRD_NONE:
                 WTC_SetThreadStatus(index, WTC_THRD_IDLE);
                 sleep(DEFAULT_THREAD_SLEEP);
                 continue;
             case WTC_THRD_INITIALIZE:
+            {
                 WTC_LOG_INFO("Thread in INITIALIZE state");
-                doDismiss = FALSE;
-                isDscpUpdated = FALSE;
-                memset(dscpStr,0,sizeof(dscpStr));
-                memset(dscpStr_1,0,sizeof(dscpStr_1));
+                BOOL doDismiss = FALSE;
+                BOOL isDscpUpdated = FALSE;
+                CHAR dscpStr[BUFLEN_256] = {0};
+                CHAR dscpStr_1[BUFLEN_256] = {0};
                 CHAR *dscpStr_2;
 
                 WTC_SetThreadStatus(index, WTC_THRD_INITIALIZING);
@@ -1132,7 +1289,7 @@ static VOID* WTC_Thread()
                 {
                     CHAR buf[BUFLEN_256] = {0};
 
-                    if(!CosaGetCfg("DscpEnabledList", buf, WTCinfo->WanMode))
+                    if(!WTC_GetConfig("DscpEnabledList", buf, sizeof(buf), WTCinfo->WanMode))
                     {
                         if(*buf)
                         {
@@ -1153,7 +1310,7 @@ static VOID* WTC_Thread()
                             RemoveSpaces(buf);
                             if (CheckForAllDscpValuePresence(buf))
                             {
-                                if(CosaSetCfg("DscpEnabledList", "-1",
+                                if(WTC_SetConfig("DscpEnabledList", "-1",
                                                WanTrafficCountInfo_t[index]->InstanceNum))
                                 {
                                     WTC_LOG_ERROR("syscfg set failure");
@@ -1194,7 +1351,7 @@ static VOID* WTC_Thread()
                 if(WanTrafficCountInfo_t[index]->IsSleepIntvlSet)
                 {
                     CHAR buf1[BUFLEN_32] = {0};
-                    if(!CosaGetCfg("DscpSleepInterval", buf1, WTCinfo->WanMode))
+                    if(!WTC_GetConfig("DscpSleepInterval", buf1, sizeof(buf1), WTCinfo->WanMode))
                     {
                         if(atoi(buf1))
                         {
@@ -1222,8 +1379,12 @@ static VOID* WTC_Thread()
                 }
                 else if(isDscpUpdated)
                 {
-                    WanTrafficCountInfo_t[index]->DscpTree = UpdateDscpCount(dscpStr,
+                    pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);
+
+                       WanTrafficCountInfo_t[index]->DscpTree = UpdateDscpCount(dscpStr,
                                                     WanTrafficCountInfo_t[index]->DscpTree);
+                    pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+
                     if (!WanTrafficCountInfo_t[index]->DscpTree)
                     {
                         WTC_LOG_ERROR("UpdateDscpCount Failure, sleep and retry in next iter");
@@ -1231,7 +1392,8 @@ static VOID* WTC_Thread()
                         continue;
                     }
 
-                    if ( RETURN_OK == platform_hal_setDscp(index, TRAFFIC_CNT_START, dscpStr_1) )
+                    if ( RETURN_OK == platform_hal_setDscp(WTCinfo->WanMode, TRAFFIC_CNT_START,
+                                                            dscpStr_1) )
                     {
                         WTC_LOG_INFO("Traffic count start Success");
                         WTC_RbusSubscribe(index);
@@ -1247,6 +1409,7 @@ static VOID* WTC_Thread()
                 WTC_SetThreadState(index, WTC_THRD_RUN);
                 sleep(WanTrafficCountInfo_t[index]->SleepInterval);
                 continue;
+            }
             case WTC_THRD_RUN:
                 WTC_SetThreadStatus(index, WTC_THRD_RUNNING);
                 break;
@@ -1255,7 +1418,7 @@ static VOID* WTC_Thread()
                 WTC_SetThreadStatus(index, WTC_THRD_SUSPENDED);
                 WTCinfo->WanMode = GetEthWANIndex();
               /*  CID: 280133 Out-of-bounds read (OVERRUN) */
-		if(WTCinfo->WanMode)
+                if(WTCinfo->WanMode)
                 {
                     index = WTCinfo->WanMode-1;
                 }
@@ -1281,18 +1444,17 @@ static VOID* WTC_Thread()
 
         pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);
 
-        ResetIsUpdatedFlag(WanTrafficCountInfo_t[index]->DscpTree);
-        WanTrafficCountInfo_t[index]->DscpTree =
-                            InsertClient(WanTrafficCountInfo_t[index]->DscpTree, &CliList);
+           ResetIsUpdatedFlag(WanTrafficCountInfo_t[index]->DscpTree);
+           WanTrafficCountInfo_t[index]->DscpTree =
+                             InsertClient(WanTrafficCountInfo_t[index]->DscpTree, &CliList);
+        pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+
         if(!WanTrafficCountInfo_t[index]->DscpTree)
         {
             WTC_LOG_ERROR("InsertClient failure, sleep and retry in next iter");
-            pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
             sleep(WanTrafficCountInfo_t[index]->SleepInterval);
             continue;
         }
-
-        pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
 
         WTC_SendTrafficCountRbus(index);
         sleep(WanTrafficCountInfo_t[index]->SleepInterval);
@@ -1302,7 +1464,7 @@ static VOID* WTC_Thread()
         {
             break;
           // TODO: Exit gracefully, so that the thread info would be meaningful to start back.
-        }  
+        }
     }
 
 wtc_exit:
