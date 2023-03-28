@@ -337,12 +337,6 @@ char * getDeviceMac()
 {
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s ENTER\n", __FUNCTION__ ));
 
-#if defined(_PLATFORM_RASPBERRYPI_)
-    // Return without performing any operation as RPi Platform don't have Cable Modem and execution
-    // of this function on RPI puts calling thread in infinite wait.
-    return deviceMAC;
-#endif
-  
 #ifdef _SKY_HUB_COMMON_PRODUCT_REQ_
     char wanPhyName[32] = {0};
     char out_value[32] = {0};
