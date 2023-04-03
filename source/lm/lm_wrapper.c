@@ -701,7 +701,7 @@ int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCoun
     int interface_number = 0;
     int bkup_ifaceNumber = 0;
     int AssociatedDevice_number[LM_MAX_INTERFACE_NUMBER];
-    parameterInfoStruct_t **interfaceInfo;
+    parameterInfoStruct_t **interfaceInfo = NULL;
     int i, j, itmp;
     int ret;
     LM_wifi_wsta_t *pwifi_wsta = NULL;
