@@ -1120,7 +1120,7 @@ int lm_wrapper_get_arp_entries (int *pCount, LM_host_entry_t **ppArray)
 #if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
     // This is added to remove atom mac from the connected device list.
     if (pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
-        fp = v_secure_popen("r", "rpcclient2 ifconfig eth0 | grep HWaddr | awk '{print $5}' | cut -c 1-18 | head -n 1");
+        fp = v_secure_popen("r", "rpcclient2 'ifconfig eth0' | grep HWaddr | awk '{print $5}' | cut -c 1-18");
         _get_shell_output(fp, pAtomBRMac, sizeof(pAtomBRMac));
         ret = v_secure_pclose(fp);
 	if(ret !=0)
@@ -1132,7 +1132,7 @@ int lm_wrapper_get_arp_entries (int *pCount, LM_host_entry_t **ppArray)
 #endif
 
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
-    	v_secure_system("ip -4 nei show | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, pAtomBRMac);
+        v_secure_system("ip -4 nei show | grep -v 192.168.10  | grep -i -v 'brlan0.*%s\|%s.*brlan0' > "ARP_CACHE_FILE, pAtomBRMac, pAtomBRMac);
         v_secure_system("ip -6 nei show | grep -i -v %s >> "ARP_CACHE_FILE, pAtomBRMac);
     } else {
 	v_secure_system("ip -4 nei show > "ARP_CACHE_FILE);
