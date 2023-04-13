@@ -1132,7 +1132,7 @@ int lm_wrapper_get_arp_entries (int *pCount, LM_host_entry_t **ppArray)
 #endif
 
     if(pAtomBRMac[0] != '\0'  &&  pAtomBRMac[0] != ' ') {
-    	v_secure_system("ip -4 nei show | grep -v 192.168.10  | grep -i -v %s > "ARP_CACHE_FILE, pAtomBRMac);
+        v_secure_system("ip -4 nei show | grep -v 192.168.10  | grep -i -v 'brlan0.*%s\\|%s.*brlan0' > " ARP_CACHE_FILE, pAtomBRMac, pAtomBRMac);
         v_secure_system("ip -6 nei show | grep -i -v %s >> "ARP_CACHE_FILE, pAtomBRMac);
     } else {
 	v_secure_system("ip -4 nei show > "ARP_CACHE_FILE);
