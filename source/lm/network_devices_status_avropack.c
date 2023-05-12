@@ -25,7 +25,7 @@
 #include <uuid/uuid.h>
 #include "ansc_platform.h"
 
-#include "base64.h"
+#include <trower-base64/base64.h>
 #include "webpa_interface.h"
 #include "network_devices_status_avropack.h"
 #include "ccsp_lmliteLog_wrapper.h"
