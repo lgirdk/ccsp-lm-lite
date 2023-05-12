@@ -21,7 +21,6 @@
 #include "cosa_ndstatus_dml.h"
 #include "cosa_reports_internal.h"
 #include "ssp_global.h"
-#include "base64.h"
 #include "ccsp_trace.h"
 #include "ccsp_psm_helper.h"
 #include "lm_main.h"
