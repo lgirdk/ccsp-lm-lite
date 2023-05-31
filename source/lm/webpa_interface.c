@@ -357,6 +357,18 @@ char * getDeviceMac()
     ret_code = STRCPY_S_NOCLOBBER(fullDeviceMAC, sizeof(fullDeviceMAC),deviceMACVal);
     ERR_CHK(ret_code);
     AnscMacToLower(deviceMAC, deviceMACVal, sizeof(deviceMAC));
+#if defined(FEATURE_RDKB_CONFIGURABLE_WAN_INTERFACE)
+    if(strlen(deviceMAC) <=0)
+    {
+        CcspTraceInfo(("%s %d - deviceMAC is empty try with default wanInterface name \n", __FUNCTION__,__LINE__));
+        strncpy(wanPhyName, "erouter0", sizeof(wanPhyName));
+        s_get_interface_mac(wanPhyName, deviceMACVal, sizeof(deviceMACVal));
+        ret_code = STRCPY_S_NOCLOBBER(fullDeviceMAC, sizeof(fullDeviceMAC),deviceMACVal);
+        ERR_CHK(ret_code);
+        AnscMacToLower(deviceMAC, deviceMACVal, sizeof(deviceMAC));
+        CcspTraceInfo(("%s %d - WanPhyName=%s \n", __FUNCTION__,__LINE__, wanPhyName));
+    }
+#endif
     // Removing the \n at the end of mac
     if((strlen(deviceMAC) == 13) && (deviceMAC[12] == '\n'))
     {
