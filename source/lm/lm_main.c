@@ -3051,7 +3051,7 @@ void LM_main (void)
     }
 
     pthread_t ValidateHostRetry_ThreadID;
-    pthread_create(&ValidateHostRetry_ThreadID, NULL, ValidateHostRetry_Thread, "ValidateHostRetry_Thread");
+    res = pthread_create(&ValidateHostRetry_ThreadID, NULL, ValidateHostRetry_Thread, "ValidateHostRetry_Thread");
     if(res != 0) {
         CcspTraceError(("Create ValidateHostRetry_Thread error %d\n", res));
     }
