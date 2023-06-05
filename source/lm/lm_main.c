@@ -1328,7 +1328,8 @@ PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress, int port)
         return pHost;
 
     if ((strcasecmp(physAddress, ATOM_MAC) == 0) ||
-        (strcasecmp(physAddress, ATOM_MAC_CSC) == 0))
+        (strcasecmp(physAddress, ATOM_MAC_CSC) == 0) ||
+        (strcasecmp(physAddress, "00:50:f1:64:ce:d7") == 0))
     {
         //CcspTraceWarning(("RDKB_CONNECTED_CLIENT: ATOM_MAC = %s ignored\n",physAddress));
         return NULL;
