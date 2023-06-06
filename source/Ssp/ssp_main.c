@@ -240,6 +240,7 @@ int main(int argc, char* argv[])
     int           ret          = 0;
     errno_t       rc           = -1;
 
+
     // Buffer characters till newline for stdout and stderr
     setlinebuf(stdout);
     setlinebuf(stderr);
@@ -348,7 +349,17 @@ int main(int argc, char* argv[])
 #ifdef FEATURE_SUPPORT_RDKLOG
     RDK_LOGGER_INIT();
 #endif
-    creat("/tmp/lmlite_initialized",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    int chk_ret = creat("/tmp/lmlite_initialized",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (chk_ret == -1)
+    {
+      CcspTraceError(("Error creating the file /tmp/lmlite_initialized.\n"));
+    }
+    else
+    {
+       close(chk_ret);
+    }
+
+
     LM_main();
     if ( bRunAsDaemon )
     {
