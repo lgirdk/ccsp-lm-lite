@@ -60,16 +60,17 @@ rbusError_t WTC_TableUlongGetHandler(rbusHandle_t handle, rbusProperty_t propert
         // Get pointer to Wan traffic table instance
         pstWanTrafficCountInfo_t p_WanTrafficTable = WanTrafficCountInfo_t[instNum-1];
         rc = Stats_GetParamUlongValue(p_WanTrafficTable, param, &value);
-        free(param);
         if(!rc)
         {
             WTC_LOG_ERROR("Stats_GetParamUlongValue failed");
+            free(param);
             return RBUS_ERROR_BUS_ERROR;
         }
         rbusValue_Init(&val);
         rbusValue_SetUInt32(val, value);
         rbusProperty_SetValue(property, val);
         rbusValue_Release(val);
+        free(param);
         return RBUS_ERROR_SUCCESS;
     }
     else
@@ -78,8 +79,6 @@ rbusError_t WTC_TableUlongGetHandler(rbusHandle_t handle, rbusProperty_t propert
         free(param);
         return RBUS_ERROR_INVALID_INPUT;
     }
-    free(param);
-    return RBUS_ERROR_BUS_ERROR;
 }
 
 /**********************************************************************
@@ -443,4 +442,3 @@ rbusError_t WTC_TableRemoveRowHandler(rbusHandle_t handle, char const* rowName)
     WTC_LOG_INFO("RowName = %s", rowName);
     return RBUS_ERROR_SUCCESS;
 }
-

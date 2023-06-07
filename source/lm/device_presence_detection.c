@@ -910,8 +910,9 @@ void *ReceiveIpv4ClientStatus(void *args)
     --pobject->task_count;
     if (mq != (mqd_t)-1)
     {
-        mq_close(mq);
-        mq_unlink(DNSMASQ_PRESENCE_QUEUE_NAME);
+        int ret = mq_close(mq);
+        if (ret == 0)
+            mq_unlink(DNSMASQ_PRESENCE_QUEUE_NAME);
     }
     return args;
 }
@@ -933,7 +934,6 @@ void RecvHCPv4ClientConnects()
         printf("Failed to open socket descriptor\n"); 
         return; 
     } 
-
     // set reuse address flag
     if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, 
                 &opt, sizeof(opt)) < 0) 
@@ -1002,6 +1002,7 @@ void RecvHCPv4ClientConnects()
             } 
         } 
     }
+    close(new_socket);
     close(sd);
     if (pobject && (pobject->task_count > 0))
 	    --pobject->task_count;
@@ -1225,7 +1226,6 @@ int Send_ipv6_neighbourdiscovery(PLmDevicePresenceDetectionInfo pobject,BOOL bac
                     }
                     continue;
                 }
-                
                 syscfg_get( NULL, "lan_ifname", buf, sizeof(buf));
                 CcspTraceDebug(("cmd = ndisc6 %s %s -r 1 -q", pobj->ipv6,buf));
                 ret = v_secure_system("ndisc6 %s %s -r 1 -q", pobj->ipv6,buf);
