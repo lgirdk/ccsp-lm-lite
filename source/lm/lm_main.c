@@ -1819,7 +1819,11 @@ static void _get_host_ipaddress(LM_host_t *pDestHost, PLmObjectHost pHost)
     LM_ip_addr_t *pIp;
     for(i=0, pIpSrc = pHost->ipv4AddrArray; pIpSrc != NULL && i < LM_MAX_IP_AMOUNT;i++, pIpSrc = pIpSrc->pNext){
         pIp = &(pDestHost->ipv4AddrList[i]);
-        inet_pton(AF_INET, pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressId],pIp->addr);
+        if(inet_pton(AF_INET, pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressId],pIp->addr) != 1)
+        {
+         CcspTraceWarning(("Invalid IP Address %s\n",pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressId]));
+         continue;
+        }
         pIp->addrSource = _get_addr_source(pIpSrc->pStringParaValue[LM_HOST_IPAddress_IPAddressSourceId]);
         pIp->priFlg = pIpSrc->l3unReachableCnt;
         if(pIp->addrSource == LM_ADDRESS_SOURCE_DHCP)
