@@ -913,6 +913,8 @@ void *ReceiveIpv4ClientStatus(void *args)
         int ret = mq_close(mq);
         if (ret == 0)
             mq_unlink(DNSMASQ_PRESENCE_QUEUE_NAME);
+	else
+	    printf("mq close failed");
     }
     return args;
 }
