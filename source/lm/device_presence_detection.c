@@ -1006,6 +1006,7 @@ void RecvHCPv4ClientConnects()
     close(sd);
     if (pobject && (pobject->task_count > 0))
 	    --pobject->task_count;
+    close(new_socket);
 
 }
 
