@@ -1072,6 +1072,7 @@ int open_netlink(void)
 
     if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
         printf("bind < 0.\n");
+        close(sock);
         return -1;
     }
 
