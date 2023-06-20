@@ -288,9 +288,6 @@ rbusError_t WTC_TableStringGetHandler(rbusHandle_t handle, rbusProperty_t proper
         free(param);
         return RBUS_ERROR_INVALID_INPUT;
     }
-    free(value);
-    free(param);
-    return RBUS_ERROR_BUS_ERROR;
 }
 
 /**********************************************************************
