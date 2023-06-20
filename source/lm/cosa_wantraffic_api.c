@@ -319,6 +319,7 @@ VOID WTC_ApplyStateChange
     )
 {
     UINT index = WTCinfo->WanMode-1;
+    UINT i;
 
     switch(WanTrafficCountInfo_t[index]->ThreadStatus)
     {
@@ -368,7 +369,7 @@ VOID WTC_ApplyStateChange
             break;
         case WTC_THRD_RUNNING:
             WTC_LOG_INFO("Thread in RUNNING state");
-            UINT i = GetEthWANIndex();
+            i = GetEthWANIndex();
             if (i == INVALID_MODE)
             {
                 WTC_LOG_ERROR("INVALID WAN MODE");
