@@ -492,8 +492,8 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                         }
                         errno_t rc = -1;
                         rc = memset_s(DscpTree->ClientList,
-                                      sizeof(DscpTree->MemorySlab * sizeof(stClientInfo_t)),
-                                      0, sizeof(DscpTree->MemorySlab * sizeof(stClientInfo_t)));
+                                      DscpTree->MemorySlab * sizeof(stClientInfo_t),
+                                      0, DscpTree->MemorySlab * sizeof(stClientInfo_t));
                         ERR_CHK(rc);
                     }
 
