@@ -1964,8 +1964,10 @@ static inline void _get_online_device_cfunc(int fd, void* recv_buf, int buf_size
                      0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "10.", 3) ||
                      0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4)
                    )
+                {
                 num++;
-               break;  /*REVIST: break need to comes under ifor else part*/
+                break;
+                }
             }
         }
     }
