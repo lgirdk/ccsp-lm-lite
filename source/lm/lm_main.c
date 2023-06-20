@@ -1700,9 +1700,11 @@ int XLM_get_online_device (void)
             /*TODO CID: 70272 Structurally dead code - logic error due to loop in break*/
             for(pIP4 = XlmHosts.hostArray[i]->ipv4AddrArray; pIP4 != NULL; pIP4 = pIP4->pNext){
                 if (0 == strncmp(pIP4->pStringParaValue[LM_HOST_IPAddress_IPAddressId], "172.", 4))
-                	num++;
-                   break;
-            }
+                {
+                  num++;
+                  break;
+                }
+           }
         }
     }
 	return num;
