@@ -1291,7 +1291,8 @@ static VOID* WTC_Thread()
         }
         else
         {
-            continue;
+            break;
+          // TODO: Exit gracefully, so that the thread info would be meaningful to start back.
         }  
     }
 
