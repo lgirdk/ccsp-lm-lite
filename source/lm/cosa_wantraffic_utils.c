@@ -604,7 +604,11 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                                       0, DscpTree->MemorySlab * sizeof(stClientInfo_t));
                         ERR_CHK(rc);
                     }
-
+                    if (DscpTree->ClientList == NULL)
+                    {
+                      WTC_LOG_INFO("ClientList is NULL");
+                      return DscpTree;
+                    }
                     for(UINT i=0; i<cliIndex; i++)
                     {
                         UINT j;
@@ -616,6 +620,7 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                                           strlen(DscpTree->ClientList[j].Mac),
                                           CliList->DSCP_Element[DscpTree->Dscp].Client[i].mac, &ind);
                             ERR_CHK(rc);
+                            
                             //Update existing client
                             if ((rc == EOK) && (!ind))
                             {
