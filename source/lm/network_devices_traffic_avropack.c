@@ -248,6 +248,11 @@ void network_devices_traffic_report(struct networkdevicetrafficdata *head, struc
   // timestamp - long
   avro_value_get_by_name(&adr, "header", &adrField, NULL);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  if (adrField.iface == NULL)
+  {
+     CcspTraceWarning(("adrField.iface is null"));
+     return;
+  }
   avro_value_get_by_name(&adrField, "timestamp", &adrField, NULL);
   avro_value_set_branch(&adrField, 1, &optional);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
