@@ -243,6 +243,11 @@ void network_devices_status_report(struct networkdevicestatusdata *head, BOOL ex
   // timestamp - long
   avro_value_get_by_name(&adr, "header", &adrField, NULL);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
+  if (adrField.iface == NULL)
+  {
+    CcspTraceWarning(("adrField.iface is NULL"));  
+    return;
+  }
   avro_value_get_by_name(&adrField, "timestamp", &adrField, NULL);
   avro_value_set_branch(&adrField, 1, &optional);
   if ( CHK_AVRO_ERR ) CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, %s\n", avro_strerror()));
