@@ -528,7 +528,7 @@ char* get_ActiveInterface(char *interface) {
     char activeInterface[64] = { '\0' };
     char interfaceUp[10][16] = { '\0' };
     char c;
-    char buffer[100] = { '\0' };
+    char buffer[256] = { '\0' };
     int i;
     int len = 0;
 
