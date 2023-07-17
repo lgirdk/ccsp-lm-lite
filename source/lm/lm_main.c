@@ -3880,9 +3880,14 @@ BOOL Hosts_GetPresenceNotificationEnableStatus(char *Mac)
 int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut)
 {
     char result[16];
+    //CIDs 330412,330410,330411,330413,330414: Data race condition (MISSING_LOCK)
+    pthread_mutex_lock(&LmHostObjectMutex);
 
     if (!paramOut)
+    {
+        pthread_mutex_unlock(&LmHostObjectMutex);
         return -1;
+    }
 
     syscfg_get(NULL, "X_RDKCENTRAL-COM_PresenceLeaveIPv4CheckInterval", result, sizeof(result));
     paramOut->ipv4CheckInterval = atol(result);
@@ -3899,6 +3904,7 @@ int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut)
     syscfg_get(NULL, "X_RDKCENTRAL-COM_BackgroundPresenceJoinInterval", result, sizeof(result));
     paramOut->bkgrndjoinInterval = atol(result);
 
+    pthread_mutex_unlock(&LmHostObjectMutex);
     return 0;
 }
 

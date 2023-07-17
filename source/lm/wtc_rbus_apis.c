@@ -235,7 +235,7 @@ BOOL Stats_GetParamStringValue
     if (!hInsContext)
     {
         WTC_LOG_ERROR("hcontext is NULL, return FALSE");
-        pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+        pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);//CID 279998: Missing unlock (LOCK)
         return FALSE;
     }
 
@@ -300,7 +300,7 @@ BOOL Stats_GetParamStringValue
     else
     {
         WTC_LOG_ERROR("Unsupported Param");
-        pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+        pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);//CID 279998: Missing unlock (LOCK)
         return FALSE;
     }
     pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
