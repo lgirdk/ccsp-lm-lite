@@ -1423,7 +1423,7 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
         }
 
-        if(strstr((const char *)dhcpHost.ipAddr, ip) && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
+        if (strstr((const char *)dhcpHost.ipAddr, ip) && (strcasecmp((char *)dhcpHost.phyAddr, pHost->pStringParaValue[LM_HOST_PhysAddressId]) == 0))
         {
             pthread_mutex_lock(&XLmHostObjectMutex);
 
