@@ -271,8 +271,8 @@ static BOOL findAndUpdateMatchedEntry
          * DeviceSerialNumber
          * DeviceProductClass (this MAY be left out if the corresponding source Parameter is not present)
          */
-        if ((AnscEqualString(pMangDevEntry->ManufacturerOUI, pMangDevTableEntry->ManufacturerOUI, TRUE)) &&
-            (AnscEqualString(pMangDevEntry->SerialNumber, pMangDevTableEntry->SerialNumber, TRUE)))
+        if ((strcmp(pMangDevEntry->ManufacturerOUI, pMangDevTableEntry->ManufacturerOUI) == 0) &&
+            (strcmp(pMangDevEntry->SerialNumber, pMangDevTableEntry->SerialNumber) == 0))
         {
             if (pCxtLink->bNew == TRUE)
             {
