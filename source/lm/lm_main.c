@@ -1157,22 +1157,30 @@ static void Host_SetIPAddress (PLmObjectHostIPAddress pIP, int l3unReachableCnt,
 
 PLmObjectHost Hosts_FindHostByPhysAddress (char * physAddress)
 {
-    int i = 0;
-    for(; i<lmHosts.numHost; i++){
-        if(lmHosts.hostArray[i] && AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
-            return lmHosts.hostArray[i];
+    int i;
+
+    for (i = 0; i < lmHosts.numHost; i++) {
+        if (lmHosts.hostArray[i]) {
+            if (strcasecmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress) == 0) {
+                return lmHosts.hostArray[i];
+            }
         }
     }
+
     return NULL;
 }
 PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 {
-    int i = 0;
-    for(; i<XlmHosts.numHost; i++){
-        if (strcasecmp(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress) == 0){
-            return XlmHosts.hostArray[i];
+    int i;
+
+    for (i = 0; i < XlmHosts.numHost; i++) {
+        if (XlmHosts.hostArray[i]) {
+            if (strcasecmp(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress) == 0) {
+                return XlmHosts.hostArray[i];
+            }
         }
     }
+
     return NULL;
 }
 
@@ -2548,11 +2556,11 @@ static PLmObjectHost Hosts_FindHostByIpAddress (char *ipAddr)
 {
     int i;
 
-    for (i = 0; i < lmHosts.numHost; i++)
-    {
-        if (lmHosts.hostArray[i] && AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ipAddr, FALSE))
-        {
-            return lmHosts.hostArray[i];
+    for (i = 0; i < lmHosts.numHost; i++) {
+        if (lmHosts.hostArray[i]) {
+            if (strcasecmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ipAddr) == 0) {
+                return lmHosts.hostArray[i];
+            }
         }
     }
 
@@ -3540,7 +3548,7 @@ void LM_get_host_state_behind_pod (void)
 
         if (pHost &&
             ((pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) || (strcmp(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], " ") == 0)) &&
-            AnscEqualString(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown", FALSE))
+            (strcasecmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == 0))
         {
             if (pHost->pStringParaValue[LM_HOST_IPAddressId])
             {
