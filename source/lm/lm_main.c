@@ -546,7 +546,7 @@ static void get_vendor_class_id (char* physAddress, char* vendor_class)
         {
             memset(client_mac, 0, sizeof(client_mac));
             sscanf(buffer, "%s", client_mac);
-            if(AnscEqualString(physAddress, client_mac, FALSE))
+            if (strcasecmp(physAddress, client_mac) == 0)
             {
                 tmp_vendor = strstr(buffer, " ");
                 if(tmp_vendor)
@@ -889,7 +889,7 @@ static void Hosts_FindHostByIPv4Address
     {
         for(j=0; j<lmHosts.hostArray[i]->numIPv4Addr; j++)
         {
-            if(AnscEqualString(ipv4Addr, lmHosts.hostArray[i]->ipv4AddrArray[j]->pStringParaValue[LM_HOST_IPAddress_IPAddressId], FALSE))
+            if (strcasecmp(ipv4Addr, lmHosts.hostArray[i]->ipv4AddrArray[j]->pStringParaValue[LM_HOST_IPAddress_IPAddressId]) == 0)
             {
                 if(!firstOne){
                     strcat(hostList, ",");
@@ -1439,7 +1439,7 @@ static PLmObjectHostIPAddress Add_Update_IPv4Address (PLmObjectHost pHost, char 
 	pPre = NULL;
 
    for(pCur = pIpAddrList; pCur != NULL; pPre = pCur, pCur = pCur->pNext){
-        if(AnscEqualString(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE)){
+        if (strcasecmp(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress) == 0){
 			break;
         }
     }
@@ -1654,7 +1654,7 @@ char *FindMACByIPAddress (char *ip_address)
 	{
 	    int i = 0;
 	    for(; i<lmHosts.numHost; i++){
-	        if(AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ip_address, TRUE)){
+	        if (strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ip_address) == 0){
 	            return lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId];
 	        }
 	    }		
@@ -1811,7 +1811,7 @@ Host_AddIPv6Address
     int i = 0;
     for(i=0; i<pHost->numIPv6Addr; i++){
         /* If IP address already exists, return. */
-        if(AnscEqualString(pHost->ipv6AddrArray[i]->pStringParaValue[LM_HOST_IPv6Address_IPAddressId],ipv6Address, FALSE))
+        if (strcasecmp(pHost->ipv6AddrArray[i]->pStringParaValue[LM_HOST_IPv6Address_IPAddressId], ipv6Address) == 0)
             return pHost->ipv6AddrArray[i];
     }
 
@@ -3760,7 +3760,7 @@ int Hosts_FindHostIndexByPhysAddress(char * physAddress)
 {
     int i = 0;
     for(; i<lmHosts.numHost; i++){
-        if(AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
+        if (strcasecmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress) == 0){
             return i;
         }
     }
@@ -4023,7 +4023,7 @@ PLmObjectHostIPAddress LM_FindIPv4BaseFromLink( PLmObjectHost pHost, char * ipAd
 
 	  for( pCur = pIpAddrList; pCur != NULL; pCur = pCur->pNext )
 	  {
-		if( AnscEqualString( pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress, FALSE ) )
+		if (strcasecmp(pCur->pStringParaValue[LM_HOST_IPAddress_IPAddressId], ipAddress) == 0)
 		{
 			return pCur;
 		}
@@ -4041,7 +4041,7 @@ PLmObjectHostIPAddress LM_FindIPv6BaseFromLink( PLmObjectHost pHost, char * ipAd
 
     for( pCur = pIpAddrList; pCur != NULL; pCur = pCur->pNext )
     {
-        if( AnscEqualString( pCur->pStringParaValue[LM_HOST_IPv6Address_IPAddressId], ipAddress, FALSE ) )
+        if (strcasecmp(pCur->pStringParaValue[LM_HOST_IPv6Address_IPAddressId], ipAddress) == 0)
         {
             return pCur;
         }
