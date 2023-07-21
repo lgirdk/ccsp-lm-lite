@@ -284,7 +284,7 @@ PLmPresenceDeviceInfo FindDeviceByPhysAddress(char * physAddress)
         {
             if (pobject->ppdevlist && pobject->ppdevlist[i])
             {
-                if(AnscEqualString(pobject->ppdevlist[i]->mac, physAddress, FALSE))
+                if (strcasecmp(pobject->ppdevlist[i]->mac, physAddress) == 0)
                 {
                     return pobject->ppdevlist[i];
                 }
@@ -367,7 +367,7 @@ int PresenceDetection_RemoveDevice(char *mac)
     {
         if (pobject->ppdevlist && pobject->ppdevlist[i])
         {
-            if(AnscEqualString(pobject->ppdevlist[i]->mac, mac, FALSE))
+            if (strcasecmp(pobject->ppdevlist[i]->mac, mac) == 0)
             {
                 pDev = pobject->ppdevlist[i];
                 pobject->ppdevlist[i] = NULL;
@@ -812,7 +812,7 @@ int CheckandupdatePresence(char *mac, int version, char *ipaddress,DeviceDetecti
             if (pobject->ppdevlist && pobject->ppdevlist[i])
             {
                 PLmPresenceDeviceInfo pobj = pobject->ppdevlist[i];
-                if(AnscEqualString(pobj->mac, mac, FALSE))
+                if (strcasecmp(pobj->mac, mac) == 0)
                 {
                     switch (version)
                     {

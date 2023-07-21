@@ -56,7 +56,7 @@ ANSC_STATUS CosaDmlGetHostPath(char *value, char *hostPath, ULONG hostPathSize)
             {
                 hostPathLen = strlen(hostPath);
                 
-                if ( AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId],value,TRUE))
+                if (strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], value) == 0)
                 {
                     dmLen = strlen(lmHosts.hostArray[i]->objectName);
                     
@@ -151,7 +151,7 @@ int IsLeaseAvailable(char* macaddr)
     {
         for (i = 0; i < array_size; i++)
         {     
-            if ( AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId],macaddr,TRUE) )
+            if (strcmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], macaddr) == 0)
             {
                 int leaseTimeRemaining = lmHosts.hostArray[i]->LeaseTime - time(NULL);
                 if (leaseTimeRemaining > 0)
