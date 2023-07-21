@@ -1535,7 +1535,7 @@ void lm_wrapper_get_dhcpv4_client()
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
             }
             
-            if((pHost->backupHostname)&&(pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+            if((pHost->backupHostname)&&(pHost->backupHostname[0]!='\0') && (strcmp(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId]) != 0))
                 {
                     rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]);
                     ERR_CHK(rc);
@@ -1651,7 +1651,7 @@ void lm_wrapper_get_dhcpv4_reserved()
                 }
             }
 
-			if((pHost->backupHostname)&&(pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+			if((pHost->backupHostname)&&(pHost->backupHostname[0]!='\0') && (strcmp(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId]) != 0))
                 {
 					rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]);
 					ERR_CHK(rc);
