@@ -1046,7 +1046,7 @@ static void Clean_Host_Table (void)
         PLmObjectHost pHost = lmHosts.hostArray[count];
 
         if((pHost->bBoolParaValue[LM_HOST_ActiveId] == FALSE) &&
-            (AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "DHCP", TRUE)) &&
+            (strcmp(pHost->pStringParaValue[LM_HOST_AddressSource], "DHCP") == 0) &&
             ((pHost->LeaseTime == 0xFFFFFFFF) || (currentTime >= (time_t)pHost->LeaseTime)))
         {
             CcspTraceWarning((" Freeing Host %s \n",pHost->pStringParaValue[LM_HOST_PhysAddressId]));
