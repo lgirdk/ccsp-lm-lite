@@ -1187,7 +1187,7 @@ Host_GetParamBoolValue
     //printf("Host_GetParamBoolValue %p, %s\n", hInsContext, ParamName);
 
     for(i = 0; i < LM_HOST_NumBoolPara; i++) {
-        if( AnscEqualString(ParamName, lmHosts.pHostBoolParaName[i], TRUE))
+        if (strcmp(ParamName, lmHosts.pHostBoolParaName[i]) == 0)
         {
             pthread_mutex_lock(&LmHostObjectMutex);
             *pBool = pHost->bBoolParaValue[i];
@@ -1397,7 +1397,7 @@ Host_GetParamUlongValue
     //printf("Host_GetParamUlongValue %p, %s\n", hInsContext, ParamName);
 
     for (i = 0; i < LM_HOST_NumUlongPara; i++) {
-        if ( AnscEqualString(ParamName, COSA_HOSTS_Extension1_Name, TRUE))
+        if (strcmp(ParamName, COSA_HOSTS_Extension1_Name) == 0)
         {
             time_t currentTime;
 
@@ -1411,7 +1411,7 @@ Host_GetParamUlongValue
             pthread_mutex_unlock(&LmHostObjectMutex); 
             return TRUE;
         }
-        else if( AnscEqualString(ParamName, lmHosts.pHostUlongParaName[i], TRUE))
+        else if (strcmp(ParamName, lmHosts.pHostUlongParaName[i]) == 0)
         {
             pthread_mutex_lock(&LmHostObjectMutex);
             *puLong = pHost->ulUlongParaValue[i];
@@ -2212,7 +2212,7 @@ Host_IPv4Address_GetParamStringValue
 
     for (i = 0; i < LM_HOST_IPv4Address_NumStringPara; i++)
     {
-        if (AnscEqualString (ParamName, lmHosts.pIPv4AddressStringParaName[i], TRUE))
+        if (strcmp(ParamName, lmHosts.pIPv4AddressStringParaName[i]) == 0)
         {
             rc = 0;
             value = pIPv4Address->pStringParaValue[i];

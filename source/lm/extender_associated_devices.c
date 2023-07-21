@@ -560,7 +560,7 @@ int GetWiFiApGetAssocDevicesData(int ServiceType)
 					}
 					else
 					{
-						if( AnscEqualString(curSsid->band,band_client, FALSE) )
+						if (strcasecmp(curSsid->band, band_client) == 0)
 						{
 							rc = strcpy_s(interfaceMAC, sizeof(interfaceMAC),curSsid->bssid);
 							ERR_CHK(rc);
