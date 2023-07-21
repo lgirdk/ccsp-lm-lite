@@ -1131,7 +1131,7 @@ Host_Synchronize
      * PandMSsp and LMLite will keep to wait the response from each other and it results deadlock.
      */
     gotEvent = getSysevent("get_from_manageable_device", out, sizeof(out));
-    if (((gotEvent == TRUE) && (!AnscEqualString(out, "true", TRUE))) ||
+    if (((gotEvent == TRUE) && (strcmp(out, "true") != 0)) ||
         (gotEvent == FALSE))
     {
         LM_get_host_info();
