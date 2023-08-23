@@ -3548,7 +3548,7 @@ void LM_get_host_state_behind_pod (void)
 
         if (pHost &&
             ((pHost->pStringParaValue[LM_HOST_AssociatedDeviceId] == NULL) || (strcmp(pHost->pStringParaValue[LM_HOST_AssociatedDeviceId], " ") == 0)) &&
-            (strcasecmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == 0))
+            ((pHost->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL) && (strcasecmp(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId], "Unknown") == 0)))
         {
             if (pHost->pStringParaValue[LM_HOST_IPAddressId])
             {
