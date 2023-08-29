@@ -3568,7 +3568,7 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 									RSSI,
 									Status));
 
-		LM_moca_cpe_t hosts;
+		LM_moca_cpe_t hosts = {0};
                 
                 /*CID:62979 Uninitialized scalar variable*/
                 memset (&hosts.parentMac, 0, sizeof(hosts.parentMac));
