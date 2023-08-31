@@ -2557,7 +2557,7 @@ static PLmObjectHost Hosts_FindHostByIpAddress (char *ipAddr)
     int i;
 
     for (i = 0; i < lmHosts.numHost; i++) {
-        if (lmHosts.hostArray[i]) {
+        if (lmHosts.hostArray[i] && lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId]) {
             if (strcasecmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_IPAddressId], ipAddr) == 0) {
                 return lmHosts.hostArray[i];
             }
