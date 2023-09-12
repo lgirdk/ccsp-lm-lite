@@ -1128,22 +1128,30 @@ static void Host_SetIPAddress (PLmObjectHostIPAddress pIP, int l3unReachableCnt,
 
 PLmObjectHost Hosts_FindHostByPhysAddress (char * physAddress)
 {
-    int i = 0;
-    for(; i<lmHosts.numHost; i++){
-        if(lmHosts.hostArray[i] && AnscEqualString(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
-            return lmHosts.hostArray[i];
+    int i;
+
+    for (i = 0; i < lmHosts.numHost; i++) {
+        if (lmHosts.hostArray[i] && lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]) {
+            if (strcasecmp(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress) == 0) {
+                return lmHosts.hostArray[i];
+            }
         }
     }
+
     return NULL;
 }
 PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 {
-    int i = 0;
-    for(; i<XlmHosts.numHost; i++){
-        if(AnscEqualString(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress, FALSE)){
-            return XlmHosts.hostArray[i];
+    int i;
+
+    for (i = 0; i < XlmHosts.numHost; i++) {
+        if (XlmHosts.hostArray[i] && XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]) {
+            if (strcasecmp(XlmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId], physAddress) == 0) {
+                return XlmHosts.hostArray[i];
+            }
         }
     }
+
     return NULL;
 }
 
