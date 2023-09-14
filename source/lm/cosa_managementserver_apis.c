@@ -17,8 +17,16 @@
 #include "cosa_managementserver_apis.h"
 #include "lm_main.h"
 #include <string.h>
+#include <sys/file.h>
+
 extern LmObjectHosts lmHosts;
 static ULONG countlines(char*);
+static void lock_clients_file(void);
+static void unlock_clients_file(void);
+#define DHCP_VENDOR_CLIENTS_LOCK "/tmp/.dhcp_vendor_clients_lock"
+static int lock_fd;
+
+
 /**********************************************************************
     function:
         CosaDmlGetHostPath
@@ -237,6 +245,35 @@ PCOSA_DML_MANG_DEV CosaDmlGetManageableDevices(ULONG *tableEntryCount, char *fil
     return pMangDevTable;
 
 }
+
+
+static void lock_clients_file(void)
+{
+  lock_fd = open(DHCP_VENDOR_CLIENTS_LOCK, O_RDONLY | O_CREAT, 0666);
+  if (lock_fd < 0) {
+    fprintf(stderr,"Can't open/create file %s",  errno, DHCP_VENDOR_CLIENTS_LOCK);
+    return;
+  }
+
+  if (flock(lock_fd, LOCK_EX) < 0) {
+    fprintf(stderr,"Error %d closing file %s'",  errno, DHCP_VENDOR_CLIENTS_LOCK);
+    return;
+  }
+  return;
+}
+
+static void unlock_clients_file(void)
+{
+  if (flock(lock_fd, LOCK_UN) < 0)
+  {
+    fprintf(stderr,"Error %d open/create file %s",  errno, DHCP_VENDOR_CLIENTS_LOCK);
+  }
+  if (close(lock_fd) < 0)
+  {
+    fprintf(stderr,"Error %d closing file %s",  errno, DHCP_VENDOR_CLIENTS_LOCK);
+  }
+  return;
+}
 /**********************************************************************
     function:
         buildDhcpVendorClientsFile
@@ -254,6 +291,7 @@ void buildDhcpVendorClientsFile()
     FILE *fpv4 = NULL;
     FILE *fp = NULL;
     char buffer[MAX_BUFFER_SIZE]="";
+    lock_clients_file();
     fpv4 = fopen(DHCP_VENDOR_CLIENT_V4_PATH,"r");
     if ( fpv4 )
     {
@@ -268,6 +306,7 @@ void buildDhcpVendorClientsFile()
         }
         fclose(fpv4);
     }
+    unlock_clients_file();
     return;
 
 }
