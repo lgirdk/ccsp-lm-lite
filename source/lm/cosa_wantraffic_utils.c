@@ -573,13 +573,11 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
 {
     if ( (DscpTree != NULL) && (CliList != NULL) )
     {
-        for(UINT k=0; k<CliList->numElements; k++)
-        {
-            if(DscpTree->Dscp == CliList->DSCP_Element[k].dscp_value)
+            if(DscpTree->Dscp == CliList->DSCP_Element[DscpTree->Dscp].dscp_value)
             {
                 UINT count = 0;
                 UINT dscpIndex = DscpTree->NumClients;
-                UINT cliIndex = CliList->DSCP_Element[k].numClients;
+                UINT cliIndex = CliList->DSCP_Element[DscpTree->Dscp].numClients;
 
                 if( (cliIndex == 0) && (dscpIndex > 0) )
                 {
@@ -616,21 +614,21 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                             INT ind = -1;
                             rc = strcmp_s(DscpTree->ClientList[j].Mac,
                                           strlen(DscpTree->ClientList[j].Mac),
-                                          CliList->DSCP_Element[k].Client[i].mac, &ind);
+                                          CliList->DSCP_Element[DscpTree->Dscp].Client[i].mac, &ind);
                             ERR_CHK(rc);
                             //Update existing client
                             if ((rc == EOK) && (!ind))
                             {
                                 DscpTree->ClientList[j].RxBytes =
-                                                CliList->DSCP_Element[k].Client[i].rxBytes -
+                                                CliList->DSCP_Element[DscpTree->Dscp].Client[i].rxBytes -
                                                 DscpTree->ClientList[j].RxBytesTot;
                                 DscpTree->ClientList[j].TxBytes =
-                                                CliList->DSCP_Element[k].Client[i].txBytes -
+                                                CliList->DSCP_Element[DscpTree->Dscp].Client[i].txBytes -
                                                 DscpTree->ClientList[j].TxBytesTot;
                                 DscpTree->ClientList[j].RxBytesTot =
-                                                CliList->DSCP_Element[k].Client[i].rxBytes;
+                                                CliList->DSCP_Element[DscpTree->Dscp].Client[i].rxBytes;
                                 DscpTree->ClientList[j].TxBytesTot =
-                                                CliList->DSCP_Element[k].Client[i].txBytes;
+                                                CliList->DSCP_Element[DscpTree->Dscp].Client[i].txBytes;
                                 DscpTree->ClientList[j].IsUpdated = TRUE;
                                 DscpTree->IsUpdated = TRUE;
                                 count++;
@@ -648,16 +646,16 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                         if (j == dscpIndex)
                         {
                             memcpy(DscpTree->ClientList[j].Mac,
-                                   CliList->DSCP_Element[k].Client[i].mac,
-                                   sizeof(CliList->DSCP_Element[k].Client[i].mac));
+                                   CliList->DSCP_Element[DscpTree->Dscp].Client[i].mac,
+                                   sizeof(CliList->DSCP_Element[DscpTree->Dscp].Client[i].mac));
                             DscpTree->ClientList[j].RxBytes =
-                                        CliList->DSCP_Element[k].Client[i].rxBytes;
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].rxBytes;
                             DscpTree->ClientList[j].TxBytes =
-                                        CliList->DSCP_Element[k].Client[i].txBytes;
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].txBytes;
                             DscpTree->ClientList[j].RxBytesTot =
-                                        CliList->DSCP_Element[k].Client[i].rxBytes;
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].rxBytes;
                             DscpTree->ClientList[j].TxBytesTot =
-                                        CliList->DSCP_Element[k].Client[i].txBytes;
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].txBytes;
                             DscpTree->ClientList[j].IsUpdated = TRUE;
                             DscpTree->NumClients++;
                             DscpTree->IsUpdated = TRUE;
@@ -681,6 +679,9 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                     }
                 }
             }
+        else
+        {
+            WTC_LOG_INFO("Values are not hashed with dscp as index \n");
         }
         DscpTree->Left = InsertClient(DscpTree->Left, CliList);
         DscpTree->Right = InsertClient(DscpTree->Right, CliList);
