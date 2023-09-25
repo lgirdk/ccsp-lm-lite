@@ -114,7 +114,7 @@ static RETURN_STATUS WTC_RbusSubscribe(UINT index);
 static VOID  WTC_RbusUnsubscribe(UINT index);
 static VOID  WTC_CreateThread(VOID);
 static VOID* WTC_Thread();
-static VOID  WTC_DeInit(BOOL doUnSubscribe);
+static VOID  WTC_DeInit(UINT index, BOOL doUnSubscribe);
 static VOID  WTC_EventHandler(rbusHandle_t handle, rbusEvent_t const* event,
                                 rbusEventSubscription_t* subscription);
 static inline CHAR* WTC_ThreadStateToStr(eWTCThreadState_t threadState);
@@ -833,16 +833,20 @@ static RETURN_STATUS WTC_SendTrafficCountRbus
 **********************************************************************/
 static VOID WTC_DeInit
     (
+        UINT index,
         BOOL doUnSubscribe
     )
 {
-    UINT index = WTCinfo->WanMode-1;
-
     //Intimate Hal to stop monitoring
-    if ( RETURN_OK != platform_hal_setDscp(WTCinfo->WanMode, TRAFFIC_CNT_STOP,
+    if ( RETURN_OK != platform_hal_setDscp(index + 1, TRAFFIC_CNT_STOP,
                               WanTrafficCountInfo_t[index]->EnabledDSCPList) )
     {
-        WTC_LOG_ERROR("Platform Stop call Failure");
+        WTC_LOG_ERROR("Platform Stop call failed!");
+    }
+
+    if ( RETURN_OK != platform_hal_resetDscpCounts(index + 1) )
+    {
+        WTC_LOG_ERROR("Platform reset call failed!");
     }
 
     if(WanTrafficCountInfo_t[index])
@@ -1248,7 +1252,6 @@ static VOID WTC_CreateThread
 static VOID* WTC_Thread()
 {
     eWTCThreadState_t  thrdState = WTC_THRD_NONE;
-    DSCP_list_t CliList;
     errno_t rc = -1;
     /* CID: 280269  Out-of-bounds access (OVERRUN) */
     UINT index = 0;
@@ -1420,7 +1423,7 @@ static VOID* WTC_Thread()
                 WTC_SetThreadStatus(index, WTC_THRD_RUNNING);
                 break;
             case WTC_THRD_SUSPEND:
-                WTC_DeInit(FALSE);
+                WTC_DeInit(index, FALSE);
                 WTC_SetThreadStatus(index, WTC_THRD_SUSPENDED);
                 WTCinfo->WanMode = GetEthWANIndex();
               /*  CID: 280133 Out-of-bounds read (OVERRUN) */
@@ -1431,7 +1434,7 @@ static VOID* WTC_Thread()
                 sleep(DEFAULT_THREAD_SLEEP);
                 continue;
             case WTC_THRD_DISMISS:
-                WTC_DeInit(TRUE);
+                WTC_DeInit(index, TRUE);
                 WTC_SetThreadStatus(index, WTC_THRD_DISMISSED);
                 WTCinfo->WanMode = GetEthWANIndex();
 
