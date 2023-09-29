@@ -80,6 +80,10 @@
 
 #define ETH_WAN_ENABLE_STRING    "eth_wan_enabled"
 
+#ifdef _SR300_PRODUCT_REQ_
+extern rbusHandle_t rbus_handle;
+#endif
+
 static UINT EnabledDscpCount = 0;
 
 static INT SetMemoryslab(INT i);
@@ -111,7 +115,80 @@ CHAR* RemoveSpaces(CHAR *str)
     str[j] = '\0';
     return str;
 }
+#ifdef _SR300_PRODUCT_REQ_
+/**********************************************************************
+    function:
+        GetCurrentActiveInterface
+    description:
+        This function is called to get active interface from rbus
+    output argument:
+        CHAR*    str,    interface name which is active
+    return:
+        INT    status
+**********************************************************************/
+INT GetCurrentActiveInterface(CHAR *ifname)
+{
+    rbusValue_t value;
+    int rc = RBUS_ERROR_SUCCESS;
+    char* val = NULL, *token = NULL, c;
 
+    rc = rbus_get(rbus_handle, TR181_ACTIVE_INTERFACE, &value);
+
+    if(rc == RBUS_ERROR_SUCCESS)
+    {
+        val = rbusValue_ToString(value,0,0);
+        if(val)
+        {
+            if(strlen(val) > 0)
+            {
+                WTC_LOG_INFO("WAN Interfaces status = %s",val);
+            }
+            else
+            {
+                WTC_LOG_INFO("rbus val is empty for active interface");
+                return 0;
+            }
+        }
+        else
+        {
+            WTC_LOG_INFO("rbus val NULL for active interface");
+            return 0;
+        }
+    }
+    else
+    {
+        WTC_LOG_INFO("rbus get failed for %s", TR181_ACTIVE_INTERFACE);
+        return 0;
+    }
+
+   //DSL,1|WANOE,0|ADSL,0
+    token = strtok(val, "|"); 
+    while (token != NULL) 
+    {
+        c = token[strlen(token)-1]; // last char in token
+        if(c == '1') 
+        {
+            if((strlen(token)-2) < BUFLEN_64) 
+            {
+                strncpy(ifname, token, strlen(token)-2); 
+                WTC_LOG_INFO("Current active interface = %s",ifname);
+                return 1;
+            }
+            else
+            {
+                WTC_LOG_INFO("Active interface is invalid");
+                return 0;
+            }
+        }
+        token = strtok(NULL, "|");
+    }
+    
+    WTC_LOG_INFO("Getting current active interface failed");
+
+    return 0;
+
+}
+#endif
 /**********************************************************************
     function:
         GetEthWANIndex
@@ -127,6 +204,38 @@ WAN_INTERFACE GetEthWANIndex(VOID)
 {
     errno_t rc = -1;
     INT ind = -1;
+
+    #ifdef _SR300_PRODUCT_REQ_
+    /* Use wan manager data model and rbus APIS for sky platform
+    "Device.X_RDK_WanManager.InterfaceActiveStatus"
+    //DSL,0|WANOE,0|ADSL,0 -> Initial value
+    //DSL,1|WANOE,0|ADSL,0 -> when DSL is up(vdsl or adsl) -> Interface.1
+    //DSL,0|WANOE,1|ADSL,0 -> when WANoE is up -> Interface.2
+    */
+    CHAR active_interface_name[BUFLEN_64]={'\0'};
+    if(GetCurrentActiveInterface(active_interface_name) == 1)
+    {
+
+        rc = strcmp_s(active_interface_name, strlen(active_interface_name), "WANOE", &ind);
+        ERR_CHK(rc);
+        if ((rc == EOK) && (!ind))
+        {
+            WTC_LOG_INFO("EWAN Mode");
+            return EWAN;
+        }
+        else
+        {
+            WTC_LOG_INFO("DSL Mode");
+            return DSL;
+        }
+    }
+    else 
+    {
+        WTC_LOG_INFO("Active interface is INVALID");
+        return INVALID_MODE;
+    }
+    // other platforms which uses ETH_WAN_ENABLE_STRING
+    #else
     CHAR eth_wan_enabled[BUFLEN_64]={'\0'};
     if(syscfg_get(NULL,ETH_WAN_ENABLE_STRING,eth_wan_enabled,sizeof(eth_wan_enabled)) == 0 )
     {
@@ -148,6 +257,7 @@ WAN_INTERFACE GetEthWANIndex(VOID)
         WTC_LOG_ERROR("Syscfg_get failed to get wan mode");
         return INVALID_MODE;
     }
+    #endif
 }
 
 /**********************************************************************

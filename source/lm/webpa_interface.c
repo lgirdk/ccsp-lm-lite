@@ -49,6 +49,11 @@
 #include <utapi/utapi_util.h>
 #endif
 
+#ifdef _SR300_PRODUCT_REQ_
+#include <cosa_wantraffic_api.h>
+extern pstWTCInfo_t WTCinfo;
+#endif
+
 extern ANSC_HANDLE bus_handle;
 static pthread_mutex_t webpa_mutex = PTHREAD_MUTEX_INITIALIZER;
 #if 0
@@ -72,7 +77,11 @@ static int check_ethernet_wan_status();
 #endif
 
 #ifdef WAN_FAILOVER_SUPPORTED
+#ifdef _SR300_PRODUCT_REQ_
+rbusHandle_t rbus_handle;
+#else
 static rbusHandle_t rbus_handle;
+#endif
 
 static void eventReceiveHandler(
     rbusHandle_t rbus_handle,
@@ -600,6 +609,32 @@ static void eventReceiveHandler(
 				else {	
 		       			CcspTraceError(("ReportSourceNDT value is NULL\n"));
 				}
+
+                    #ifdef _SR300_PRODUCT_REQ_
+                    if((strstr(newActiveInterface, "WANOE") != NULL) || 
+                        (strstr(newActiveInterface, "DSL") != NULL ) ||
+                         (strstr(newActiveInterface, "ADSL") != NULL )) 
+                            
+                    {
+                        CcspTraceInfo(("newActiveInterface is : %s\n", newActiveInterface));
+                        if(WTCinfo)
+                        {
+                            pthread_mutex_lock(&WTCinfo->WanTrafficMutexVar);    
+                            if((strstr(newActiveInterface, "WANOE")))
+                                WTCinfo->WanMode = EWAN;
+                            else
+                                WTCinfo->WanMode = DSL;
+                            WTCinfo->WTCConfigFlag[WTCinfo->WanMode-1] |= WTC_WANMODE_CHANGE;
+                            pthread_mutex_unlock(&WTCinfo->WanTrafficMutexVar);
+                            WTC_ApplyStateChange();
+                            CcspTraceInfo(("Setting WAN mode change!!!\n"));
+                        }
+                        else
+                        {
+                            CcspTraceInfo(("WTCinfo is NULL!!!\n"));
+                        }
+                    }
+                    #endif
 		}
 		else {
 			CcspTraceError(("newActiveInterface is NULL\n"));

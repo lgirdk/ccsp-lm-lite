@@ -149,7 +149,11 @@ VOID WTC_Init
             WTCinfo->SubscribeRefCount = 0;
             WTCinfo->LanMode = IsBridgeMode();
             WTCinfo->WanMode = GetEthWANIndex();
-            if ((INVALID_MODE == WTCinfo->LanMode) || (INVALID_MODE == WTCinfo->WanMode) )
+            #ifdef _SR300_PRODUCT_REQ_
+            if ((INVALID_MODE == WTCinfo->LanMode))
+            #else
+            if ((INVALID_MODE == WTCinfo->LanMode) || (INVALID_MODE == WTCinfo->WanMode))
+            #endif
             {
                 WTC_LOG_ERROR("INVALID LAN/WAN MODE %d/%d", WTCinfo->LanMode, WTCinfo->WanMode);
                 free(WTCinfo);
