@@ -1080,7 +1080,7 @@ RET1:
 }
 #endif
 
-#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
+#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_) && !defined(_COSA_QCA_ARM_)
 /*
    Note that there are two versions of _get_shell_output() used with RDKB.
    This version, which accepts a char * command as the first argument, is
@@ -1117,7 +1117,7 @@ int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount,
    // snprintf(buf, sizeof(buf), "ip nei show | grep %s | grep -v 192.168.10 > %s", netName, ARP_CACHE_FILE);
 
     // XB6/XF3 Do not have this interface. Remove constant warnings.
-#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_)
+#if !defined(INTEL_PUMA7) && !defined(_COSA_BCM_MIPS_) && !defined(_COSA_BCM_ARM_) && !defined(_PLATFORM_TURRIS_) && !defined(_COSA_QCA_ARM_)
     // This is added to remove atom mac from the connected device list.
     if (pAtomBRMac[0] == '\0' || pAtomBRMac[0] == ' ') {
         fp = v_secure_popen("r","ifconfig l2sd0 | grep HWaddr | awk '{print $5}' | cut -c 1-14");
