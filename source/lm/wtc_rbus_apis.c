@@ -241,7 +241,7 @@ BOOL Stats_GetParamStringValue
 
     if (strcmp(ParamName, "DscpCountEnable") == 0)
     {
-        if(!WTC_GetConfig("DscpEnabledList", pValue, *pUlSize, client->InstanceNum))
+        if(!CosaGetCfg("DscpEnabledList", pValue, client->InstanceNum))
         {
             if(RBUS_ERROR_SUCCESS == WTC_EventPublish(WTC_DCSPCOUNTENABLE, pValue, client->InstanceNum))
             {
@@ -338,7 +338,7 @@ BOOL Stats_GetParamUlongValue
     if (strcmp(ParamName, "DscpCountInterval") == 0)
     {
         CHAR buf[BUFLEN_32] = {0};
-        if(!WTC_GetConfig("DscpSleepInterval", buf, sizeof(buf), client->InstanceNum))
+        if(!CosaGetCfg("DscpSleepInterval", buf, client->InstanceNum))
         {
             *pInt = atoi(buf);
             WTC_LOG_INFO("Sleep Interval = %lu", *pInt);
@@ -397,7 +397,7 @@ BOOL Stats_SetParamStringValue
             WTC_LOG_ERROR("Invalid dscp");
             return FALSE;
         }
-        if(WTC_SetConfig("DscpEnabledList", pString, client->InstanceNum))
+        if(CosaSetCfg("DscpEnabledList", pString, client->InstanceNum))
         {
             WTC_LOG_ERROR("syscfg set failure, return");
             return TRUE;
@@ -464,7 +464,7 @@ BOOL Stats_SetParamUlongValue
             return FALSE;
         }
 
-        if(WTC_SetConfig("DscpSleepInterval", buf, client->InstanceNum))
+        if(CosaSetCfg("DscpSleepInterval", buf, client->InstanceNum))
         {
             WTC_LOG_ERROR("syscfg set failure, return");
             return TRUE;

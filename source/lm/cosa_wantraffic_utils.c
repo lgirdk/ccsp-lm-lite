@@ -92,12 +92,7 @@ static pstDSCPInfo_t InsertDscpNode(pstDSCPInfo_t DscpTree, UINT dscp);
 static pstDSCPInfo_t DeleteDisabledDscp(pstDSCPInfo_t DscpTree);
 static pstDSCPInfo_t DeleteDisabledClients(pstDSCPInfo_t DscpTree);
 
-#if 0
- // Retaining these changes as backup incase of future need.
-static pstDSCPInfo_t InsertDscpNode(pstDSCPInfo_t DscpTree, UINT dscp,
-                                    pstDSCPInfo_t* tail, INT* opCount, INT* flowReverse);
-static pstDSCPInfo_t DeleteDisabledDscp(pstDSCPInfo_t DscpTree, pstDSCPInfo_t* inorderPrev);
-#endif
+
 /**********************************************************************
     function:
         RemoveSpaces
@@ -315,7 +310,7 @@ INT IsBridgeMode(VOID)
 **********************************************************************/
 static INT SetMemoryslab(INT i)
 {
-    return (!!i) * CLIENT_ALLOC_SLAB * ((i/CLIENT_ALLOC_SLAB)+1);
+    return (!!i) * CLIENT_ALLOC_SLAB * ((i/10)+1);
 }
 
 /**********************************************************************
@@ -362,12 +357,9 @@ static pstDSCPInfo_t NewNode(UINT Dscp)
     DscpNode->NumClients = 0;
     DscpNode->Left = NULL;
     DscpNode->Right = NULL;
-#if 0
-    DscpNode->Next = NULL;
-#endif
     DscpNode->ClientList = NULL;
     DscpNode->IsUpdated = TRUE;
-    DscpNode->MemorySlab = 0;
+    DscpNode->MemorySlab = CLIENT_ALLOC_SLAB;
     return DscpNode;
 }
 
@@ -384,7 +376,7 @@ static pstDSCPInfo_t NewNode(UINT Dscp)
 **********************************************************************/
 static pstDSCPInfo_t InsertDscpNode(pstDSCPInfo_t DscpTree, UINT dscp)
 {
-    if (!DscpTree)
+    if (DscpTree == NULL)
         return NewNode(dscp);
 
     if(dscp == DscpTree->Dscp)
@@ -401,87 +393,6 @@ static pstDSCPInfo_t InsertDscpNode(pstDSCPInfo_t DscpTree, UINT dscp)
     return DscpTree;
 }
 
-#if 0
-/**********************************************************************
-    function:
-        InsertDscpNode
-    description:
-        This function is called to Insert a new Dscp node to the DSCP tree.
-    argument:
-        pstDSCPInfo_t    DscpTree       -  Dscp tree
-        UINT             dscp           -  Dscp value
-        pstDSCPInfo_t    tail           -  The previous node in the inorder traversed.
-        INT*             opCount        -  Counter for performing 2 ops after new node creation.
-        INT*             flowReverse    -  Flag to notify the unwinding flow of tree traversal. 
-    return:
-        pstDSCPInfo_t
-**********************************************************************/
-static pstDSCPInfo_t InsertDscpNode(pstDSCPInfo_t DscpTree, UINT dscp,
-                                    pstDSCPInfo_t* tail, INT* opCount, INT* flowReverse)
-{
-    int skipTailing = 0;
-
-    if (!DscpTree)
-    {
-       if  (!(*flowReverse = !!(DscpTree = NewNode(dscp))))
-       {
-            return NULL;
-       }
-    }
-    else if(dscp == DscpTree->Dscp)
-    {
-        WTC_LOG_INFO("Dscp node already exists, Dscp = %d",DscpTree->Dscp);
-        DscpTree->IsUpdated = TRUE;
-        *opCount = 0;
-        return DscpTree;
-    }
-
-    if (dscp < DscpTree->Dscp)
-    {
-        DscpTree->Left = InsertDscpNode(DscpTree->Left, dscp, tail, opCount, flowReverse);
-    }
-    else
-    {   // Since we skipped the left traversal, avoid the tail linking below.
-        skipTailing = 1;
-    }
-
-    if (*opCount)
-    {
-        if ((!skipTailing || dscp == DscpTree->Dscp) && *tail)
-        {
-            WTC_LOG_INFO("[DBG-ToBeRemoved] %d -> %d", (*tail)->Dscp, DscpTree->Dscp);
-            (*tail)->Next = DscpTree;
-        }
-        *tail = DscpTree;
-        *opCount = (*flowReverse)? (*opCount)-1 : *opCount;
-    }
-
-    if (dscp > DscpTree->Dscp)
-    {
-        DscpTree->Right = InsertDscpNode(DscpTree->Right, dscp, tail, opCount, flowReverse);
-    }
-
-    return DscpTree;
-}
-
-/*
-static pstDSCPInfo_t LinearizeDscpTree(pstDSCPInfo_t DscpTree, pstDSCPInfo_t* tail)
-{
-    if (DscpTree->Left)
-        LinearizeDscpTree(DscpTree->Left, tail);
-
-    if (*tail)
-        (*tail)->Next = DscpTree;
-
-    *tail = DscpTree;
-
-    if (DscpTree->Right)
-        LinearizeDscpTree(DscpTree->Right, tail);
-
-    return DscpTree;
-}
-*/
-#endif
 /**********************************************************************
     function:
         ResetIsUpdatedFlag
@@ -547,7 +458,7 @@ pstDSCPInfo_t UpdateDscpCount(CHAR* Enabled_DSCP_List, pstDSCPInfo_t DscpTree)
 **********************************************************************/
 pstDSCPInfo_t DeleteDscpTree(pstDSCPInfo_t DscpTree)
 {
-    if (!DscpTree)
+    if (DscpTree == NULL)
         return DscpTree;
     else if (DscpTree->Left != NULL)
         DeleteDscpTree(DscpTree->Left);
@@ -556,12 +467,10 @@ pstDSCPInfo_t DeleteDscpTree(pstDSCPInfo_t DscpTree)
     else
     {
         if (DscpTree->ClientList != NULL)
-        {
             free(DscpTree->ClientList);
-            DscpTree->ClientList = NULL;
-        }
         free(DscpTree);
-        DscpTree = NULL;
+	/* CID: 279988  Use after free (USE_AFTER_FREE) */
+	return NULL;
     }
     return DscpTree;
 }
@@ -578,7 +487,7 @@ pstDSCPInfo_t DeleteDscpTree(pstDSCPInfo_t DscpTree)
 **********************************************************************/
 static pstDSCPInfo_t DeleteDisabledDscp(pstDSCPInfo_t DscpTree)
 {
-    if (!DscpTree)
+    if (DscpTree == NULL)
     {
         WTC_LOG_INFO("DscpTree NULL");
         return NULL;
@@ -610,113 +519,13 @@ static pstDSCPInfo_t DeleteDisabledDscp(pstDSCPInfo_t DscpTree)
             temp->Left = DscpTree->Left;
         }
         free(DscpTree);
-        DscpTree = temp;
+        DscpTree = NULL;
         EnabledDscpCount--;
+        return temp;
     }
     return DscpTree;
 }
 
-#if 0
-/**********************************************************************
-    function:
-        DeleteDisabledDscp
-    description:
-        This function is called to delete the disabled Dscp nodes.
-    argument:
-        pstDSCPInfo_t    DscpTree       -  Dscp tree
-        pstDSCPInfo_t*   inorderPrev    -  The previous node in the inorder traversal.
-    return:
-        pstDSCPInfo_t
-**********************************************************************/
-static pstDSCPInfo_t DeleteDisabledDscp(pstDSCPInfo_t DscpTree, pstDSCPInfo_t* inorderPrev)
-{
-    pstDSCPInfo_t prev = NULL;
-
-    if (!DscpTree)
-    {
-        return NULL;
-    }
-
-    DscpTree->Left = DeleteDisabledDscp(DscpTree->Left, inorderPrev);
-    /* Storing the inorder previous node, local to the current stack(node), as it might get
-     * changed during the right sub-tree traversal.
-     */
-    {
-        prev = *inorderPrev;
-        *inorderPrev = DscpTree;
-    }
-
-    DscpTree->Right = DeleteDisabledDscp(DscpTree->Right, inorderPrev);
-
-    if (DscpTree->IsUpdated == FALSE)
-    {
-        pstDSCPInfo_t temp = NULL;
-        if (!DscpTree->Left && !DscpTree->Right)
-        {    // Make current stack's previous as the next stack's previous
-             *inorderPrev = prev;
-        }
-
-        if (DscpTree->Left == NULL)
-        {      // Replacement node
-            if ((temp = DscpTree->Right ))
-            {
-                if (prev)
-                {
-                    WTC_LOG_INFO("[DBG-ToBeRemoved]  p %d -> %d", prev->Dscp, temp->Dscp);
-                    // Linear continuity for node with right child
-                    prev->Next = temp;
-                }
-            }
-            else if (prev)
-            {
-                // Linear continuity for leaf node
-                prev->Next = DscpTree->Next;
-            }
-        }
-        else if (DscpTree->Right == NULL)
-        {       // Replacement node
-            if ((temp = DscpTree->Left)) {
-               WTC_LOG_INFO("[DBG-ToBeRemoved]  ii %d -> %d", temp->Dscp, DscpTree->Dscp);
-
-               while(temp->Right) temp = temp->Right;
-               // Linear continuity
-               temp->Next = DscpTree->Next;
-               // Tree node replacement
-               temp = DscpTree->Left;
-            }
-        }
-        else
-        {
-            pstDSCPInfo_t temparent = DscpTree;
-            /* Finding the replacement of a node with 2 child. One right and the left most is the
-             * rule of replacement.
-             */
-            temp = DscpTree->Right;
-            if (temp->Left)
-            {
-               while (temparent=temp, temp = temp->Left, temp->Left);
-
-               temparent->Left = temp->Right;
-               temp->Right = DscpTree->Right;
-            }
-            temp->Left = DscpTree->Left;
-
-            // Finding the previous node in the linear sequence.
-            {
-               pstDSCPInfo_t linear = DscpTree->Left;
-
-               while(temparent=linear, (linear=linear->Right));
-               temparent->Next = temp;
-             WTC_LOG_INFO("[DBG-ToBeRemoved]  iii %d -> %d", temparent->Dscp, temp->Dscp);
-            }
-        }
-        free(DscpTree);
-        DscpTree = temp;
-        EnabledDscpCount--;
-    }
-    return DscpTree;
-}
-#endif
 /**********************************************************************
     function:
         DeleteDisabledClients
@@ -770,44 +579,30 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                 UINT dscpIndex = DscpTree->NumClients;
                 UINT cliIndex = CliList->DSCP_Element[DscpTree->Dscp].numClients;
 
-                if( (cliIndex > 0) || (dscpIndex > 0) )
+                if( (cliIndex == 0) && (dscpIndex > 0) )
                 {
-                  UINT resetMemorySlab = 0;
+                    //No clients in new incoming and but had few clients in the past iterations
+                   free(DscpTree->ClientList);
+                   DscpTree->ClientList = NULL;
+                }
 
-                  do
-                  {
-                    if( ((INT)(DscpTree->MemorySlab - cliIndex)) < 0 || resetMemorySlab )
+                if(cliIndex > 0)
+                {
+                    if( (((DscpTree->MemorySlab-cliIndex)/CLIENT_ALLOC_SLAB)>0) || (dscpIndex==0) )
                     {
-                        if ( !(DscpTree->MemorySlab = SetMemoryslab(cliIndex)) )
-                        {
-                            DscpTree->NumClients = 0;
-                        }
-
-                        // Below logic takes care of alloc, realloc and freeing of client list.
-                        if ( !(DscpTree->ClientList = (stClientInfo_t*)realloc(DscpTree->ClientList,
-                                                DscpTree->MemorySlab * sizeof(stClientInfo_t)))
-                             && DscpTree->MemorySlab )
+                        DscpTree->MemorySlab = SetMemoryslab(cliIndex);
+                        DscpTree->ClientList = (stClientInfo_t *) realloc (DscpTree->ClientList,
+                                                DscpTree->MemorySlab * sizeof(stClientInfo_t));
+                        if (DscpTree->ClientList == NULL)
                         {
                             WTC_LOG_ERROR("Realloc failure.");
                             return DscpTree;
                         }
-
-                        WTC_LOG_INFO("[DSCP-%d] Memory Slab : %d", DscpTree->Dscp
-                                                                 , DscpTree->MemorySlab);
-                        if ( resetMemorySlab )
-                        {
-                            break;
-                        }
-                    }
-                    else if ( (DscpTree->MemorySlab - cliIndex) >= CLIENT_ALLOC_SLAB )
-                    {
-                         resetMemorySlab = 1;
-
-                         if ( !cliIndex )
-                         {
-                             // this is a better flow for the client list free() case.
-                             continue;
-                         }
+                        errno_t rc = -1;
+                        rc = memset_s(DscpTree->ClientList,
+                                      DscpTree->MemorySlab * sizeof(stClientInfo_t),
+                                      0, DscpTree->MemorySlab * sizeof(stClientInfo_t));
+                        ERR_CHK(rc);
                     }
 
                     for(UINT i=0; i<cliIndex; i++)
@@ -847,55 +642,27 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                                 break;
                             }
                         }
-                    }
-
-                    // Remove stale client entries
-                    if (dscpIndex > count)
-                    {
-                        DeleteDisabledClients(DscpTree);
-                    }
-
-                    // Add new client entries
-                    if (cliIndex > count)
-                    {
-                        for(UINT i=0; i<cliIndex; i++)
+                        //New Client added
+                        if (j == dscpIndex)
                         {
-                            UINT j;
-                            for(j=0; j<DscpTree->NumClients; j++)
-                            {
-                                errno_t rc = -1;
-                                INT ind = -1;
-                                rc = strcmp_s(DscpTree->ClientList[j].Mac,
-                                              strlen(DscpTree->ClientList[j].Mac),
-                                              CliList->DSCP_Element[k].Client[i].mac, &ind);
-                                ERR_CHK(rc);
-
-                                if ((rc == EOK) && (!ind))
-                                {
-                                    break;
-                                }
-                            }
-
-                            //New Client addition
-                            if (j == DscpTree->NumClients)
-                            {
-                                memcpy(DscpTree->ClientList[j].Mac,
-                                       CliList->DSCP_Element[k].Client[i].mac,
-                                       sizeof(CliList->DSCP_Element[k].Client[i].mac));
-                                DscpTree->ClientList[j].RxBytes =
-                                          CliList->DSCP_Element[k].Client[i].rxBytes;
-                                DscpTree->ClientList[j].TxBytes =
-                                          CliList->DSCP_Element[k].Client[i].txBytes;
-                                DscpTree->ClientList[j].RxBytesTot =
-                                          CliList->DSCP_Element[k].Client[i].rxBytes;
-                                DscpTree->ClientList[j].TxBytesTot =
-                                          CliList->DSCP_Element[k].Client[i].txBytes;
-                                DscpTree->ClientList[j].IsUpdated = TRUE;
-                                DscpTree->NumClients++;
-                                DscpTree->IsUpdated = TRUE;
-                                WTC_LOG_INFO("j = %d, Dscp = %d, MAC = %s, RxBytes = %lu,"
-                                             "TxBytes = %lu, RxBytesTot = %lu, TxBytesTot = %lu,"
-                                             "Is_Updated = %d",
+                            memcpy(DscpTree->ClientList[j].Mac,
+                                   CliList->DSCP_Element[DscpTree->Dscp].Client[i].mac,
+                                   sizeof(CliList->DSCP_Element[DscpTree->Dscp].Client[i].mac));
+                            DscpTree->ClientList[j].RxBytes =
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].rxBytes;
+                            DscpTree->ClientList[j].TxBytes =
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].txBytes;
+                            DscpTree->ClientList[j].RxBytesTot =
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].rxBytes;
+                            DscpTree->ClientList[j].TxBytesTot =
+                                        CliList->DSCP_Element[DscpTree->Dscp].Client[i].txBytes;
+                            DscpTree->ClientList[j].IsUpdated = TRUE;
+                            DscpTree->NumClients++;
+                            DscpTree->IsUpdated = TRUE;
+                            dscpIndex = DscpTree->NumClients;
+                            WTC_LOG_INFO("j = %d, Dscp = %d, MAC = %s, RxBytes = %lu,"
+                                         "TxBytes = %lu, RxBytesTot = %lu, TxBytesTot = %lu,"
+                                         "Is_Updated = %d",
                                               j, DscpTree->Dscp,
                                               DscpTree->ClientList[j].Mac,
                                               DscpTree->ClientList[j].RxBytes,
@@ -903,15 +670,18 @@ pstDSCPInfo_t InsertClient(pstDSCPInfo_t DscpTree, pDSCP_list_t CliList)
                                               DscpTree->ClientList[j].RxBytesTot,
                                               DscpTree->ClientList[j].TxBytesTot,
                                               DscpTree->IsUpdated);
-                            }
                         }
                     }
-                  } while (resetMemorySlab);
+
+                    if (dscpIndex > cliIndex)
+                    {
+                        DeleteDisabledClients(DscpTree);
+                    }
                 }
             }
         else
         {
-            WTC_LOG_INFO("Values are not hashed with dscp as index \n");
+            WTC_LOG_INFO("Values are not hashed with dscp as index.");
         }
         DscpTree->Left = InsertClient(DscpTree->Left, CliList);
         DscpTree->Right = InsertClient(DscpTree->Right, CliList);

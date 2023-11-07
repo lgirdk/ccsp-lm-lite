@@ -119,10 +119,6 @@
  #define UINT    unsigned int
 #endif
 
-#ifndef INT
- #define INT     int
-#endif
-
 #ifndef CHAR
  #define CHAR    char
 #endif
@@ -187,45 +183,44 @@ typedef enum _eWTCConfig_t {
                STRUCTURE DEFINITIONS
 **********************************************************************/
 typedef struct _stWTCInfo_t {
-    UCHAR                 WTCConfigFlag[SUPPORTED_WAN_MODES];
-    BOOL                  LanMode;
-    WAN_INTERFACE         WanMode;
-    UINT                  SubscribeRefCount;
-    pthread_t             WanTrafficThreadId;
-    pthread_mutex_t       WanTrafficMutexVar;
-    rbusHandle_t          handle;
+    UCHAR             WTCConfigFlag[SUPPORTED_WAN_MODES];
+    BOOL              LanMode;
+    WAN_INTERFACE     WanMode;
+    UINT              SubscribeRefCount;
+    pthread_t         WanTrafficThreadId;
+    pthread_mutex_t   WanTrafficMutexVar;
+    rbusHandle_t      handle;
 } stWTCInfo_t, *pstWTCInfo_t;
 
 typedef struct _stClientInfo_t {
-    BOOL                  IsUpdated;
-    CHAR                  Mac[BUFLEN_24];
-    ULONG                 RxBytes;
-    ULONG                 TxBytes;
-    ULONG                 RxBytesTot;
-    ULONG                 TxBytesTot;
+    BOOL    IsUpdated;
+    CHAR    Mac[BUFLEN_24];
+    ULONG   RxBytes;
+    ULONG   TxBytes;
+    ULONG   RxBytesTot;
+    ULONG   TxBytesTot;
 } stClientInfo_t,  *pstClientInfo_t;
 
-typedef struct _stDSCPInfo_t  {
+typedef struct stDSCPInfo_t  {
     BOOL                  IsUpdated;
     UINT                  Dscp;
     UINT                  NumClients;
     UINT                  MemorySlab;
-    struct _stDSCPInfo_t  *Left, *Right; //  BST mode
-    //struct _stDSCPInfo_t  *Next;         //  Sorted Linear List Mode
-    pstClientInfo_t       ClientList;    //  Contains contiguous list of ClientInfo
+    struct stDSCPInfo_t   *Left, *Right;
+    pstClientInfo_t       ClientList; //  Contains contiguous list of ClientInfo
 }  stDCSPInfo_t,  *pstDSCPInfo_t;
 
 typedef struct _stWanTrafficCountInfo_t {
-    BOOL                  IsRbusSubscribed;
-    BOOL                  IsDscpListSet;
-    BOOL                  IsSleepIntvlSet;
-    UINT                  NumElements;
-    UINT                  InstanceNum;
-    UINT                  SleepInterval;
-    CHAR*                 EnabledDSCPList;
-    eWTCThreadState_t     ThreadState;
-    eWTCThreadStatus_t    ThreadStatus;
-    pstDSCPInfo_t         DscpTree;
+    BOOL                 IsRbusSubscribed;
+    BOOL                 IsDscpListSet;
+    BOOL                 IsSleepIntvlSet;
+    UINT                 NumElements;
+    UINT                 InstanceNum;
+    UINT                 SleepInterval;
+    CHAR*                EnabledDSCPList;
+    eWTCThreadState_t    ThreadState;
+    eWTCThreadStatus_t   ThreadStatus;
+    pstDSCPInfo_t        DscpTree;
 } stWanTrafficCountInfo_t, *pstWanTrafficCountInfo_t;
 
 
@@ -236,20 +231,20 @@ typedef struct _stWanTrafficCountInfo_t {
 
 /**********************************************************************
     function:
-        WTC_SetConfig
+        CosaSetCfg
     description:
         This function is called to set syscfg parameters.
 **********************************************************************/
-RETURN_STATUS WTC_SetConfig(CHAR *param, CHAR* value, WAN_INTERFACE ethWanMode);
+RETURN_STATUS CosaSetCfg(CHAR *param, CHAR* value, WAN_INTERFACE ethWanMode);
 
 
 /**********************************************************************
     function:
-        WTC_GetConfig
+        CosaGetCfg
     description:
         This function is called to get syscfg parameters.
 **********************************************************************/
-RETURN_STATUS WTC_GetConfig(CHAR *param, CHAR* value, ULONG valueLen, WAN_INTERFACE ethWanMode);
+RETURN_STATUS CosaGetCfg(CHAR *param, CHAR* value, WAN_INTERFACE ethWanMode);
 
 
 /**********************************************************************
