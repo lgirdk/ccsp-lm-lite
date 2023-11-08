@@ -593,6 +593,18 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	memset(addressSource,0,sizeof(addressSource));
 	memset(IPAddress,0,sizeof(IPAddress));
 	memset(interface,0,sizeof(interface));
+
+		if (strcmp(pHost->pStringParaValue[LM_HOST_HostNameId], "unknown") == 0)
+		{
+			char HostName[50];
+			// This will be true only if we have a valid hostname in dnsmasq.leases file.
+			// If the hostname is * or space we will not modify pHost->pStringParaValue[LM_HOST_HostNameId] value rather keep it as unknown
+			if (get_HostName(pHost->pStringParaValue[LM_HOST_PhysAddressId], HostName, sizeof(HostName)) == 1)
+			{
+				LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), HostName);
+			}
+		}
+
 		if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )	
 		{
 			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
