@@ -581,6 +581,14 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 	memset(addressSource,0,sizeof(addressSource));
 	memset(IPAddress,0,sizeof(IPAddress));
 	memset(interface,0,sizeof(interface));
+
+		if (strcmp(pHost->pStringParaValue[LM_HOST_HostNameId], "unknown") == 0)
+		{
+			char HostName[50] = {0};
+			get_HostName(pHost->pStringParaValue[LM_HOST_PhysAddressId], HostName);
+			LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), HostName);
+		}
+
 		if ( ! pHost->pStringParaValue[LM_HOST_IPAddressId] )	
 		{
 			 getIPAddress(pHost->pStringParaValue[LM_HOST_PhysAddressId], IPAddress);
