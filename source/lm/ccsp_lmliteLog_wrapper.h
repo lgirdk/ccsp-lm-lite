@@ -29,12 +29,15 @@ extern FILE* debugLogFile;
 /*
  * Logging wrapper APIs g_Subsystem
  */
+
+/* CID 135317 135579 Large stack use fix */
+
 #ifdef CcspTraceBaseStr
 #undef CcspTraceBaseStr
 #endif
 #define  CcspTraceBaseStr(arg ...)                                                                  \
             do {                                                                                    \
-                if (snprintf(pTempChar1, 4095, arg) > (int)sizeof(pTempChar1)) {              \
+                if (snprintf(pTempChar1, 4095, arg) > 4095) {                                       \
                     if(consoleDebugEnable) fprintf(debugLogFile, "%s: truncation while copying arg to pTempChar1 \n", __FUNCTION__);  \
                 }                                                                                   \
             } while (FALSE)
@@ -42,7 +45,8 @@ extern FILE* debugLogFile;
 
 #define  CcspLMLiteConsoleTrace(msg)                                                             \
 {\
-		    char pTempChar1[4096]; 							\
+        char* pTempChar1 = (char*)malloc(4096 * sizeof(char));                       \
+        if (pTempChar1 != NULL) {                                                              \
                     CcspTraceBaseStr msg;                                                           \
                     if(consoleDebugEnable)                                                          \
                     {\
@@ -50,11 +54,14 @@ extern FILE* debugLogFile;
                         fprintf(debugLogFile, "%s", pTempChar1);                                    \
                         fflush(debugLogFile);                                                       \
                     }\
+                    free(pTempChar1);  \
+        }                                                                             \
 }
 
 #define  CcspLMLiteTrace(msg)                                                                    \
 {\
-		    char pTempChar1[4096]; 							\
+        char* pTempChar1 = (char*)malloc(4096 * sizeof(char));                       \
+        if (pTempChar1 != NULL) {                                                    \
                     CcspTraceBaseStr msg;                                                           \
                     if(consoleDebugEnable)                                                          \
                     {\
@@ -63,11 +70,14 @@ extern FILE* debugLogFile;
                         fflush(debugLogFile);                                                       \
                     }\
                     Ccsplog3("com.cisco.spvtg.ccsp.harvester", (pTempChar1));  \
+                    free(pTempChar1);  \
+        }                                                                             \
 }
 
 #define  CcspLMLiteEventTrace(msg)                                                               \
 {\
-		    char pTempChar1[4096];							\
+        char* pTempChar1 = (char*)malloc(4096 * sizeof(char));                       \
+        if (pTempChar1 != NULL) {                                                              \
                     CcspTraceBaseStr msg;                                                           \
                     if(consoleDebugEnable)                                                          \
                     {\
@@ -76,6 +86,8 @@ extern FILE* debugLogFile;
                         fflush(debugLogFile);                                                       \
                     }\
                     Ccsplog3("com.cisco.spvtg.ccsp.harvester", (pTempChar1));  \
+                    free(pTempChar1);  \
+        }                                                                             \
 }
 
 

@@ -498,7 +498,7 @@ char * getDeviceMac()
 
 #ifdef WAN_FAILOVER_SUPPORTED
 static bool isRbus = false ;
-char newSource[72] = { '\0' };
+char newSource[512] = { '\0' };
 
 //Checking the Rbus active status
 bool checkRbusEnabled()
@@ -534,7 +534,7 @@ LMLITE_STATUS lmliteRbusInit(const char *pComponentName)
 char* get_ActiveInterface(char *interface) {
     char* token;
     int n = -1;
-    char activeInterface[64] = { '\0' };
+    char activeInterface[256] = { '\0' };
     char interfaceUp[10][16] = { '\0' };
     char c;
     char buffer[256] = { '\0' };
@@ -553,9 +553,18 @@ char* get_ActiveInterface(char *interface) {
 	    token = strtok(NULL, "|");
     } 	    
     
-    for(i=0; i<=n; i++) {
-	    snprintf(buffer, sizeof(buffer), "%s,", interfaceUp[i]); // appending all active interface with comma
-	    strcat(activeInterface, buffer);  
+    for(i=0; i<=n; i++)
+    {
+        snprintf(buffer, sizeof(buffer), "%s,", interfaceUp[i]); // appending all active interface with comma
+        /* CID 281056 Calling risky function */
+        if((strlen(buffer)+strlen(activeInterface)) < sizeof(activeInterface))
+        {
+            strcat(activeInterface, buffer);
+        }
+        else
+        {
+            CcspTraceInfo((" LMLite <%s> <%d > Error in coping %s\n",__FUNCTION__,__LINE__, buffer));
+        }
     } 
     if(strlen(activeInterface) > 0) {
             len = strlen(activeInterface);

@@ -553,8 +553,8 @@ void delete_partial_list_ndt()
         	list->parent = NULL;
         	free(list->device_type); 
         	list->device_type = NULL;               
-        	free(list);
-        	list = NULL;
+                /*CID 340771 Unused value fix */
+		free(list);
 		if( prev!= NULL )
 			prev->next = next;
 	}

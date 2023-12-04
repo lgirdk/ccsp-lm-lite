@@ -36,6 +36,8 @@
 #include "report_common.h"
 #include <stdint.h>
 
+extern pthread_mutex_t LmHostObjectMutex;
+
 LMHOSTS_DEVICE_PRESENCE_DETECTION_FUNC pclbk = NULL;
 
 int Hosts_InitPresenceDetection()
@@ -115,6 +117,10 @@ int Hosts_UpdatePresenceDetectionParam(LmHostPresenceDetectionParam *pParam, Hos
 {
     if (!pParam)
         return -1;
+
+    /*CID 340068 340170 340335 340421 340402 Data race condition*/
+    pthread_mutex_lock(&LmHostObjectMutex);
+
     switch (flag)
     {
         case HOST_PRESENCE_IPV4_ARP_LEAVE_INTERVAL:
@@ -154,6 +160,8 @@ int Hosts_UpdatePresenceDetectionParam(LmHostPresenceDetectionParam *pParam, Hos
         default:
         break;
     }
+
+    pthread_mutex_unlock(&LmHostObjectMutex);
     return 0;
 }
 

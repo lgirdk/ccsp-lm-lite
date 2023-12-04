@@ -502,7 +502,8 @@ char* NDS_GetIpAddress(PLmObjectHost host)
                 strncat(dest, pIpv4address, ipv4_len);
                 if (pIpv6addressindex1 || pIpv6addressindex3)
                 {
-                    strcat(dest," ");
+                    /* CID 172827 Calling risky function */
+		    strncat(dest," ",1);
                 }
             }
 
@@ -511,7 +512,7 @@ char* NDS_GetIpAddress(PLmObjectHost host)
                 strncat(dest, pIpv6addressindex1, ipv6_index1_len);
                 if (pIpv6addressindex3)
                 {
-                    strcat(dest," ");
+                    strncat(dest," ",1);
                 }
             }
 

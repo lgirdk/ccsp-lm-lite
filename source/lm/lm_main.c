@@ -769,7 +769,8 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 				   {
 					/* CID :257716 Resource leak */
 					int fd;
-					if ((fd = creat("/tmp/.conn_cli_flag",S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0)
+					/* CID 257720 Time of check time of use */
+					if ((fd = open("/tmp/.conn_cli_flag", O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0)
                                         {
                                             close(fd);
                                         }
@@ -2229,6 +2230,8 @@ static void *Event_HandlerThread(void *threadid)
         buffer[bytes_read] = '\0';
 
         memcpy(&EventMsg,buffer,sizeof(EventMsg));
+        /* CID 339816 String not null terminated */
+        EventMsg.Msg[MAX_SIZE_EVT-1] = '\0';
         do_dhcpsync = FALSE;
 
         if(EventMsg.MsgType == MSG_TYPE_ETH)
@@ -2648,7 +2651,7 @@ static void *Hosts_LoggingThread(void *args)
 		t2_event_d("Total_Ethernet_Clients_split", TotalEthDev);
 		t2_event_d("Total_MoCA_Clients_split", TotalMoCADev);
 	
-		TotalDevCount = 0;
+		/* CID 340337 Unused value fix */
 		TotalOnlineDev = 0;
 		TotalOffLineDev = 0;
 		TotalWiFiDev = 0;

@@ -66,6 +66,8 @@
 
 #include "lm_api.h"
 
+#define BUFLEN_256                  256
+
 int Utopia_set_lan_host_comments(UtopiaContext *ctx, unsigned char *pMac, unsigned char *pComments);
 int lm_wrapper_priv_stop_scan()
 {
@@ -110,9 +112,10 @@ void lm_wrapper_priv_getLanHostComments(char *physAddress, char *pComments)
 
 		p = strchr(buffer, '+');
 		if(p!=NULL)
-        {
-			strcpy(pComments,p+1);
-		}
+                {
+		    /* CID 52991 Calling risky function */
+		    snprintf(pComments, BUFLEN_256 -1, "%s", (p+1));
+	        }
 	}
 
     return;

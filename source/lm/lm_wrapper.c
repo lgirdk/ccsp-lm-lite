@@ -1306,7 +1306,11 @@ pthread_mutex_lock(&HostNameMutex);
     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname \n"));
     while(1)
     {
-    sleep(HOST_NAME_RETRY_INTERVAL);
+
+	/* CID 135289 Waiting while holding a lock */
+	pthread_mutex_unlock(&HostNameMutex);
+	sleep(HOST_NAME_RETRY_INTERVAL);
+	pthread_mutex_lock(&HostNameMutex);
         if(!(fp = v_secure_popen("r", "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE)))
         {
             CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: v_secure_popen() failed \n" ));

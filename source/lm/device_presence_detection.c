@@ -893,6 +893,8 @@ void *ReceiveIpv4ClientStatus(void *args)
             {
                 buffer[bytes_read] = '\0';
                 memcpy(&EventMsg,buffer,sizeof(EventMsg));
+                /* CID 340286 String not null terminated */
+                EventMsg.mac[MAC_SIZE-1] = '\0';
 
                 if(EventMsg.MsgType == MSG_TYPE_DNS_PRESENCE)
                 {
@@ -1145,7 +1147,9 @@ void read_event(int sock)
          * Because, safec has the limitation of copying only 4k ( RSIZE_MAX ) to destination pointer
          * And here, we have destination and source pointer size more than 4k, i.e 65536
          */
-        strcpy(buffer1,NLMSG_DATA((struct nlmsghdr *) buffer));
+        /* CID 57216 Calling risky function */
+        strncpy(buffer1, NLMSG_DATA((struct nlmsghdr *) buffer), size);
+        buffer1[size-1] = '\0';
         CcspTraceDebug(("buffer1: %s\n", buffer1));
         token = strtok_r(buffer1, ",", &st);
         if(token != NULL)

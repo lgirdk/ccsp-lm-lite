@@ -1252,6 +1252,12 @@ static VOID* WTC_Thread()
     errno_t rc = -1;
     /* CID: 280269  Out-of-bounds access (OVERRUN) */
     UINT index = 0;
+    /* CID 280141 Branch past initialization */
+    BOOL doDismiss = FALSE;
+    BOOL isDscpUpdated = FALSE;
+    CHAR dscpStr[BUFLEN_256] = {0};
+    CHAR dscpStr_1[BUFLEN_256] = {0};
+    CHAR *dscpStr_2 = NULL;
 
     if(WTCinfo->WanMode)
     {
@@ -1277,11 +1283,11 @@ static VOID* WTC_Thread()
             case WTC_THRD_INITIALIZE:
             {
                 WTC_LOG_INFO("Thread in INITIALIZE state");
-                BOOL doDismiss = FALSE;
-                BOOL isDscpUpdated = FALSE;
-                CHAR dscpStr[BUFLEN_256] = {0};
-                CHAR dscpStr_1[BUFLEN_256] = {0};
-                CHAR *dscpStr_2;
+                doDismiss = FALSE;
+                isDscpUpdated = FALSE;
+                dscpStr[0] = '\0';
+                dscpStr_1[0] = '\0';
+                dscpStr_2 = NULL;
 
                 WTC_SetThreadStatus(index, WTC_THRD_INITIALIZING);
 

@@ -81,7 +81,8 @@ extern int getTimeOffsetFromUtc();
 #ifdef WAN_FAILOVER_SUPPORTED
 void set_ReportSourceNDT(char * value)
 {
-     strncpy(ReportSourceNDT, value, sizeof(ReportSourceNDT));
+    /* CID 281036 Buffer not null terminated */
+    snprintf(ReportSourceNDT, sizeof(ReportSourceNDT), "%s", value);
 }
 
 char * get_ReportSourceNDT(void)
