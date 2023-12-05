@@ -901,7 +901,9 @@ static pstDSCPInfo_t PrintDscpTree
 {
     if (DscpTree)
     {
-        ULONG lOffset = 0;
+        ULONG lOffset  = 0;
+        ULONG rx_in_KB = 0;
+        ULONG tx_in_KB = 0;
 
         PrintDscpTree(pValue, pUlSize, offset, countPerInterval, DscpTree->Left);
 
@@ -916,20 +918,21 @@ static pstDSCPInfo_t PrintDscpTree
 
             if (countPerInterval)
             {
-                if ((DscpTree->ClientList[i].RxBytes!=0) || (DscpTree->ClientList[i].TxBytes!=0))
-                {
-                    lOffset += snprintf(gPrintBuf + lOffset, *pUlSize - lOffset, "|%s,%lu,%lu",
-                                        DscpTree->ClientList[i].Mac,
-                                        DscpTree->ClientList[i].RxBytes / UNIT_KB,
-                                        DscpTree->ClientList[i].TxBytes / UNIT_KB);
-                }
+                rx_in_KB = DscpTree->ClientList[i].RxBytes / UNIT_KB;
+                tx_in_KB = DscpTree->ClientList[i].TxBytes / UNIT_KB;
             }
             else
             {
+                rx_in_KB = DscpTree->ClientList[i].RxBytesTot / UNIT_KB;
+                tx_in_KB = DscpTree->ClientList[i].TxBytesTot / UNIT_KB;
+            }
+
+            if (rx_in_KB || tx_in_KB)
+            {
                 lOffset += snprintf(gPrintBuf + lOffset, *pUlSize - lOffset, "|%s,%lu,%lu",
                                     DscpTree->ClientList[i].Mac,
-                                    DscpTree->ClientList[i].RxBytesTot / UNIT_KB,
-                                    DscpTree->ClientList[i].TxBytesTot / UNIT_KB);
+                                    tx_in_KB,
+                                    rx_in_KB);
             }
         }
 
