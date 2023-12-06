@@ -1323,6 +1323,8 @@ pthread_mutex_lock(&HostNameMutex);
     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname \n"));
     while(1)
     {
+        char *p;
+
     sleep(HOST_NAME_RETRY_INTERVAL);
         if(!(fp = v_secure_popen("r", "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE)))
         {
@@ -1333,6 +1335,13 @@ pthread_mutex_lock(&HostNameMutex);
       
     while(fgets(output, sizeof(output), fp)!=NULL);
     v_secure_pclose(fp);
+
+    /* Remove trailing newline */
+    if ((p = strchr(output, '\n')))
+    {
+        *p = 0;
+    }
+
     rc = STRCPY_S_NOCLOBBER(HostName, 50,output);
     if(rc != EOK)
     {
