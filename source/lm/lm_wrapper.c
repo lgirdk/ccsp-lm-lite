@@ -1323,6 +1323,7 @@ pthread_mutex_lock(&HostNameMutex);
     CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname \n"));
     while(1)
     {
+        char *p;
 
 	/* CID 135289 Waiting while holding a lock */
 	pthread_mutex_unlock(&HostNameMutex);
@@ -1337,6 +1338,13 @@ pthread_mutex_lock(&HostNameMutex);
       
     while(fgets(output, sizeof(output), fp)!=NULL);
     v_secure_pclose(fp);
+
+    /* Remove trailing newline */
+    if ((p = strchr(output, '\n')))
+    {
+        *p = 0;
+    }
+
     rc = STRCPY_S_NOCLOBBER(HostName, 50,output);
     if(rc != EOK)
     {
