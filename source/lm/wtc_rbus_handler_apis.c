@@ -114,18 +114,52 @@ rbusError_t WTC_TableUlongSetHandler(rbusHandle_t handle, rbusProperty_t propert
     {
         // Get pointer to Wan traffic table instance
         pstWanTrafficCountInfo_t p_WanTrafficTable = WanTrafficCountInfo_t[instNum-1];
-        rc = Stats_SetParamUlongValue(p_WanTrafficTable, param, rbusValue_GetUInt32(val));
-        free(param);
-        if(!rc)
+        if(val)
         {
-            WTC_LOG_ERROR("Stats_SetParamUlongValue failed");
-            return RBUS_ERROR_INVALID_INPUT;
+            if(rbusValue_GetType(val) == RBUS_UINT32)
+            {
+	        rc = Stats_SetParamUlongValue(p_WanTrafficTable, param, rbusValue_GetUInt32(val));
+                free(param);
+                if(!rc)
+                {
+                    WTC_LOG_ERROR("Stats_SetParamUlongValue failed");
+                    return RBUS_ERROR_INVALID_INPUT;
+                }
+            }
+	    else
+	    {
+                WTC_LOG_ERROR("%s result:FAIL error:'unexpected type %d'\n", __FUNCTION__, rbusValue_GetType(val));
+                if(param != NULL)
+                {
+                    free(param);
+                    param=NULL;
+                }
+                return RBUS_ERROR_INVALID_INPUT;
+	    }
+        }
+        else
+        {
+             if(param != NULL)
+             {
+                 WTC_LOG_ERROR("%s result:FAIL value=NULL param='%s'\n", __FUNCTION__, param);
+                 free(param);
+                 param=NULL;
+             }
+             else
+             {
+                 WTC_LOG_ERROR("%s param is NULL\n", __FUNCTION__);
+             }
+             return RBUS_ERROR_INVALID_INPUT;
         }
     }
     else
     {
         WTC_LOG_ERROR("Invalid instance '%d' requested", instNum);
-        free(param);
+        if(param != NULL)
+        {
+            free(param);
+            param=NULL;
+        }
         return RBUS_ERROR_INVALID_INPUT;
     }
     return RBUS_ERROR_SUCCESS;
@@ -312,9 +346,20 @@ rbusError_t WTC_TableStringSetHandler(rbusHandle_t handle, rbusProperty_t proper
     int ret;
     unsigned int instNum;
     char const* propName = rbusProperty_GetName(property);
-    char* param = strdup(GetParamName(propName));
     rbusValue_t val = rbusProperty_GetValue(property);
-    char* pValue = strdup(rbusValue_GetString(val,NULL));
+    rbusValueType_t type;
+    if(val) 
+    {
+        type = rbusValue_GetType(val);
+    } 
+    else
+    {
+	WTC_LOG_ERROR("Invalid input to set\n");
+        return RBUS_ERROR_INVALID_INPUT;
+    }
+
+    char* pValue = rbusValue_ToString(val,NULL,0);
+    char* param = strdup(GetParamName(propName));
     WTC_LOG_INFO("Called for [%s]", param);
 
     ret = sscanf(propName, "Device.X_RDK_WAN.Interface.%d.", &instNum);
@@ -324,16 +369,36 @@ rbusError_t WTC_TableStringSetHandler(rbusHandle_t handle, rbusProperty_t proper
     {
         // Get pointer to Wan traffic table instance
         pstWanTrafficCountInfo_t p_WanTrafficTable = WanTrafficCountInfo_t[instNum-1];
-        rc = Stats_SetParamStringValue(p_WanTrafficTable, param, pValue);
-        free(param);
-        param = NULL;
-        free(pValue);
-        pValue = NULL;
-        if(!rc)
-        {
-            WTC_LOG_ERROR("Stats_SetParamStringValue failed");
-            return RBUS_ERROR_INVALID_INPUT;
+
+        if((pValue != NULL) && (type == RBUS_STRING))
+	{
+            rc = Stats_SetParamStringValue(p_WanTrafficTable, param, pValue);
+            free(param);
+            param = NULL;
+            free(pValue);
+            pValue = NULL;
+            if(!rc)
+            {
+                WTC_LOG_ERROR("Stats_SetParamStringValue failed");
+                return RBUS_ERROR_INVALID_INPUT;
+            }
         }
+        else
+        {
+            WTC_LOG_ERROR("%s result:FAIL error:'unexpected type '\n", __FUNCTION__);
+            if(param != NULL)
+            {
+            	free(param);
+            	param = NULL;
+            }
+            
+            if(pValue != NULL)
+            {
+                free(pValue);
+                pValue = NULL;
+            }
+            return RBUS_ERROR_INVALID_INPUT;
+	}
     }
     else
     {
