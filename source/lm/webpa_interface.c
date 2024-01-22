@@ -559,7 +559,7 @@ char* get_ActiveInterface(char *interface) {
         /* CID 281056 Calling risky function */
         if((strlen(buffer)+strlen(activeInterface)) < sizeof(activeInterface))
         {
-            strcat(activeInterface, buffer);
+            strncat(activeInterface, buffer,sizeof(activeInterface) - strlen(activeInterface));
         }
         else
         {
