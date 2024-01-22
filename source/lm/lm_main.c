@@ -770,7 +770,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 					/* CID :257716 Resource leak */
 					int fd;
 					/* CID 257720 Time of check time of use */
-					if ((fd = open("/tmp/.conn_cli_flag", O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)) >= 0)
+					if ((fd = open("/tmp/.conn_cli_flag", O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH | O_CLOEXEC)) >= 0)
                                         {
                                             close(fd);
                                         }
