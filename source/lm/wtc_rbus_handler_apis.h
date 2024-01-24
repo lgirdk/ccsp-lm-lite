@@ -21,7 +21,7 @@
 #ifndef  _WTC_RBUS_HANDLER_APIS_H
 #define  _WTC_RBUS_HANDLER_APIS_H
 
-#include <rbus.h>
+#include <rbus/rbus.h>
 
 rbusError_t WTC_TableUlongGetHandler(rbusHandle_t handle, rbusProperty_t property,
                                      rbusGetHandlerOptions_t* opts);

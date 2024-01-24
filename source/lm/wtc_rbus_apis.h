@@ -39,7 +39,7 @@
 
 
 #include "ansc_platform.h"
-#include <rbus.h>
+#include <rbus/rbus.h>
 
 rbusError_t WTC_RbusInit
     (
