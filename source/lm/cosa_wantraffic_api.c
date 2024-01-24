@@ -72,7 +72,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <rbus.h>
+#include <rbus/rbus.h>
 
 #include "ansc_platform.h"
 #include "ccsp_lmliteLog_wrapper.h"
