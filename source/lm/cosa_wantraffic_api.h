@@ -70,7 +70,7 @@
 #ifndef  _COSA_WANTRAFFIC_API_H
 #define  _COSA_WANTRAFFIC_API_H
 
-#include <rbus.h>
+#include <rbus/rbus.h>
 #include "platform_hal.h"
 
 
