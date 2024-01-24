@@ -2237,12 +2237,13 @@ static void *Event_HandlerThread(void *threadid)
         if(EventMsg.MsgType == MSG_TYPE_ETH)
         {
             memcpy(&EthHost,EventMsg.Msg,sizeof(EthHost));
+            /* CID 339816 String not null terminated */
+            EthHost.MacAddr[sizeof(EthHost.MacAddr) - 1] = '\0';
 
             pthread_mutex_lock(&LmHostObjectMutex);
             pHost = Hosts_FindHostByPhysAddress(EthHost.MacAddr);
-            if ( !pHost )
-            {
-                pHost = Hosts_AddHostByPhysAddress(EthHost.MacAddr);
+            if ( !pHost ) 
+            {    pHost = Hosts_AddHostByPhysAddress(EthHost.MacAddr);
 
                 if ( pHost )
                 {
