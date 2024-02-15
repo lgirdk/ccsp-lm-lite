@@ -1423,7 +1423,7 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
            ((CCSP_MESSAGE_BUS_INFO *)bus_handle)->freefunc(strValue);
         }
 
-        if(strstr((const char *)dhcpHost.ipAddr, ip) && AnscEqualString((char *)dhcpHost.phyAddr,pHost->pStringParaValue[LM_HOST_PhysAddressId],FALSE))
+        if (strstr((const char *)dhcpHost.ipAddr, ip) && (strcasecmp((char *)dhcpHost.phyAddr, pHost->pStringParaValue[LM_HOST_PhysAddressId]) == 0))
         {
             pthread_mutex_lock(&XLmHostObjectMutex);
 
@@ -1515,9 +1515,9 @@ void lm_wrapper_get_dhcpv4_client()
         if ( pHost )
         {
             PRINTD("%s: %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.hostName);
-	if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_AddressSource], "Static", TRUE))
+	if (strcmp(pHost->pStringParaValue[LM_HOST_AddressSource], "Static") != 0)
 	{
-            if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE)){
+            if (strcasecmp(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId]) != 0){
                 rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
                 ERR_CHK(rc);
             }
@@ -1528,7 +1528,7 @@ void lm_wrapper_get_dhcpv4_client()
                 LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_HostNameId]), (char *)dhcpHost.hostName);
 
             
-            if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+            if((pHost->backupHostname[0]!='\0') && (strcmp(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId]) != 0))
                 {
                     rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]);
                     ERR_CHK(rc);
@@ -1618,7 +1618,7 @@ void lm_wrapper_get_dhcpv4_reserved()
         if ( pHost )
         {
             PRINTD("%s: %s %s %s\n", __FUNCTION__, dhcpHost.phyAddr, dhcpHost.ipAddr, dhcpHost.hostName);
-			if(!AnscEqualString(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId], FALSE)){
+			if (strcasecmp(pHost->pStringParaValue[LM_HOST_PhysAddressId], pHost->pStringParaValue[LM_HOST_HostNameId]) != 0){
 				rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]); // hostanme change id.
 				ERR_CHK(rc);
             }
@@ -1644,7 +1644,7 @@ void lm_wrapper_get_dhcpv4_reserved()
                 }
             }
 
-			if((pHost->backupHostname[0]!='\0') && (!AnscEqualString(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId], TRUE)))
+			if((pHost->backupHostname[0]!='\0') && (strcmp(pHost->backupHostname, pHost->pStringParaValue[LM_HOST_HostNameId]) != 0))
                 {
 					rc = strcpy_s(pHost->backupHostname, sizeof(pHost->backupHostname),pHost->pStringParaValue[LM_HOST_HostNameId]);
 					ERR_CHK(rc);
