@@ -16,6 +16,7 @@
 #include "cosa_managementserver_dml.h"
 #if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
 static time_t lastModifiedv4 = {0};
+static time_t lastModifiedv6 = {0};
 static BOOL findAndUpdateMatchedEntry(COSA_DATAMODEL_REPORTS*, PCOSA_DML_MANG_DEV);
 static ANSC_STATUS CosaSListPushEntryByInsNum(PSLIST_HEADER, PCOSA_CONTEXT_LINK_OBJ);
 #endif
@@ -173,20 +174,33 @@ ManageableDevice_IsUpdated
 
 #if defined(DEVICE_GATEWAY_ASSOCIATION_FEATURE)
     int retValv4 = 0;
+    int retValv6 = 0;
+
     struct stat fileStatv4 = {0};
+    struct stat fileStatv6 = {0};
     PCOSA_CONTEXT_LINK_OBJ              pCxtLink          = NULL;
     PSINGLE_LINK_ENTRY                  pSListEntry       = NULL;
     PCOSA_DML_MANG_DEV                  pMangDevEntry     = NULL;
     int                                leaseUpdated = 0;
-    retValv4 = stat(DHCP_VENDOR_CLIENT_V4_PATH, &fileStatv4);
+    retValv4 = stat(DHCP_VENDOR_CLIENT_V4_PATH, &fileStatv4); //"/tmp/dhcp_vendor_clients.txt"
+    retValv6 = stat(DIBBLER_VENDOR_CLIENT_V6_XML, &fileStatv6); ///tmp/dibbler/server-AddrMgr.xml
     
-    if (retValv4 == 0)
+    if ((retValv4 == 0) || (retValv6 == 0))
     {
         /* Check whether the file is modified or not. */
-        if ( lastModifiedv4 != fileStatv4.st_mtime )
+        if ((lastModifiedv4 != fileStatv4.st_mtime) || (lastModifiedv6 != fileStatv6.st_mtime))
         {
+            if (lastModifiedv4 != fileStatv4.st_mtime)
+            {
+                lastModifiedv4 = fileStatv4.st_mtime;
+            }
+            //Get DHCPv6 clients from /tmp/dibbler/server-AddrMgr.xml
+            if (lastModifiedv6 != fileStatv6.st_mtime)
+            {
+                vendorClientV6XMLParser(DIBBLER_VENDOR_CLIENT_V6_XML);
+                lastModifiedv6 = fileStatv6.st_mtime;
+            }
             buildDhcpVendorClientsFile();
-            lastModifiedv4 = fileStatv4.st_mtime;
             return TRUE;
         }
         else
@@ -209,17 +223,17 @@ ManageableDevice_IsUpdated
                 return TRUE;
             }
         }
-        
     }
     else
     {
-        if ( lastModifiedv4 != 0 )
+        if ((lastModifiedv4 != 0) || (lastModifiedv6 != 0))
         {
             if (access(DHCP_VENDOR_CLIENT_ALL_PATH, F_OK) == 0)
             {
                 unlink(DHCP_VENDOR_CLIENT_ALL_PATH);
             }
             lastModifiedv4 = 0;
+            lastModifiedv6 = 0;
             // Return true to let synchronize function remove all existing link entries.
             return TRUE;
         }
@@ -285,6 +299,7 @@ static BOOL findAndUpdateMatchedEntry
             {
                 // Keep unsynchronized LMLite is ready.
                 lastModifiedv4 = 0;
+                lastModifiedv6 = 0;
             }
             break;
         }

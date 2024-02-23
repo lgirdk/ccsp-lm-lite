@@ -235,7 +235,8 @@ PCOSA_DML_MANG_DEV CosaDmlGetManageableDevices(ULONG *tableEntryCount, char *fil
                     (len_manufacturerOUI == MANG_DEV_MANUFACTURER_OUI_STR_LEN) &&
                     (len_serialNumber > 0) && (len_serialNumber < MANG_DEV_SERIAL_NUMBER_STR_LEN))
                 {
-                    if (IsLeaseAvailable(macAddrStr))
+                    // TODO: This check is commented because LeaseTime is NOT currently updated in hostArray[] for DHCPv6 clients... hence IsLeaseAvailable(macAddrStr) check will return false for DHCPv6 LAN clients
+                    // if (IsLeaseAvailable(macAddrStr))
                     {
                         memcpy(pMangDevTable[MangDevIdx].MacAddr, macAddrStr, len_macAddrStr + 1);
                         memcpy(pMangDevTable[MangDevIdx].ManufacturerOUI, manufacturerOUI, len_manufacturerOUI + 1);
@@ -298,26 +299,207 @@ static void unlock_clients_file(void)
 void buildDhcpVendorClientsFile()
 {
     FILE *fpv4 = NULL;
+    FILE *fpv6 = NULL;
     FILE *fp = NULL;
     char buffer[MAX_BUFFER_SIZE]="";
-    lock_clients_file();
-    fpv4 = fopen(DHCP_VENDOR_CLIENT_V4_PATH,"r");
-    if ( fpv4 )
+
+    fp = fopen(DHCP_VENDOR_CLIENT_ALL_PATH,"w");
+    if(fp)
     {
-        fp = fopen(DHCP_VENDOR_CLIENT_ALL_PATH,"w");
-        if ( fp )
+        lock_clients_file();
+        fpv4 = fopen(DHCP_VENDOR_CLIENT_V4_PATH,"r");
+        if (fpv4)
         {
             while ( fgets(buffer, sizeof(buffer), fpv4) != NULL )
             {
                 fprintf(fp,"%s",buffer);
             }
-            fclose(fp);
+            fclose(fpv4);
         }
-        fclose(fpv4);
-    }
-    unlock_clients_file();
-    return;
+        unlock_clients_file();
 
+        fpv6 = fopen(DHCP_VENDOR_CLIENT_V6_PATH,"r");
+        if (fpv6)
+        {
+            while ( fgets(buffer, sizeof(buffer), fpv6) != NULL )
+            {
+                fprintf(fp,"%s",buffer);
+            }
+            fclose(fpv6);
+        }
+        if(fp)
+        fclose(fp);
+    }
+    return;
 }
 
+static BOOL parseXMLTag(char *buf, char *tag, char *tagValue)
+{
+    char *ptr = NULL;
+    char tagLeft[MAX_BUFFER_SIZE] = {0};
+    _ansc_strcat(tagLeft, "<");
+    _ansc_strcat(tagLeft, tag);
+
+    ptr = _ansc_strstr(buf, tagLeft);
+    if( ptr == NULL )
+    {
+        return FALSE;
+    }
+    else
+    {
+        ptr = _ansc_strstr(ptr, ">");
+       if( ptr == NULL )
+        {
+            return FALSE;
+        }
+        else
+        {
+              buf = ptr + 1;
+        }
+    }
+
+    char tagRight[MAX_BUFFER_SIZE]= {0};
+    sprintf(tagRight, "</%s>", tag);
+
+    ptr = _ansc_strstr(buf, tagRight);
+    if( ptr == NULL )
+    {
+        return FALSE;
+    }
+    else
+    {
+        _ansc_memcpy(tagValue , buf , strlen(buf) - strlen(ptr));
+    }
+
+    return TRUE;
+}
+
+
+/*
+ * Generates DHCP_VENDOR_CLIENT_V6_PATH using tmp/dibbler/server-AddrMgr.xml for DHCPv6 clients
+ */
+void vendorClientV6XMLParser(char *xmlFile)
+{
+    char buf[MAX_BUFFER_SIZE] = {0};
+    int cnt = 0;
+    BOOL newClient = FALSE;
+    BOOL gotAddr = FALSE;
+    char cmd[MAX_BUFFER_SIZE] = {0};
+    char respBuf[MAX_BUFFER_SIZE] = {0};
+    char tagValue[MAX_BUFFER_SIZE] = {0};
+    char vendor_mac[MANG_DEV_MAC_STR_LEN+1] = {0};
+    char vendor_oui[MANG_DEV_MANUFACTURER_OUI_STR_LEN+1] = {0};
+    char vendor_serial[MANG_DEV_SERIAL_NUMBER_STR_LEN+1] = {0};
+    char vendor_class[MANG_DEV_PRODUCT_CLASS_STR_LEN+1] = {0};
+    char *startPtr = NULL;
+    char *endPtr = NULL;
+
+
+    FILE *fp = fopen(xmlFile, "r");
+    if(!fp)
+    {
+        return;
+    }
+
+    if (access(DHCP_VENDOR_CLIENT_V6_PATH, F_OK) == 0)
+    {
+        unlink(DHCP_VENDOR_CLIENT_V6_PATH);
+    }
+
+    while(!feof(fp))
+    {
+        _ansc_memset(buf, 0, MAX_BUFFER_SIZE);
+        _ansc_memset(cmd, 0, MAX_BUFFER_SIZE);
+        _ansc_memset(tagValue, 0, MAX_BUFFER_SIZE);
+        if (fgets(buf, sizeof(buf), fp) != NULL)
+        {
+
+            if(_ansc_strstr(buf, TAG_STR_ADDCLIENT_START )!= 0 && !newClient ) //Look for <AddrClient>
+            {
+                newClient = TRUE;
+                cnt++;
+                continue;
+            }
+            if (newClient)
+            {
+                if (_ansc_strstr(buf, TAG_STR_ADDR_IA) != 0 && !gotAddr) //Look for AddrIA
+                {
+                    startPtr = _ansc_strstr(buf, "unicast=");
+                    if (startPtr)
+                    {
+                        startPtr += strlen("unicast=") + 1;
+                        endPtr = _ansc_strstr(startPtr, "\"");
+                        if (endPtr)
+                        {
+                            *endPtr = '\0';
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                    FILE *fp = NULL;
+
+                    fp = v_secure_popen("r","ip neigh | grep %s | awk '{print $5}'", startPtr);
+                    if(fp)
+                    {
+                        if(fgets(respBuf, sizeof(respBuf), fp)!=NULL)
+                        {
+                            respBuf[strlen(respBuf) - 1] = '\0';
+                            strncpy(vendor_mac,respBuf,MANG_DEV_MAC_STR_LEN);
+                        }
+                        v_secure_pclose(fp);
+                    }
+                    gotAddr = TRUE;
+                    continue;
+                }
+                if (parseXMLTag(buf, TAG_STR_MANUFACTUREROUI, tagValue) == TRUE)
+                {
+                    _ansc_strncpy(vendor_oui, tagValue, MANG_DEV_MANUFACTURER_OUI_STR_LEN);
+                    continue;
+                }
+
+                if (parseXMLTag(buf, TAG_STR_SERIALNUMBER, tagValue) == TRUE)
+                {
+                    _ansc_strncpy(vendor_serial, tagValue, MANG_DEV_SERIAL_NUMBER_STR_LEN);
+                    continue;
+                }
+
+                if (parseXMLTag(buf, TAG_STR_PRODUCTCLASS, tagValue) == TRUE)
+                {
+                    _ansc_strncpy(vendor_class, tagValue, MANG_DEV_PRODUCT_CLASS_STR_LEN);
+                    continue;
+                }
+
+                if(_ansc_strstr(buf, TAG_STR_ADDCLIENT_END)!= 0 && newClient )
+                {
+                    newClient = FALSE;
+                    gotAddr = FALSE;
+                    /* product class is optional, it could be empty. */
+                    if ((strlen(vendor_mac) == MANG_DEV_MAC_STR_LEN) &&
+                       (strlen(vendor_oui) == MANG_DEV_MANUFACTURER_OUI_STR_LEN) &&
+                       (strlen(vendor_serial) < MANG_DEV_SERIAL_NUMBER_STR_LEN) && (strlen(vendor_serial) > 0))
+                    {
+                        sprintf( cmd, "echo \"%s;%s;%s;%s\" >> %s", vendor_mac, vendor_oui, vendor_serial, vendor_class, DHCP_VENDOR_CLIENT_V6_PATH);
+                        system(cmd);
+                        //Below fails with error "redirection to variable is insecure"
+                        //v_secure_system("echo %s;%s;%s;%s >> %s", vendor_mac, vendor_oui, vendor_serial, vendor_class, DHCP_VENDOR_CLIENT_V6_PATH);
+                    }
+                    _ansc_memset(vendor_mac, 0, MANG_DEV_MAC_STR_LEN+1);
+                    _ansc_memset(vendor_oui, 0, MANG_DEV_MANUFACTURER_OUI_STR_LEN+1);
+                    _ansc_memset(vendor_serial, 0, MANG_DEV_SERIAL_NUMBER_STR_LEN+1);
+                    _ansc_memset(vendor_class, 0, MANG_DEV_PRODUCT_CLASS_STR_LEN+1);
+                    continue;
+                }
+            }
+        }
+    }
+    fclose(fp);
+
+    return;
+}
 #endif

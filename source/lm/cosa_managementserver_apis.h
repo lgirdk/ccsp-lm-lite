@@ -25,8 +25,9 @@
 #define PARSE_ARGU_NUM_3           3
 #define DHCP_VENDOR_CLIENT_ALL_PATH      "/tmp/dhcp_vendor_clients_all.txt"
 #define DHCP_VENDOR_CLIENT_V4_PATH       "/tmp/dhcp_vendor_clients.txt"
-// #define DHCP_VENDOR_CLIENT_V6_PATH       "/tmp/dhcp_vendor_clients_v6.txt"
-// #define DIBBLER_VENDOR_CLIENT_V6_XML     "/tmp/dibbler/server-AddrMgr.xml"
+#define DHCP_VENDOR_CLIENT_V6_PATH       "/tmp/dhcp_vendor_clients_v6.txt"
+#define DIBBLER_VENDOR_CLIENT_V6_XML     "/tmp/dibbler/server-AddrMgr.xml"
+
 #define MANG_DEV_MANUFACTURER_OUI_STR_LEN       6
 #define MANG_DEV_SERIAL_NUMBER_STR_LEN          64
 #define MANG_DEV_PRODUCT_CLASS_STR_LEN          64
@@ -35,9 +36,9 @@
 #define TAG_STR_MANUFACTUREROUI     "DeviceManufacturerOUI"
 #define TAG_STR_SERIALNUMBER        "DeviceSerialNumber"
 #define TAG_STR_PRODUCTCLASS        "DeviceProductClass"
-// #define TAG_STR_ADDR_IA             "AddrIA"
-// #define TAG_STR_ADDCLIENT_START     "<AddrClient>"
-// #define TAG_STR_ADDCLIENT_END       "</AddrClient>"
+#define TAG_STR_ADDR_IA             "AddrIA"
+#define TAG_STR_ADDCLIENT_START     "<AddrClient>"
+#define TAG_STR_ADDCLIENT_END       "</AddrClient>"
 #define MAX_BUFFER_SIZE             128
 /*
  * Device.ManagementServer.ManageableDevice..{i}.
