@@ -1226,6 +1226,9 @@ void getAddressSource(char *physAddress, char *pAddressSource)
     int ret;
     LM_host_entry_t dhcpHost;
     errno_t rc = -1;
+    char ipAddress[50] = {0};
+    getIPAddress(physAddress , ipAddress);
+
     if ( (fp=fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
     {
         return;
@@ -1250,7 +1253,7 @@ void getAddressSource(char *physAddress, char *pAddressSource)
         if(ret != 4)
             continue;
 
-	if (!strcasecmp(physAddress, (const char *)dhcpHost.phyAddr))
+    if (!strcasecmp(ipAddress,(const char *)dhcpHost.ipAddr))
 	{
 		rc = STRCPY_S_NOCLOBBER(pAddressSource, 20,"DHCP");
 		ERR_CHK(rc);
@@ -1290,7 +1293,12 @@ memset(buf,0,sizeof(buf));
 
    }
     fclose(fp);
+   if(rc == -1)
+   {
+     rc = STRCPY_S_NOCLOBBER(pAddressSource, 20,"Static");
+     ERR_CHK(rc);
 
+   }
    return;
 }
 
@@ -1367,8 +1375,8 @@ int getIPAddress(char *physAddress,char *IPAddress)
 
     FILE *fp = NULL;
     char output[50] = {0};
-    errno_t rc = -1;
-
+    char buf[200] = {0};
+#if 0
     v_secure_system("ip -4 nei show | grep brlan0 | grep -v 192.168.10 | grep -i %s | awk '{print $1}' | tail -1 > /tmp/LMgetIP.txt ", physAddress);
      
     fp = fopen ("/tmp/LMgetIP.txt", "r");
@@ -1382,6 +1390,102 @@ int getIPAddress(char *physAddress,char *IPAddress)
     rc = STRCPY_S_NOCLOBBER(IPAddress, 50,output);
     ERR_CHK(rc);
     return 0;
+#endif
+
+//FIX START
+/* With previous fix provided few corner cases was not not getting handled.
+   This was seen when connected clients moved from DHCP to Static
+   1) Not transitioning states when changed from DHCP to Static while client was connected.
+
+   This led to improper values in Host Table or not getting updated at all resulting wrong values in UI.
+
+   This fix handles the above case by dividing the updation of neighbour table into 2 parts :
+   CASE 1 : handles the updation of host table from neighbour table when clients are connected and mode is changed to STATIC on the fly.
+   CASE 2 : handles the updation of host table from neighbour table when clients are disconnected/change mode to DHCP
+   CASE 3 : handles the updation of host table from dnsmasq.leases when connected clients are set to receive ip from DHCP.
+*/
+
+//CASE 1 : To update neighbour table when Static clients are transistioning between REACHABLE and DELAY
+    memset(buf, 0, sizeof(buf));
+    memset(output, 0, sizeof(output));
+    snprintf(buf, sizeof(buf), "ip -4 nei show | grep -i %s | grep -e REACHABLE -e DELAY | awk '{print $1}' | grep -v 169.254. | tail -1", physAddress); //Link local IP is filtered.
+    if((fp = popen(buf, "r")))
+    {
+        while(fgets(output, sizeof(output), fp)!=NULL)
+        {
+                output[strlen(output) - 1] = '\0';
+        }
+        if (output[0] != '\0')
+        {
+            memcpy(IPAddress,output,sizeof(output));
+            AnscTraceWarning(("client is either reachable or delay: MAC %s IP %s\n", physAddress, IPAddress));
+            pclose(fp);
+            fp = NULL;
+            return 0;
+         }
+         else
+         {
+             pclose(fp);
+             fp = NULL;
+         }
+    }
+
+//CASE 2 : To update neighbour table when Static clients are disconnected or mode changes to DHCP due to which it receives new IP...existing IP is obsolete
+    memset(buf, 0, sizeof(buf));
+    memset(output, 0, sizeof(output));
+    snprintf(buf, sizeof(buf), "ip -4 nei show | grep -i %s | grep -e STALE | awk '{print $1}' | grep -v 169.254. | tail -1", physAddress); //Link local IP is filtered.
+    if((fp = popen(buf, "r")))
+    {
+        while(fgets(output, sizeof(output), fp)!=NULL)
+        {
+                output[strlen(output) - 1] = '\0';
+        }
+        if (output[0] != '\0')
+        {
+             memcpy(IPAddress,output,sizeof(output));
+             AnscTraceWarning(("client is in stale state: MAC %s IP %s\n", physAddress, IPAddress));
+             pclose(fp);
+             fp = NULL;
+             return 0;
+         }
+         else
+         {
+             pclose(fp);
+             fp = NULL;
+         }
+    }
+
+//CASE 3 : Handles details of clients that are set to receive automatic IP via DHCP
+    memset(buf, 0, sizeof(buf));
+    memset(output, 0, sizeof(output));
+    snprintf(buf, sizeof(buf), "cat /nvram/dnsmasq.leases | grep -i %s | cut -d ' ' -f3", physAddress);
+
+   if( ( (access( "/nvram/dnsmasq.leases", F_OK ) != -1)) && (fp = popen(buf, "r")))
+    {
+         while(fgets(output, sizeof(output), fp)!=NULL)
+         {
+             output[strlen(output) - 1] = '\0';
+         }
+
+         if (output[0] != '\0')
+         {
+             memcpy(IPAddress,output,sizeof(output));
+             AnscTraceWarning(("client mac present in dnsmasq: MAC %s IP %s\n", physAddress, IPAddress));
+             pclose(fp);
+             fp = NULL;
+             return 0;
+         }
+         else
+         {
+             pclose(fp);
+             fp = NULL;
+         }
+    }
+//FIX END
+//Return empty and update primray IP in caller
+   memcpy(IPAddress,output,sizeof(output));
+   return 0;
+
 }
 
 void Xlm_wrapper_get_info(PLmObjectHost pHost)
@@ -1542,10 +1646,13 @@ void lm_wrapper_get_dhcpv4_client()
                 }
 	}
             LanManager_CheckCloneCopy(&(pHost->pStringParaValue[LM_HOST_AddressSource]), "DHCP");
+            char ipAddress[50] = {0};
+            getIPAddress((char *)dhcpHost.phyAddr, ipAddress);
+
             pIP = Host_AddIPv4Address
             (
                 pHost,
-                (char *)dhcpHost.ipAddr
+                (char *)ipAddress
             );
             if(pIP != NULL)
             {
