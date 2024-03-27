@@ -412,10 +412,10 @@ static int _syscmd(FILE *f, char *retBuf, int retBufSize)
 char* NDS_GetIpAddress(PLmObjectHost host)
 {
     PLmObjectHostIPAddress pIpAddrList;
-    size_t ipv4_len = 0;
-    size_t ipv6_index1_len = 0;
-    size_t ipv6_index3_len = 0;
-    size_t total_len = 0;
+    size_t ipv4_len;
+    size_t ipv6_index1_len;
+    size_t ipv6_index3_len;
+    size_t total_len;
     char *pIpv4address = NULL;
     char *pIpv6addressindex1 = NULL;
     char *pIpv6addressindex3 = NULL;
@@ -467,58 +467,51 @@ char* NDS_GetIpAddress(PLmObjectHost host)
         }
     }
 
-    if (pIpv4address)
-    {
-        ipv4_len = strlen(pIpv4address);
-    }
-
-    if (pIpv6addressindex1)
-    {
-        ipv6_index1_len = strlen(pIpv6addressindex1);
-    }
-
-    if (pIpv6addressindex3)
-    {
-        ipv6_index3_len = strlen(pIpv6addressindex3);
-    }
+    ipv4_len = pIpv4address ? strlen(pIpv4address) : 0;
+    ipv6_index1_len = pIpv6addressindex1 ? strlen(pIpv6addressindex1) : 0;
+    ipv6_index3_len = pIpv6addressindex3 ? strlen(pIpv6addressindex3) : 0;
 
     total_len = ipv4_len + ipv6_index1_len + ipv6_index3_len;
 
     // Below logic to send ipv4, ipv6 index1 and index3 together with delimeter space.
     if (total_len > 0)
     {
-        char * dest = (char *)malloc(total_len + 5);
-        // This below case will comes atleast either ipv4 or ipv6 available.
+        char *dest = malloc(total_len + 3);
+
         if (dest)
         {
-            memset (dest,0,total_len + 5);
-            if (pIpv4address)
+            char *d = dest;
+
+            *d = 0;
+
+            if (ipv4_len)
             {
-                strncat(dest, pIpv4address, ipv4_len);
-                if (pIpv6addressindex1 || pIpv6addressindex3)
-                {
-                    /* CID 172827 Calling risky function */
-		    strncat(dest," ",1);
-                }
+                memcpy(d, pIpv4address, ipv4_len);
+                d[ipv4_len] = ' ';
+                d += ipv4_len + 1;
             }
 
-            if (pIpv6addressindex1)
+            if (ipv6_index1_len)
             {
-                strncat(dest, pIpv6addressindex1, ipv6_index1_len);
-                if (pIpv6addressindex3)
-                {
-                    strncat(dest," ",1);
-                }
+                memcpy(d, pIpv6addressindex1, ipv6_index1_len);
+                d[ipv6_index1_len] = ' ';
+                d += ipv6_index1_len + 1;
             }
 
-            if (pIpv6addressindex3)
+            if (ipv6_index3_len)
             {
-                strncat(dest, pIpv6addressindex3, ipv6_index3_len);
+                memcpy(d, pIpv6addressindex3, ipv6_index3_len);
+                d[ipv6_index3_len] = ' ';
+                d += ipv6_index3_len + 1;
             }
+
+            if (d > dest)
+                d[-1] = 0;
 
             return dest;
         }
     }
+
     return strdup("Unknown");
 }
 
