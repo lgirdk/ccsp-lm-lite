@@ -18,7 +18,7 @@
 #include "lm_main.h"
 #include <string.h>
 extern LmObjectHosts lmHosts;
-static ULONG countlines(char*);
+static unsigned int countlines(char*);
 /**********************************************************************
     function:
         CosaDmlGetHostPath
@@ -107,12 +107,12 @@ ANSC_STATUS CosaDmlGetHostPath(char *value, char *hostPath, ULONG hostPathSize)
     return:     0 if file processing failed
                 lines in the input file.
 **********************************************************************/
-static ULONG countlines(char *filename)
+static unsigned int countlines(char *filename)
 {
 
     FILE *fp = NULL;
     char ch = '\0';
-    ULONG lines = 0;
+    unsigned int lines = 0;
     fp = fopen(filename, "r");
     if (fp != NULL)
     {
@@ -183,60 +183,71 @@ int IsLeaseAvailable(char* macaddr)
 **********************************************************************/
 PCOSA_DML_MANG_DEV CosaDmlGetManageableDevices(ULONG *tableEntryCount, char *filename)
 {
+    PCOSA_DML_MANG_DEV pMangDevTable;
+    unsigned int MangDevIdx = 0;
+    unsigned int lines;
+    FILE *fp;
 
-    char macAddrStr[MANG_DEV_MAC_STR_LEN+1] = {0};
-    char manufacturerOUI[MANG_DEV_MANUFACTURER_OUI_STR_LEN+1] = {0};
-    char serialNumber[MANG_DEV_SERIAL_NUMBER_STR_LEN+1] = {0};
-    char productClass[MANG_DEV_PRODUCT_CLASS_STR_LEN+1] = {0};
-    char lineBuf[MAX_BUFFER_SIZE] = {0};
-    PCOSA_DML_MANG_DEV  pMangDevTable = NULL;
-    ULONG lines = 0;
-    ULONG MangDevIdx = 0;
-    int arguNum = 0; 
-    
     lines = countlines(filename);
-    if (lines)
+    if (lines == 0)
     {
-        pMangDevTable = AnscAllocateMemory(sizeof(COSA_DML_MANG_DEV) * lines);
-    }
-    
-    if ((lines == 0) || (pMangDevTable == NULL))
-    {
+        *tableEntryCount = 0;
         return NULL;
     }
-    FILE *fp = fopen(filename, "r");
+
+    pMangDevTable = AnscAllocateMemory(sizeof(COSA_DML_MANG_DEV) * lines);
+    if (pMangDevTable == NULL)
+    {
+        *tableEntryCount = 0;
+        return NULL;
+    }
+
+    fp = fopen(filename, "r");
     if (fp)
     {
-        while (NULL != fgets(lineBuf, sizeof(lineBuf), fp))
+        char lineBuf[17 + 1 + 6 + 1 + 64 + 1 + 64 + 1 + 1 + 16];
+
+        while (fgets(lineBuf, sizeof(lineBuf), fp) != NULL)
         {
+            char macAddrStr[MANG_DEV_MAC_STR_LEN + 1];
+            char manufacturerOUI[MANG_DEV_MANUFACTURER_OUI_STR_LEN + 1];
+            char serialNumber[MANG_DEV_SERIAL_NUMBER_STR_LEN + 1];
+            char productClass[MANG_DEV_PRODUCT_CLASS_STR_LEN + 1];
+            int arguNum;
+
             arguNum = sscanf(lineBuf, "%17[^;];%6[^;];%64[^;];%64s ", macAddrStr, manufacturerOUI, serialNumber, productClass);
-            /* ProductClass is optional. */
-            if (((arguNum == PARSE_ARGU_NUM_4) || (arguNum == PARSE_ARGU_NUM_3)) &&
-                (strlen(macAddrStr) == MANG_DEV_MAC_STR_LEN) && (strlen(manufacturerOUI) == MANG_DEV_MANUFACTURER_OUI_STR_LEN) &&
-                (strlen(serialNumber) < MANG_DEV_SERIAL_NUMBER_STR_LEN) && (strlen(serialNumber) > 0))
+
+            /* ProductClass is optional */
+            if ((arguNum == 3) || (arguNum == 4))
             {
-                if ( IsLeaseAvailable(macAddrStr) )
+                size_t len_macAddrStr = strlen(macAddrStr);
+                size_t len_manufacturerOUI = strlen(manufacturerOUI);
+                size_t len_serialNumber = strlen(serialNumber);
+
+                if ((len_macAddrStr == MANG_DEV_MAC_STR_LEN) &&
+                    (len_manufacturerOUI == MANG_DEV_MANUFACTURER_OUI_STR_LEN) &&
+                    (len_serialNumber > 0) && (len_serialNumber < MANG_DEV_SERIAL_NUMBER_STR_LEN))
                 {
-                    _ansc_strncpy(pMangDevTable[MangDevIdx].ManufacturerOUI, manufacturerOUI, MANG_DEV_MANUFACTURER_OUI_STR_LEN);
-                    _ansc_strncpy(pMangDevTable[MangDevIdx].SerialNumber, serialNumber, MANG_DEV_SERIAL_NUMBER_STR_LEN);
-                    _ansc_strncpy(pMangDevTable[MangDevIdx].ProductClass, productClass, MANG_DEV_PRODUCT_CLASS_STR_LEN);
-                    _ansc_strncpy(pMangDevTable[MangDevIdx].MacAddr, macAddrStr, MANG_DEV_MAC_STR_LEN);
-                    MangDevIdx++;
+                    if (IsLeaseAvailable(macAddrStr))
+                    {
+                        memcpy(pMangDevTable[MangDevIdx].MacAddr, macAddrStr, len_macAddrStr + 1);
+                        memcpy(pMangDevTable[MangDevIdx].ManufacturerOUI, manufacturerOUI, len_manufacturerOUI + 1);
+                        memcpy(pMangDevTable[MangDevIdx].SerialNumber, serialNumber, len_serialNumber + 1);
+                        snprintf(pMangDevTable[MangDevIdx].ProductClass, sizeof(pMangDevTable[MangDevIdx].ProductClass), "%s", (arguNum == 4) ? productClass : "");
+                        MangDevIdx++;
+                    }
                 }
             }
-            _ansc_memset(manufacturerOUI, 0, MANG_DEV_MANUFACTURER_OUI_STR_LEN+1);
-            _ansc_memset(serialNumber, 0, MANG_DEV_SERIAL_NUMBER_STR_LEN+1);
-            _ansc_memset(productClass, 0, MANG_DEV_PRODUCT_CLASS_STR_LEN+1);
-            _ansc_memset(macAddrStr, 0, MANG_DEV_MAC_STR_LEN+1);
-            _ansc_memset(lineBuf, 0, sizeof(lineBuf));
         }
-        *tableEntryCount = MangDevIdx;
+
         fclose(fp);
     }
-    
-    return pMangDevTable;
 
+    *tableEntryCount = MangDevIdx;
+
+    return pMangDevTable;
 }
+
 /**********************************************************************
     function:
         buildDhcpVendorClientsFile
