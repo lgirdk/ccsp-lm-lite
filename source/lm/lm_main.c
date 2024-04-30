@@ -106,7 +106,7 @@
                                            (dest) = _CloneString((src));}
 
 
-#define DNS_LEASE "/nvram/dnsmasq.leases"
+#define DNS_LEASE "/var/lib/misc/dnsmasq.leases"
 #define DEBUG_INI_NAME  "/etc/debug.ini"
 #define HOST_ENTRY_LIMIT 175
 #define HOST_OBJECT_SIZE	200
@@ -156,7 +156,7 @@
 #define MAX_WAIT_VALIDATE_RETRY         (15)
 #define ARP_CACHE                       "/tmp/arp.txt"
 #define DNSMASQ_CACHE                   "/tmp/dns.txt"
-#define DNSMASQ_FILE                    "/nvram/dnsmasq.leases"
+#define DNSMASQ_FILE                    "/var/lib/misc/dnsmasq.leases"
 #define ACTION_FLAG_ADD                 (1)
 #define ACTION_FLAG_DEL                 (2)
 
