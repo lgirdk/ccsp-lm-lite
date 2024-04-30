@@ -50,7 +50,7 @@
 
 #define DEVICE_WIFI_ACCESS_POINT "Device.WiFi.AccessPoint." 
 #define ARP_CACHE_FILE "/tmp/arp_cache"
-#define DNSMASQ_LEASES_FILE "/nvram/dnsmasq.leases"
+#define DNSMASQ_LEASES_FILE "/var/lib/misc/dnsmasq.leases"
 #define DNSMASQ_RESERVED_FILE "/etc/dhcp_static_hosts"
 
 #define HOST_NAME_RETRY 3
