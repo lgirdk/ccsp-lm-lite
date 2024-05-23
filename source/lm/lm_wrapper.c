@@ -70,7 +70,9 @@ extern char g_Subsystem[32];
 static char *pERTPAMComponentName = NULL;
 static char *pERTPAMComponentPath = NULL;
 extern pthread_mutex_t LmHostObjectMutex;
+#if !defined (RESOURCE_OPTIMIZATION)
 extern pthread_mutex_t XLmHostObjectMutex;
+#endif
 extern pthread_mutex_t HostNameMutex;
 
 extern LmObjectHosts lmHosts;
@@ -92,7 +94,9 @@ static pthread_mutex_t GetARPEntryMutex;
 
 #ifdef USE_NOTIFY_COMPONENT
 static LM_wifi_hosts_t hosts;
+#if !defined (RESOURCE_OPTIMIZATION)
 static LM_wifi_hosts_t Xhosts;
+#endif
 static pthread_mutex_t Wifi_Hosts_mutex;
 #else
 
@@ -530,6 +534,7 @@ void Wifi_Server_Thread_func()
 				Xpos5=strstr((const char *)hosts.host[i].ssid,".4");
 				if(Xpos2!=NULL || Xpos5!=NULL)
 				{
+#if !defined (RESOURCE_OPTIMIZATION)
 					CcspTraceWarning(("%s, %d\n",__FUNCTION__, __LINE__));
 					Xhosts.host[i].RSSI = ntohl(hosts.host[i].RSSI);
      				Xhosts.host[i].Status = ntohl(hosts.host[i].Status);
@@ -542,7 +547,7 @@ void Wifi_Server_Thread_func()
 					}
 
 					Xhosts.count++;
-					
+#endif
 				}
 				else
 				{
@@ -570,7 +575,9 @@ void Wifi_Server_Thread_func()
 		}
 		pthread_mutex_unlock(&Wifi_Hosts_mutex);
         close(newsockfd);
+#if !defined (RESOURCE_OPTIMIZATION)
 		XHosts_SyncWifi();
+#endif
 		sleep(1);
     }
 
@@ -590,6 +597,7 @@ BOOL SearchWiFiClients(char *phyAddr, char *ssid)
 }
 #endif
 
+#if !defined (RESOURCE_OPTIMIZATION)
 int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
 	LM_wifi_wsta_t *pwifi_wsta = NULL;
@@ -627,6 +635,7 @@ int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray)
 
 	return 0;
 }
+#endif
 
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray)
 {
@@ -1488,6 +1497,7 @@ int getIPAddress(char *physAddress,char *IPAddress)
 
 }
 
+#if !defined (RESOURCE_OPTIMIZATION)
 void Xlm_wrapper_get_info(PLmObjectHost pHost)
 {
     FILE *fp = NULL;
@@ -1548,6 +1558,7 @@ void Xlm_wrapper_get_info(PLmObjectHost pHost)
 
     return;
 }
+#endif
 
 
 void lm_wrapper_get_dhcpv4_client()

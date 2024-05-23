@@ -56,12 +56,15 @@
 #include "cosa_plugin_api.h"
 #include "plugin_main.h"
 #include "cosa_hosts_dml.h"
-#include "cosa_xhosts_dml.h"
 #include "cosa_ndstatus_dml.h"
 #include "cosa_ndtraffic_dml.h"
 
 #include "cosa_reports_internal.h"
+
+#if !defined (RESOURCE_OPTIMIZATION)
+#include "cosa_xhosts_dml.h"
 #include "cosa_managementserver_dml.h"
+#endif
 
 #define THIS_PLUGIN_VERSION                         1
 COSA_DATAMODEL_REPORTS* g_pReports = NULL;
@@ -120,6 +123,7 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "Host_IPv6Address_GetParamStringValue",  Host_IPv6Address_GetParamStringValue);
 
 	/*Register XHS data model apis*/
+#if !defined (RESOURCE_OPTIMIZATION)
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHosts_GetParamUlongValue",  XHosts_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetEntryCount",  XHost_GetEntryCount);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_GetEntry",  XHost_GetEntry);
@@ -141,7 +145,7 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv6Address_GetEntryCount",  XHost_IPv6Address_GetEntryCount);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv6Address_GetEntry",  XHost_IPv6Address_GetEntry);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "XHost_IPv6Address_GetParamStringValue",  XHost_IPv6Address_GetParamStringValue);
-
+#endif
 
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_GetParamUlongValue",  NetworkDevicesStatus_GetParamUlongValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesStatus_GetParamBoolValue",  NetworkDevicesStatus_GetParamBoolValue);
@@ -173,12 +177,14 @@ COSA_Init
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Commit",  NetworkDevicesTraffic_Default_Commit);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "NetworkDevicesTraffic_Default_Rollback",  NetworkDevicesTraffic_Default_Rollback);
  
+#if !defined (RESOURCE_OPTIMIZATION)
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_GetEntryCount",  ManageableDevice_GetEntryCount);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_IsUpdated",  ManageableDevice_IsUpdated);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_GetParamStringValue",  ManageableDevice_GetParamStringValue);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_Synchronize",  ManageableDevice_Synchronize);
     pPlugInfo->RegisterFunction(pPlugInfo->hContext, "ManageableDevice_GetEntry",  ManageableDevice_GetEntry);
- 
+#endif
+
      /* Create LMLite Object for Settings */
     g_pReports = (PCOSA_DATAMODEL_REPORTS)CosaReportsCreate();
 

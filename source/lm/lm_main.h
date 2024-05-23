@@ -303,7 +303,6 @@ void Hosts_PollHost (void);
 void LM_main (void);
 
 int LM_get_online_device (void);
-int XLM_get_online_device (void);
 int LMDmlHostsSetHostComment (char *pMac, char *pComment);
 
 char* FindParentIPInExtenderList(char* mac_address);
@@ -327,12 +326,15 @@ int Hosts_GetPresenceParamFromSysDb(LmHostPresenceDetectionParam *paramOut);
 int Hosts_stop_scan();
 int Hosts_EnablePresenceDetectionTask();
 int Hosts_DisablePresenceDetectionTask();
-void XHosts_SyncWifi();
 void EthClient_AddtoQueue(char *phyAddr,int Status );
 void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, char* parentMac, char* deviceType, int RSSI, int Status );
 int LM_get_online_device();
 int LM_get_host_info();
 int LMDmlHostsSetHostComment(char* pMac, char* pComment);
+#if !defined (RESOURCE_OPTIMIZATION)
+void XHosts_SyncWifi();
+int XLM_get_online_device (void);
 int XLM_get_host_info();
 int XLM_get_online_device();
+#endif
 #endif

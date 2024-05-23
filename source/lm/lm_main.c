@@ -211,8 +211,9 @@ int g_DHCPv4ListNum = 0;
 Name_DM_t *g_pDHCPv4List = NULL;
 
 static int firstFlg = 0;
+#if !defined (RESOURCE_OPTIMIZATION)
 static int xfirstFlg = 0;
-
+#endif
 
 extern int bWifiHost;
 
@@ -277,6 +278,7 @@ LmObjectHosts lmHosts = {
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
 
+#if !defined (RESOURCE_OPTIMIZATION)
 LmObjectHosts XlmHosts = {
     .pHostBoolParaName = {"Active","X_RDKCENTRAL-COM_PresenceNotificationEnabled","RDK_PresenceActive"},
     .pHostIntParaName = {"X_CISCO_COM_ActiveTime", "X_CISCO_COM_InactiveTime", "X_CISCO_COM_RSSI"},
@@ -293,17 +295,22 @@ LmObjectHosts XlmHosts = {
     .pIPv4AddressStringParaName = {"IPAddress"},
     .pIPv6AddressStringParaName = {"IPAddress"}
 };
+#endif
 
 ANSC_STATUS COSAGetParamValueByPathName(void* bus_handle, parameterValStruct_t *val, ULONG *parameterValueLength);
 
 /* It may be updated by different threads at the same time? */
 ULONG HostsUpdateTime = 0;
+#if !defined (RESOURCE_OPTIMIZATION)
 ULONG XHostsUpdateTime = 0;
+#endif
 
 pthread_mutex_t HostNameMutex;
 pthread_mutex_t PollHostMutex;
 pthread_mutex_t LmHostObjectMutex;
+#if !defined (RESOURCE_OPTIMIZATION)
 pthread_mutex_t XLmHostObjectMutex;
+#endif
 pthread_mutex_t LmRetryHostListMutex;
 
 static void Wifi_ServerSyncHost(char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status);
@@ -940,6 +947,7 @@ static void Hosts_RmHosts (void)
     return;
 }
 
+#if !defined (RESOURCE_OPTIMIZATION)
 static PLmObjectHost XHosts_AddHost (int instanceNum)
 {
     //printf("in XHosts_AddHost %d \n", instanceNum);
@@ -1004,6 +1012,7 @@ static PLmObjectHost XHosts_AddHost (int instanceNum)
     XlmHosts.numHost++;
     return pHost;
 }
+#endif
 
 static void Clean_Host_Table (void)
 {
@@ -1141,6 +1150,8 @@ PLmObjectHost Hosts_FindHostByPhysAddress (char * physAddress)
 
     return NULL;
 }
+
+#if !defined (RESOURCE_OPTIMIZATION)
 PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 {
     int i;
@@ -1155,6 +1166,7 @@ PLmObjectHost XHosts_FindHostByPhysAddress (char * physAddress)
 
     return NULL;
 }
+#endif
 
 #define MACADDR_SZ      18
 #define ATOM_MAC        "00:00:ca:01:02:03"
@@ -1181,6 +1193,7 @@ static int validate_mac (char *physAddress)
     return 0;
 }
 
+#if !defined (RESOURCE_OPTIMIZATION)
 static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
 {
     char comments[256];
@@ -1226,6 +1239,7 @@ static PLmObjectHost XHosts_AddHostByPhysAddress (char *physAddress)
 
     return pHost;
 }
+#endif
 
 PLmObjectHost Hosts_AddHostByPhysAddress(char *physAddress)
 {
@@ -1694,6 +1708,7 @@ int LM_get_online_device (void)
 	return num;
 }
 
+#if !defined (RESOURCE_OPTIMIZATION)
 int XLM_get_online_device (void)
 {
 	int i;
@@ -1718,6 +1733,7 @@ int XLM_get_online_device (void)
     }
 	return num;
 }
+#endif
 
 int LMDmlHostsSetHostComment (char *pMac, char *pComment)
 {
@@ -2071,6 +2087,7 @@ int Hosts_stop_scan()
     return lm_wrapper_priv_stop_scan();
 }
 
+#if !defined (RESOURCE_OPTIMIZATION)
 void XHosts_SyncWifi()
 {
 	int count = 0;
@@ -2125,6 +2142,7 @@ void XHosts_SyncWifi()
 	//Get the lease time as well as update host name.
 	
 }
+#endif
 
 void Hosts_SyncWifi()
 {
@@ -3005,7 +3023,9 @@ void LM_main (void)
 
     pthread_mutex_init(&PollHostMutex, 0);
     pthread_mutex_init(&LmHostObjectMutex,0);
+#if !defined (RESOURCE_OPTIMIZATION)
 	pthread_mutex_init(&XLmHostObjectMutex,0);
+#endif
     pthread_mutex_init(&HostNameMutex,0);
     pthread_mutex_init(&LmRetryHostListMutex, 0);
     lm_wrapper_init();
@@ -3016,11 +3036,13 @@ void LM_main (void)
     lmHosts.availableInstanceNum = 1;
     lmHosts.enablePresence = FALSE;
 
+#if !defined (RESOURCE_OPTIMIZATION)
 	XlmHosts.hostArray = AnscAllocateMemory(LM_HOST_ARRAY_STEP * sizeof(PLmObjectHost));
 	XlmHosts.sizeHost = LM_HOST_ARRAY_STEP;
 	XlmHosts.numHost = 0;
 	XlmHosts.lastActivity = 0;
     XlmHosts.availableInstanceNum = 1;
+#endif
 	
     pComponentName = (char*)compName;
     Hosts_GetPresenceParamFromSysDb(&lmHosts.param_val); // update presence syscfg param into lmhost object.
@@ -3280,6 +3302,7 @@ int LM_get_host_info()
 	return 0;
 }
 
+#if !defined (RESOURCE_OPTIMIZATION)
 int XLM_get_host_info()
 {
 
@@ -3312,12 +3335,16 @@ int XLM_get_host_info()
 	return 0;
 
 }
+#endif
 
 void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int RSSI, int Status)
 {
 	char *Xpos2 = NULL;
 	char *Xpos5 = NULL;
+#if !defined (RESOURCE_OPTIMIZATION)
 	char radio[32] 			= {0};
+        char telemetryBuff[TELEMETRY_MAX_BUFFER] = { '\0' };
+#endif
 
 	CcspTraceWarning(("%s [%s %s %s %d %d]\n",
 									__FUNCTION__,
@@ -3333,12 +3360,12 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 	Xpos2	= strstr( ssid,".3" );
 	Xpos5	= strstr( ssid,".4" );
 
-	char telemetryBuff[TELEMETRY_MAX_BUFFER] = { '\0' };
 
 	if( ( NULL != Xpos2 ) || \
 		( NULL != Xpos5 ) 
 	   )
 	{
+#if !defined (RESOURCE_OPTIMIZATION)
 		PLmObjectHost pHost;
 
 		pHost = XHosts_AddHostByPhysAddress(phyAddr);
@@ -3411,6 +3438,7 @@ void Wifi_ServerSyncHost (char *phyAddr, char *AssociatedDevice, char *ssid, int
 
 			pthread_mutex_unlock(&XLmHostObjectMutex);
 		}
+#endif
 	}
 	else
 	{

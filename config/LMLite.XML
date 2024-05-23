@@ -330,6 +330,7 @@
         </object>
       </objects>
     </object>
+<?ifndef FEATURE_RESOURCE_OPTIMIZATION?>
     <object>
       <name>XHosts</name>
       <objectType>object</objectType>
@@ -504,6 +505,7 @@
         </object>
       </objects>
     </object>
+<?endif?>
     <object>
         <name>X_RDKCENTRAL-COM_Report</name>
         <objectType>object</objectType>
@@ -668,6 +670,7 @@
             </object>                                                                        
         </objects>
     </object>
+<?ifndef FEATURE_RESOURCE_OPTIMIZATION?>
     <object>
         <name>ManagementServer</name>
         <objectType>object</objectType>
@@ -707,6 +710,7 @@
                 </parameters>
             </object>
         </objects>
-    </object>    
+    </object>
+<?endif?>
  </objects>
 </dataModelInfo>

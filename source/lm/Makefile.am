@@ -41,12 +41,14 @@ libCcspLM_la_SOURCES = cosa_hosts_dml.c \
                        network_devices_traffic_avropack.c  \
                        cosa_ndtraffic_dml.c \
                        network_devices_traffic.c \
-                       cosa_xhosts_dml.c \
                        network_devices_interface.c \
-                       device_presence_detection.c \
-                       cosa_managementserver_apis.c \
-                       cosa_managementserver_dml.c
+                       device_presence_detection.c
 
+if !FEATURE_RESOURCE_OPTIMIZATION
+libCcspLM_la_SOURCES += cosa_xhosts_dml.c \
+                        cosa_managementserver_apis.c \
+                        cosa_managementserver_dml.c
+endif
 
 libCcspLM_la_LDFLAGS = -lhal_platform -lccsp_common -lsyscfg -lsysevent -lutapi -lutctx -lulog -ltelemetry_msgsender -lavro -lmsgpackc -ltrower-base64 -luuid -lm -lrt -pthread -lnanomsg -lwrp-c -llibparodus -lsecure_wrapper
 if ENABLE_SESHAT

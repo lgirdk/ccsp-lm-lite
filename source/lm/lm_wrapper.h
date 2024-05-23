@@ -146,7 +146,9 @@ int lm_arping_v4_send(char netName[64], char strMac[17], unsigned char ip[4]);
 int lm_wrapper_get_wifi_wsta_list(char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_wifi_wsta_t **ppWstaArray);
 int lm_wrapper_get_arp_entries (char netName[LM_NETWORK_NAME_SIZE], int *pCount, LM_host_entry_t **ppArray);
 void lm_wrapper_get_dhcpv4_client();
+#if !defined (RESOURCE_OPTIMIZATION)
 void Xlm_wrapper_get_info(PLmObjectHost pHost);
+#endif
 
 void lm_wrapper_get_dhcpv4_reserved();
 #if 0
@@ -162,7 +164,9 @@ void Wifi_Server_Thread_func();
 #endif
 int getIPAddress(char *physAddress,char *IPAddress);
 int get_HostName(char *physAddress,char *HostName);
+#if !defined (RESOURCE_OPTIMIZATION)
 int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray);
+#endif
 void SyncWiFi();
 int lm_wrap_checkIPv4AddressInRange(char* ipaddress, char* ipaddres2, char* subnetmask);
 #endif

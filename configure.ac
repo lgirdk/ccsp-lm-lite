@@ -62,6 +62,18 @@ AC_ARG_ENABLE([wan_traffic_count_support],
 esac],[wan_traffic_count_support=false])
 AM_CONDITIONAL(WAN_TRAFFIC_COUNT_SUPPORT, test x"$wan_traffic_count_support" = x"true")
 
+AC_ARG_ENABLE([resourceoptimization],
+             AS_HELP_STRING([--enable-resourceoptimization],[enable resource optimization (default is no)]),
+             [
+              case "${enableval}" in
+               yes) RESOURCE_OPTIMIZATION_ENABLED=true;;
+               no)  RESOURCE_OPTIMIZATION_ENABLED=false;;
+               *) AC_MSG_ERROR([bad value ${enableval} for --enable-resourceoptimization]);;
+              esac
+             ],
+             [echo "resourceoptimization is disabled"])
+AM_CONDITIONAL(FEATURE_RESOURCE_OPTIMIZATION, test "x$RESOURCE_OPTIMIZATION_ENABLED" = xtrue)
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
