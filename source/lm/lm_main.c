@@ -216,6 +216,9 @@ Name_DM_t *g_pMoCAADList = NULL;
 int g_DHCPv4ListNum = 0;
 Name_DM_t *g_pDHCPv4List = NULL;
 
+int g_DHCPv4GuestListNum = 0;
+Name_DM_t *g_pDHCPv4GuestList = NULL;
+
 static int firstFlg = 0;
 #if !defined (RESOURCE_OPTIMIZATION)
 static int xfirstFlg = 0;
@@ -3546,6 +3549,7 @@ int LM_get_host_info()
 	_init_DM_List(&g_MoCAADListNum, &g_pMoCAADList, "Device.MoCA.Interface.1.AssociatedDevice.", "MACAddress");
 #endif
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.1.Client.", "Chaddr");
+	_init_DM_List(&g_DHCPv4GuestListNum, &g_pDHCPv4GuestList, "Device.DHCPv4.Server.Pool.3.Client.", "Chaddr");
 
 	pthread_mutex_lock(&LmHostObjectMutex); 
 
@@ -3567,6 +3571,7 @@ int LM_get_host_info()
 		{
 			if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AddressSource],LM_ADDRESS_SOURCE_DHCP_STR)	!= NULL){
                 _get_dmbyname(g_DHCPv4ListNum, g_pDHCPv4List, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
+                _get_dmbyname(g_DHCPv4GuestListNum, g_pDHCPv4GuestList, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_DHCPClientId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
                 lmHosts.hostArray[i]->LeaseTime = lmHosts.hostArray[i]->ipv4AddrArray->LeaseTime;    		
             }
 		}
