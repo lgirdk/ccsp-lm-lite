@@ -66,24 +66,23 @@ ULONG NDTOverrideTTLDefault = DEFAULT_TTL_INTERVAL;
 
 struct timeval reset_timestamp;
 
-
-bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size);
-
 void* StartNetworkDevicesTrafficHarvesting( void *arg );
 #if 0
 static int _syscmd_ndt(char *cmd, char *retBuf, int retBufSize);
 #endif
-void add_to_list_ndt(char* ip_table_line);
-void print_list_ndt();
-void delete_list_ndt();
-void delete_partial_list_ndt();
 
 #ifndef UTC_ENABLE
 extern int getTimeOffsetFromUtc();
 #endif
 
-static struct networkdevicetrafficdata *headnode = NULL;
-static struct networkdevicetrafficdata *currnode = NULL;
+#ifdef UNIT_TEST_DOCKER_SUPPORT
+#define STATIC
+#else
+#define STATIC static
+#endif
+
+STATIC struct networkdevicetrafficdata *headnode = NULL;
+STATIC struct networkdevicetrafficdata *currnode = NULL;
 
 // RDKB-9258 : set polling and reporting periods to NVRAM after TTL expiry
 extern ANSC_STATUS SetNDTPollingPeriodInNVRAM(ULONG pPollingVal);

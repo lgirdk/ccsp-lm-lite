@@ -74,6 +74,20 @@ AC_ARG_ENABLE([resourceoptimization],
              [echo "resourceoptimization is disabled"])
 AM_CONDITIONAL(FEATURE_RESOURCE_OPTIMIZATION, test "x$RESOURCE_OPTIMIZATION_ENABLED" = xtrue)
 
+AC_ARG_ENABLE([unitTestDockerSupport],
+             AS_HELP_STRING([--enable-unitTestDockerSupport],[enable docker support for unit testing (default is no)]),
+             [
+              UNIT_TEST_DOCKER_SUPPORT=""
+               case "${enableval}" in
+                yes) UNIT_TEST_DOCKER_SUPPORT=true;;
+                no) UNIT_TEST_DOCKER_SUPPORT=false;;
+                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-unitTestDockerSupport ]);;
+               esac
+             ],
+             [echo "Docker support is disabled"])
+AM_CONDITIONAL([UNIT_TEST_DOCKER_SUPPORT], [test x$UNIT_TEST_DOCKER_SUPPORT = xtrue])
+
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -103,6 +117,8 @@ AC_CONFIG_FILES(
 )
 
 AC_SUBST(GTEST_ENABLE_FLAG)
+
+AC_SUBST(UNIT_TEST_DOCKER_SUPPORT)
 
 AC_OUTPUT
 

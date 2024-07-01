@@ -26,6 +26,7 @@
 #define NDT_DEFAULT_PARENT_MAC		"11:22:33:44:55:66"
 #define NDT_DEFAULT_DEVICE_TYPE		"empty"
 
+
 /**
  * @brief Set the Harvesting Status for Network Devices.
  *
@@ -83,7 +84,7 @@ ULONG GetNDTReportingPeriodDefault();
  *
  * @return period : The Current Reporting Period
  */
-ULONG SetNDTReportingPeriodDefault();
+ULONG SetNDTReportingPeriodDefault(ULONG period);
 
 /**
  * @brief Gets the Default Network Devices Polling Period
@@ -97,7 +98,7 @@ ULONG GetNDTPollingPeriodDefault();
  *
  * @return period : The Current Reporting Period
  */
-ULONG SetNDTPollingPeriodDefault();
+ULONG SetNDTPollingPeriodDefault(ULONG period);
 
 /**
  * @brief Gets the Default timeout for Accelerated Scans
@@ -115,4 +116,39 @@ ULONG GetNDTOverrideTTLDefault();
  */
 BOOL ValidateNDTPeriod(ULONG period);
 int SetNDTOverrideTTL(ULONG ttl);
+
+/**
+ * @brief Gets the Network Devices TTL Interval
+ *
+ * @return period : The Current TTL Interval
+ */
+ULONG GetNDTOverrideTTL();
+
+/**
+ * @brief Reset the EBTables.
+ *
+ * @return status 0 for success and 1 for failure
+ */
+int ResetEBTables();
+
+/**
+ * @brief Get the IP Table Data.
+ */
+void GetIPTableData();
+
+/**
+ * @brief Check if a value is present in an array.
+ *
+ * @param[in] val The value to check.
+ * @param[in] arr The array to search in.
+ * @param[in] size The size of the array.
+ * @return true if the value is present, false otherwise.
+ */
+bool isvalueinarray_ndt(ULONG val, ULONG *arr, int size);
+
+void add_to_list_ndt(char* ip_table_line);
+void print_list_ndt();
+void delete_list_ndt();
+void delete_partial_list_ndt();
+
 #endif 

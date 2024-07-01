@@ -63,12 +63,14 @@ char * getDeviceMac();
 */
 char * getFullDeviceMac();
 void initparodusTask();
+const char *rdk_logger_module_fetch(void); 
 
 #ifdef WAN_FAILOVER_SUPPORTED
 bool checkRbusEnabled();
 LMLITE_STATUS lmliteRbusInit(const char *pComponentName);
 char* getInterface(char *interface);
 void get_WanManager_ActiveInterface();
+char * get_ActiveInterface(char *interface);
 int subscribeTo_InterfaceActiveStatus_Event();
 #endif
 

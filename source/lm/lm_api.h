@@ -156,4 +156,14 @@ int lm_add_network(char netName[LM_NETWORK_NAME_SIZE]);
 int lm_delete_network(char netName[LM_NETWORK_NAME_SIZE]);
 int lm_get_network(char netName[LM_NETWORK_NAME_SIZE]);
 int lm_get_online_device(int *num);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int init_client_socket(int* fd);
+int lm_send_rev(void *cmd, int size, void *buff, int buff_size);
+
+#ifdef __cplusplus
+}
+#endif
 #endif

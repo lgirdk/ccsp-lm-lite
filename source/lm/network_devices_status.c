@@ -66,16 +66,11 @@ ULONG NDSOverrideTTLDefault = DEFAULT_TTL_INTERVAL;
 #ifndef UTC_ENABLE
 int tm_offset = 0;
 #endif
-bool isvalueinarray(ULONG val, ULONG *arr, int size);
-
 void* StartNetworkDeviceStatusHarvesting( void *arg );
 #ifndef UTC_ENABLE
 static int _syscmd(FILE *f, char *retBuf, int retBufSize);
 #endif
 void add_to_list(PLmObjectHost host, struct networkdevicestatusdata **head);
-void print_list(struct networkdevicestatusdata *head);
-void delete_list(struct networkdevicestatusdata **head);
-
 static struct networkdevicestatusdata *headnode = NULL;
 static struct networkdevicestatusdata *headnodeextender = NULL;
 
@@ -654,6 +649,8 @@ void delete_list(struct networkdevicestatusdata **head)
         currnode = next;
     }
     
+    *head = NULL;
+    
     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, LMLite %s EXIT \n", __FUNCTION__ ));
 
     return;
@@ -766,7 +763,6 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
                     CcspLMLiteConsoleTrace(("RDK_LOG_DEBUG, Before Sending to WebPA and AVRO currentPollingPeriod [%ld] NDSReportingPeriod[%ld]  \n", GetNDSPollingPeriod(), GetNDSReportingPeriod()));
                     network_devices_status_report(ptr, FALSE, (char *)getFullDeviceMac());
                     delete_list(&headnode);
-                    headnode = NULL;
                 }
 
             ptr = headnodeextender;
@@ -790,7 +786,6 @@ void* StartNetworkDeviceStatusHarvesting( void *arg )
 
                     pthread_mutex_unlock(&LmHostObjectMutex);
                     delete_list(&headnodeextender);
-                    headnodeextender = NULL;
                 }
 
             currentReportingPeriod = 0;

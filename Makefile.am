@@ -18,14 +18,19 @@
 ##########################################################################
 SUBDIRS = source
 
+if !UNIT_TEST_DOCKER_SUPPORT
+
 lib_LTLIBRARIES = liblmapi.la
 
 liblmapi_la_CPPFLAGS =
 
-liblmapi_la_LDFLAGS = -lccsp_common 
+liblmapi_la_LDFLAGS = -lccsp_common
 
 liblmapi_la_SOURCES = ${SUBDIRS}/lm/lm_api.c
 
 liblmapi_la_DEPENDENCIES =
 
 liblmapi_la_LIBADD = $(liblmapi_la_DEPENDENCIES)
+
+endif
+

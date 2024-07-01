@@ -21,6 +21,7 @@
 #define  NETWORK_DEVICES_STATUS_H
 
 #include "ansc_platform.h"
+#include "network_devices_status_avropack.h"
 
 /**
  * @brief Set the Harvesting Status for Network Devices.
@@ -79,7 +80,7 @@ ULONG GetNDSReportingPeriodDefault();
  *
  * @return period : The Current Reporting Period
  */
-ULONG SetNDSReportingPeriodDefault();
+ULONG SetNDSReportingPeriodDefault(ULONG period);
 
 /**
  * @brief Gets the Default Network Devices Polling Period
@@ -93,7 +94,7 @@ ULONG GetNDSPollingPeriodDefault();
  *
  * @return period : The Current Reporting Period
  */
-ULONG SetNDSPollingPeriodDefault();
+ULONG SetNDSPollingPeriodDefault(ULONG period);
 
 /**
  * @brief Gets the Default timeout for Accelerated Scans
@@ -110,5 +111,13 @@ ULONG GetNDSOverrideTTLDefault();
  * @return status 0 for success and 1 for failure
  */
 BOOL ValidateNDSPeriod(ULONG period);
+
 int SetNDSOverrideTTL(ULONG ttl);
+ULONG GetNDSOverrideTTL();
+char* GetCurrentTimeString();
+ulong GetCurrentTimeInSecond();
+bool isvalueinarray(ULONG val, ULONG *arr, int size);
+void ResetNDSReportingConfiguration();
+void print_list(struct networkdevicestatusdata *head);
+void delete_list(struct networkdevicestatusdata **head);
 #endif 
