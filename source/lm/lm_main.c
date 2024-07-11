@@ -2612,6 +2612,33 @@ static void *Event_HandlerThread(void *threadid)
 
 static int ping_interval = 0;
 
+static void Hosts_FindHostByMACAddress ( LM_host_entry_t *hosts, int count)
+{
+    int index,i;
+    int flag=0;
+    char macAddr[20];
+    for (index = 0; index < lmHosts.numHost; index++)
+    {
+        strncpy(macAddr, lmHosts.hostArray[index]->pStringParaValue[LM_HOST_PhysAddressId], sizeof(macAddr) - 1);
+        for(i =0;i < count;i++)
+        {
+            if ( lmHosts.hostArray[index]->pStringParaValue[LM_HOST_IPAddressId] != NULL )         // IP comes null in VMB/RIP when static ip not assigned to host
+            {
+                if( (0 == strcasecmp( macAddr,hosts[i].phyAddr)) && (0 == strcmp( lmHosts.hostArray[index]->pStringParaValue[LM_HOST_IPAddressId],hosts[i].ipAddr)) )
+                {
+                    flag++;
+                    break;
+                }
+            }
+        }
+        if (flag ==0)
+        {
+            lmHosts.hostArray[index]->bBoolParaValue[LM_HOST_ActiveId]=false;
+        }
+        flag =0;
+    }
+}
+
 static PLmObjectHost Hosts_FindHostByIpAddress (char *ipAddr)
 {
     int i;
@@ -2632,6 +2659,7 @@ static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
     char comments[256] = {0};
     char cmd[50];
     int i;
+    char dhcpEnable[2];
 
     ping_interval += 10;
 
@@ -2742,6 +2770,11 @@ static void Hosts_SyncArp (int count, LM_host_entry_t *hosts)
             }
         }
 
+        syscfg_get(NULL, "dhcp_server_enabled", dhcpEnable, sizeof(dhcpEnable));       // dhcpEnable will be disabled for static case
+        if (strcmp(dhcpEnable, "0") == 0)
+        {
+            Hosts_FindHostByMACAddress(hosts, count);
+        }
         pthread_mutex_unlock(&LmHostObjectMutex);
         free(swPorts);
     }
