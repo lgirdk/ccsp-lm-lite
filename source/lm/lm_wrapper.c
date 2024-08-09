@@ -1476,11 +1476,16 @@ void lm_wrapper_get_dhcpv4_client()
     FILE *fp = NULL;
     char buf[200] = {0};
     int ret;
+    char dhcpEnable[2];
     PLmObjectHostIPAddress pIP;
 
     LM_host_entry_t dhcpHost;
     PLmObjectHost pHost;
     errno_t rc = -1;
+
+    syscfg_get(NULL, "dhcp_server_enabled", dhcpEnable, sizeof(dhcpEnable));
+    if (strcmp(dhcpEnable, "1") == 0)
+    {
 
     if ( (fp = fopen(DNSMASQ_LEASES_FILE, "r")) == NULL )
     {
@@ -1578,6 +1583,7 @@ void lm_wrapper_get_dhcpv4_client()
     }
 
     fclose(fp);
+    }
 
     return;
 }
