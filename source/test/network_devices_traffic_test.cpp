@@ -45,6 +45,7 @@ extern "C" {
 }
 
 extern SecureWrapperMock * g_securewrapperMock;
+extern AnscDebugMock* g_anscDebugMock;
 
 extern ULONG NetworkDeviceTrafficPeriods[];
 extern ULONG NDTPollingPeriod;
@@ -72,6 +73,9 @@ TEST_F(CcspLMLiteTestFixture, ResetEBTablesSuccess) {
         .Times(1)
         .WillOnce(::testing::Return(0));
 
+    EXPECT_CALL(*g_anscDebugMock, Ccsplog3(_, _))
+        .Times(1);
+
     EXPECT_EQ(0, ResetEBTables());
 }
 
@@ -80,6 +84,9 @@ TEST_F(CcspLMLiteTestFixture, ResetEBTablesFailure) {
     EXPECT_CALL(*g_securewrapperMock, v_secure_system(HasSubstr(expectedCmd),_))
         .Times(1)
         .WillOnce(::testing::Return(-1));
+
+    EXPECT_CALL(*g_anscDebugMock, Ccsplog3(_, _))
+        .Times(1);
 
     EXPECT_EQ(-1, ResetEBTables());
 }
@@ -90,7 +97,10 @@ TEST_F(CcspLMLiteTestFixture, GetIPTableDataSystemCallFailure) {
     EXPECT_CALL(*g_securewrapperMock, v_secure_system(HasSubstr(expectedCmd),_))
         .Times(1)
         .WillOnce(::testing::Return(1));
-
+    
+    EXPECT_CALL(*g_anscDebugMock, Ccsplog3(_, _))
+        .Times(1);
+    
     GetIPTableData();
 }
 
@@ -305,3 +315,4 @@ TEST_F(CcspLMLiteTestFixture, AddDataToList) {
 }
 
 // end of file
+

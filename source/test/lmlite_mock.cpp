@@ -39,6 +39,7 @@ CcspDmApiMock* g_ccspDmApiMock = NULL;
 telemetryMock * g_telemetryMock = NULL;
 DslhDmagntExportedMock* g_dslhDmagntExportedMock = NULL;
 TraceMock * g_traceMock = NULL;
+FileIOMock * g_fileIOMock = NULL; 
 
 CcspLMLiteTestFixture::CcspLMLiteTestFixture()
 {
@@ -61,6 +62,7 @@ CcspLMLiteTestFixture::CcspLMLiteTestFixture()
     g_telemetryMock = new telemetryMock;
     g_dslhDmagntExportedMock = new DslhDmagntExportedMock;
     g_traceMock = new TraceMock;
+    g_fileIOMock = new FileIOMock;
     
 }
 
@@ -85,6 +87,7 @@ CcspLMLiteTestFixture::~CcspLMLiteTestFixture()
     delete g_telemetryMock;
     delete g_dslhDmagntExportedMock;
     delete g_traceMock;
+    delete g_fileIOMock;
 
     g_platformHALMock = nullptr;
     g_securewrapperMock = nullptr;
@@ -105,6 +108,7 @@ CcspLMLiteTestFixture::~CcspLMLiteTestFixture()
     g_telemetryMock = nullptr;
     g_dslhDmagntExportedMock = nullptr;
     g_traceMock = nullptr;
+    g_fileIOMock = nullptr;
 }
 
 void CcspLMLiteTestFixture::SetUp()
@@ -114,3 +118,4 @@ void CcspLMLiteTestFixture::TearDown() {}
 void CcspLMLiteTestFixture::TestBody() {}
 
 // end of file
+

@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <time.h>
+#include <sys/socket.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -55,6 +56,7 @@ using ::testing::StrEq;
 
 extern SocketMock * g_socketMock;
 extern SafecLibMock * g_safecLibMock;
+extern FileIOMock * g_fileIOMock;
 
 TEST_F(CcspLMLiteTestFixture, InitClientSocketSuccess) {
     int expectedFd;
@@ -104,38 +106,140 @@ TEST_F(CcspLMLiteTestFixture, InitClientSocketConnectFailure) {
 }
 
 TEST_F(CcspLMLiteTestFixture, LMSendReceiveSuccess) {
-    int expectedFd ;
+    int expectedFd = 10;
     void* expectedCmd[64];
     void* expectedBuff[64];
     memset(expectedCmd,0,sizeof(expectedCmd));
     memset(expectedBuff,0,sizeof(expectedCmd));
-    
-    EXPECT_CALL(*g_socketMock, recv(expectedFd, expectedBuff, 64, _))
+
+    EXPECT_CALL(*g_socketMock, socket(_, _, _))
+        .Times(1)
         .WillOnce(Return(1));
 
-    EXPECT_EQ(LM_RET_SUCCESS, lm_send_rev(expectedCmd, 64, expectedBuff, 64));
+    EXPECT_CALL(*g_safecLibMock, _strcpy_s_chk(_, _, _,_))
+        .Times(1)
+        .WillOnce(Return(0));
+
+    EXPECT_CALL(*g_socketMock, connect(_, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+    
+    EXPECT_CALL(*g_fileIOMock, write(_, _, _))
+        .Times(1)
+        .WillRepeatedly(Return(1));
+
+    EXPECT_CALL(*g_socketMock, recv(_, _, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+
+    EXPECT_CALL(*g_socketMock, close(_))
+        .Times(1)
+        .WillOnce(Return(0));
+        
+    ASSERT_EQ(LM_RET_SUCCESS, lm_send_rev(expectedCmd, 64, expectedBuff, 64)) << "Failed to send/receive data";
 }
 
-TEST_F(CcspLMLiteTestFixture, LMSendReceiveFailure) {
-    int expectedFd ;
+TEST_F(CcspLMLiteTestFixture, LMSendReceive_WriteFailure) {
+    int expectedFd = 10;
     void* expectedCmd[64];
     void* expectedBuff[64];
     memset(expectedCmd,0,sizeof(expectedCmd));
     memset(expectedBuff,0,sizeof(expectedCmd));
 
-    EXPECT_CALL(*g_socketMock, recv(expectedFd, expectedBuff, 64, _))
+    EXPECT_CALL(*g_socketMock, socket(_, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+
+    EXPECT_CALL(*g_safecLibMock, _strcpy_s_chk(_, _, _,_))
+        .Times(1)
+        .WillOnce(Return(0));
+
+    EXPECT_CALL(*g_socketMock, connect(_, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+    
+    EXPECT_CALL(*g_fileIOMock, write(_, _, _))
+        .Times(1)
+        .WillRepeatedly(Return(-1));
+
+    EXPECT_CALL(*g_socketMock, close(_))
+        .Times(1)
+        .WillOnce(Return(0));
+        
+    EXPECT_EQ(LM_RET_ERR, lm_send_rev(expectedCmd, 64, expectedBuff, 64));
+}
+
+TEST_F(CcspLMLiteTestFixture, LMSendReceive_SocketFailure) {
+    int expectedFd = 10;
+    void* expectedCmd[64];
+    void* expectedBuff[64];
+    memset(expectedCmd,0,sizeof(expectedCmd));
+    memset(expectedBuff,0,sizeof(expectedCmd));
+
+    EXPECT_CALL(*g_socketMock, socket(_, _, _))
+        .Times(1)
         .WillOnce(Return(-1));
 
     EXPECT_EQ(LM_RET_ERR, lm_send_rev(expectedCmd, 64, expectedBuff, 64));
 }
 
-TEST_F(CcspLMLiteTestFixture, LMSendReceiveWriteFailure) {
-    int expectedFd ;
+TEST_F(CcspLMLiteTestFixture, LMSendReceive_SocketConnectFailure) {
+    int expectedFd = 10;
     void* expectedCmd[64];
     void* expectedBuff[64];
     memset(expectedCmd,0,sizeof(expectedCmd));
     memset(expectedBuff,0,sizeof(expectedCmd));
 
+    EXPECT_CALL(*g_socketMock, socket(_, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+
+    EXPECT_CALL(*g_safecLibMock, _strcpy_s_chk(_, _, _,_))
+        .Times(1)
+        .WillOnce(Return(0));
+
+    EXPECT_CALL(*g_socketMock, connect(_, _, _))
+        .Times(1)
+        .WillOnce(Return(-1));
+
+    EXPECT_CALL(*g_socketMock, close(_))
+        .Times(1)
+        .WillOnce(Return(0));
+    
+    EXPECT_EQ(LM_RET_ERR, lm_send_rev(expectedCmd, 64, expectedBuff, 64));
+}
+
+TEST_F(CcspLMLiteTestFixture, LMSendReceive_RecvFailure) {
+    int expectedFd = 10;
+    void* expectedCmd[64];
+    void* expectedBuff[64];
+    memset(expectedCmd,0,sizeof(expectedCmd));
+    memset(expectedBuff,0,sizeof(expectedCmd));
+
+    EXPECT_CALL(*g_socketMock, socket(_, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+
+    EXPECT_CALL(*g_safecLibMock, _strcpy_s_chk(_, _, _,_))
+        .Times(1)
+        .WillOnce(Return(0));
+
+    EXPECT_CALL(*g_socketMock, connect(_, _, _))
+        .Times(1)
+        .WillOnce(Return(1));
+    
+    EXPECT_CALL(*g_fileIOMock, write(_, _, _))
+        .Times(1)
+        .WillRepeatedly(Return(1));
+
+    EXPECT_CALL(*g_socketMock, recv(_, _, _, _))
+        .Times(1)
+        .WillOnce(Return(-1));
+
+    EXPECT_CALL(*g_socketMock, close(_))
+        .Times(1)
+        .WillOnce(Return(0));
+        
     EXPECT_EQ(LM_RET_ERR, lm_send_rev(expectedCmd, 64, expectedBuff, 64));
 }
 

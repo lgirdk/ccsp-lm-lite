@@ -97,6 +97,7 @@ CcspLMLite_gtest_bin_LDADD = $(HOME)/usr/local/lib/libmock_ccsp_common.la \
                              $(HOME)/usr/local/lib/libmock_secure_wrapper.la \
                              $(HOME)/usr/local/lib/libmock_safec_lib.la \
                              $(HOME)/usr/local/lib/libmock_psm.la \
+                             $(HOME)/usr/local/lib/libmock_file_io.la \
                              $(HOME)/usr/local/lib/libmock_syscfg.la \
                              $(HOME)/usr/local/lib/libmock_utopia.la \
                              $(HOME)/usr/local/lib/libmock_telemetry.la \

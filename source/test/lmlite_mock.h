@@ -41,6 +41,7 @@
 #include <mocks/mock_telemetry.h>
 #include <mocks/mock_dslh_dmagnt_exported.h>
 #include <mocks/mock_trace.h>
+#include <mocks/mock_file_io.h>
 
 class CcspLMLiteTestFixture : public ::testing::Test {
   protected:
@@ -63,7 +64,8 @@ class CcspLMLiteTestFixture : public ::testing::Test {
         telemetryMock mockedTelemetry;
         DslhDmagntExportedMock mockedDslhDmagntExported;
         TraceMock mockedTrace;
-
+        FileIOMock mockedFileIO;
+        
         CcspLMLiteTestFixture();
         virtual ~CcspLMLiteTestFixture();
         virtual void SetUp() override;
@@ -73,4 +75,5 @@ class CcspLMLiteTestFixture : public ::testing::Test {
 };
 
 #endif // LMLITE_MOCK_H
+
 
