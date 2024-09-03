@@ -20,7 +20,4 @@ if UNIT_TEST_DOCKER_SUPPORT
 SUBDIRS = test
 else
 SUBDIRS = lm Ssp
-if WITH_GTEST_SUPPORT
-SUBDIRS += test
-endif
 endif

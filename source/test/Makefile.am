@@ -83,8 +83,6 @@ CcspLMLite_gtest_bin_SOURCES += $(top_srcdir)/source/lm/cosa_xhosts_dml.c \
 endif
 
 CcspLMLite_gtest_bin_LDFLAGS = -lgtest -lgmock -lgcov -lpthread -lrt -lavro -luuid
-if WITH_GTEST_SUPPORT
-if UNIT_TEST_DOCKER_SUPPORT
 
 # Enabling RESOURCE_OPTIMIZATION for docker environment as it is defined in lm-lite recipe file in jenkins
 if FEATURE_RESOURCE_OPTIMIZATION
@@ -103,10 +101,6 @@ CcspLMLite_gtest_bin_LDADD = $(HOME)/usr/local/lib/libmock_ccsp_common.la \
                              $(HOME)/usr/local/lib/libmock_telemetry.la \
                              $(HOME)/usr/local/lib/libmock_parodus.la \
                              $(HOME)/usr/local/lib/libmock_rbus.la
-else
-CcspLMLite_gtest_bin_LDFLAGS += -lmock_ccsp_common -lmock_platform_hal -lmock_socket -lmock_secure_wrapper -lmock_safec_lib -lmock_psm -lmock_syscfg -lmock_utopia -lmock_telemetry -lmock_parodus -lmock_rbus
-endif
-endif
 
 # Adding Code Coverage Flags
 AM_CFLAGS += -fprofile-arcs -ftest-coverage

@@ -24,21 +24,6 @@ AC_PREREQ([2.65])
 AC_INIT([lmapi], [1.0], [BUG-REPORT-ADDRESS])
 AM_INIT_AUTOMAKE([subdir-objects])
 LT_INIT
-GTEST_ENABLE_FLAG = ""
-
-AC_ARG_ENABLE([gtestapp],
-             AS_HELP_STRING([--enable-gtestapp],[enable Gtest support (default is no)]),
-             [
-               case "${enableval}" in
-                yes) GTEST_SUPPORT_ENABLED=true
-                     GTEST_ENABLE_FLAG="-DGTEST_ENABLE"
-                     m4_if(m4_sysval,[0],[AC_CONFIG_FILES([source/test/Makefile])]);;
-                no) GTEST_SUPPORT_ENABLED=false AC_MSG_ERROR([Gtest support is disabled]);;
-                 *) AC_MSG_ERROR([bad value ${enableval} for --enable-gtestapp ]);;
-               esac
-             ],
-             [echo "Gtestapp is disabled"])
-AM_CONDITIONAL([WITH_GTEST_SUPPORT], [test x$GTEST_SUPPORT_ENABLED = xtrue])
 AC_PREFIX_DEFAULT(`pwd`)
 AC_ENABLE_SHARED
 AC_DISABLE_STATIC
@@ -79,7 +64,8 @@ AC_ARG_ENABLE([unitTestDockerSupport],
              [
               UNIT_TEST_DOCKER_SUPPORT=""
                case "${enableval}" in
-                yes) UNIT_TEST_DOCKER_SUPPORT=true;;
+                yes) UNIT_TEST_DOCKER_SUPPORT=true
+                     m4_if(m4_sysval,[0],[AC_CONFIG_FILES([source/test/Makefile])]);;
                 no) UNIT_TEST_DOCKER_SUPPORT=false;;
                  *) AC_MSG_ERROR([bad value ${enableval} for --enable-unitTestDockerSupport ]);;
                esac
@@ -115,8 +101,6 @@ AC_CONFIG_FILES(
 	source/Ssp/Makefile
 	Makefile
 )
-
-AC_SUBST(GTEST_ENABLE_FLAG)
 
 AC_SUBST(UNIT_TEST_DOCKER_SUPPORT)
 
