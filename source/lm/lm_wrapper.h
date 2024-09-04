@@ -38,7 +38,9 @@
 
 #include <sys/socket.h>
 #include <lm_api.h>
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 #include "moca_hal.h"
+#endif
 #include "lm_main.h"
 /*****************
  */
@@ -63,13 +65,17 @@
  * Moca header file will include some private path
  * We cannot include these file, so ...
  */
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 #define kMoca_MaxCpeList 256
+#endif
 #define STATUS int
 
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 typedef struct _moca_cpe_list
 {
    unsigned char mac_addr[6];
 } moca_cpe_list;
+#endif
 
 /*****************
  *
@@ -116,6 +122,7 @@ typedef struct{
 }LM_wifi_wsta_t;
 #endif
 
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 typedef struct {
   unsigned char ssid[LM_GEN_STR_SIZE];
   unsigned char AssociatedDevice[LM_GEN_STR_SIZE];
@@ -126,6 +133,7 @@ typedef struct {
   int Status;
   int RSSI;
 }LM_moca_cpe_t;
+#endif
 
 typedef struct{
 	unsigned char phyAddr[18];

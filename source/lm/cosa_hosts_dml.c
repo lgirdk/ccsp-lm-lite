@@ -828,6 +828,7 @@ CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > <macAddr=%s> <sta
         EthClient_AddtoQueue(macAddr,active);
         return TRUE;
     }
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
     if (strcmp(ParamName, "X_RDKCENTRAL-COM_LMHost_Sync_From_MoCA") == 0)
     {
      
@@ -900,6 +901,7 @@ CcspTraceWarning((" \n Hosts_SetParamStringValue : < %s : %d > <macAddr=%s> <sta
         
         return TRUE;
     }
+#endif
     /* AnscTraceWarning(("Unsupported parameter '%s'\n", ParamName)); */
     return FALSE;
 }

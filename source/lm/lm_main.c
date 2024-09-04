@@ -141,7 +141,9 @@
 #define MSG_TYPE_EMPTY  0
 #define MSG_TYPE_ETH    1
 #define MSG_TYPE_WIFI   2
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 #define MSG_TYPE_MOCA   3
+#endif
 #define MSG_TYPE_PRESENCE_NOTIFICATION  4 
 #define MSG_TYPE_RFC  5
 #define MSG_TYPE_DNSMASQ  6
@@ -204,8 +206,10 @@ RetryHostList *pListHead = NULL;
 int g_IPIfNameDMListNum = 0;
 Name_DM_t *g_pIPIfNameDMList = NULL;
 
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 int g_MoCAADListNum = 0;
 Name_DM_t *g_pMoCAADList = NULL;
+#endif
 
 int g_DHCPv4ListNum = 0;
 Name_DM_t *g_pDHCPv4List = NULL;
@@ -319,7 +323,7 @@ static void Hosts_SyncDHCP(void);
 static void Sendmsg_dnsmasq(BOOL enablePresenceFeature);
 static void Send_Eth_Host_Sync_Req(void);
 
-#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA)
 static void Send_MoCA_Host_Sync_Req(void);
 #endif
 
@@ -620,7 +624,7 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			rc = strcpy_s(interface, sizeof(interface),"WiFi");
 			ERR_CHK(rc);
 		}
-#ifndef _CBR_PRODUCT_REQ_ 
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 		{
 			if(pHost->ipv4Active == TRUE)
@@ -704,11 +708,13 @@ static void LM_SET_ACTIVE_STATE_TIME_(int line, LmObjectHost *pHost,BOOL state){
 			rc = strcpy_s(interface, sizeof(interface),"WiFi");
 			ERR_CHK(rc);
 		}
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 		{
 			rc = strcpy_s(interface, sizeof(interface),"MoCA");
 			ERR_CHK(rc);
 		}
+#endif
 		else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
 		{
 			rc = strcpy_s(interface, sizeof(interface),"Ethernet");
@@ -1812,8 +1818,10 @@ static void _get_host_mediaType(enum LM_MEDIA_TYPE * m_type, char * l1Interfce)
 {
     if(l1Interfce == NULL){
         *m_type = LM_MEDIA_TYPE_UNKNOWN;
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
     }else if(strstr(l1Interfce, "MoCA")){
         *m_type = LM_MEDIA_TYPE_MOCA;
+#endif
     }else if(strstr(l1Interfce, "WiFi")){
         *m_type = LM_MEDIA_TYPE_WIFI;
     }else
@@ -2206,7 +2214,9 @@ static void *Event_HandlerThread(void *threadid)
 {
     UNREFERENCED_PARAMETER(threadid);
     LM_wifi_wsta_t hosts;
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
     LM_moca_cpe_t mhosts;
+#endif
     PLmObjectHost pHost;
     //printf("Hello World! It's me, thread #%ld!\n", tid);
     mqd_t mq;
@@ -2389,6 +2399,7 @@ static void *Event_HandlerThread(void *threadid)
             }
 
         }
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
         else if(EventMsg.MsgType == MSG_TYPE_MOCA)
         {
             memcpy(&mhosts,EventMsg.Msg,sizeof(mhosts));
@@ -2456,6 +2467,7 @@ static void *Event_HandlerThread(void *threadid)
             }
             
         }
+#endif
         else if (MSG_TYPE_PRESENCE_ADD == EventMsg.MsgType)
         {
             Hosts_CheckAndUpdatePresenceDeviceMac (EventMsg.Msg,TRUE);
@@ -2595,7 +2607,9 @@ static void *Hosts_LoggingThread(void *args)
 	int Radio_5_Dev = 0;
         int Radio_6_Dev = 0;
 	int TotalEthDev = 0;
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 	int TotalMoCADev = 0;
+#endif
 
 	sleep(30);
 
@@ -2633,11 +2647,13 @@ static void *Hosts_LoggingThread(void *args)
 							}
 							TotalWiFiDev++;
 						}
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 						else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
 						{
 							
 							TotalMoCADev++;
 						}
+#endif
 						else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
 						{
 							
@@ -2660,7 +2676,9 @@ static void *Hosts_LoggingThread(void *args)
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-5.0G_Clients=%d\n",Radio_5_Dev));
                 CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_WiFi-6.0G_Clients=%d\n",Radio_6_Dev));
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_Ethernet_Clients=%d\n",TotalEthDev));
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 		CcspTraceWarning(("RDKB_CONNECTED_CLIENTS:Total_MoCA_Clients=%d\n",TotalMoCADev));
+#endif
 		CcspTraceWarning(("-------------------------------------------------------------------\n"));
 
 		t2_event_d("Total_devices_connected_split", TotalDevCount);
@@ -2668,7 +2686,9 @@ static void *Hosts_LoggingThread(void *args)
 		t2_event_d("Total_offline_clients_split", TotalOffLineDev);
 		t2_event_d("Total_wifi_clients_split", TotalWiFiDev);
 		t2_event_d("Total_Ethernet_Clients_split", TotalEthDev);
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 		t2_event_d("Total_MoCA_Clients_split", TotalMoCADev);
+#endif
 	
 		/* CID 340337 Unused value fix */
 		TotalOnlineDev = 0;
@@ -2678,7 +2698,9 @@ static void *Hosts_LoggingThread(void *args)
 		Radio_5_Dev = 0;
                 Radio_6_Dev = 0;
 		TotalEthDev = 0;
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 		TotalMoCADev = 0;
+#endif
 
 		sleep(g_Client_Poll_interval*60); 
 	}
@@ -2708,7 +2730,7 @@ static void *Hosts_StatSyncThreadFunc(void *args)
             if(bridgemode)
             {
                 Send_Eth_Host_Sync_Req(); 
-#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA)
                 Send_MoCA_Host_Sync_Req(); 
 #endif
                 SyncWiFi();
@@ -3144,7 +3166,7 @@ void LM_main (void)
 #endif
 	if(!Hosts_stop_scan()) {
 		 Send_Eth_Host_Sync_Req();
-#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA)
 		 Send_MoCA_Host_Sync_Req();
 #endif
 		 SyncWiFi( );
@@ -3268,7 +3290,7 @@ int LM_get_host_info()
 	}
 */
 	_init_DM_List(&g_IPIfNameDMListNum, &g_pIPIfNameDMList, "Device.IP.Interface.", "Name");
-#ifndef _CBR_PRODUCT_REQ_ 
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 	_init_DM_List(&g_MoCAADListNum, &g_pMoCAADList, "Device.MoCA.Interface.1.AssociatedDevice.", "MACAddress");
 #endif
 	_init_DM_List(&g_DHCPv4ListNum, &g_pDHCPv4List, "Device.DHCPv4.Server.Pool.1.Client.", "Chaddr");
@@ -3281,9 +3303,11 @@ int LM_get_host_info()
 
 		if(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId] != NULL)
 		{
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 			if(strstr(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_Layer1InterfaceId], "MoCA") != NULL){
 	        	_get_dmbyname(g_MoCAADListNum, g_pMoCAADList, &(lmHosts.hostArray[i]->pStringParaValue[LM_HOST_AssociatedDeviceId]), lmHosts.hostArray[i]->pStringParaValue[LM_HOST_PhysAddressId]);
 			}
+#endif
 		}
 		
 
@@ -3600,6 +3624,7 @@ static void DelAndShuffleAssoDevIndx (PLmObjectHost pHost)
 	}
 }
 
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, char* parentMac, char* deviceType, int RSSI, int Status )
 {
 	CcspTraceWarning(("%s [%s %s %s %s %s %d %d]\n",
@@ -3658,7 +3683,7 @@ void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssi
 }
 
 
-#if defined (CONFIG_SYSTEM_MOCA) && !defined(_CBR_PRODUCT_REQ_) && !defined(_HUB4_PRODUCT_REQ_)
+#if defined (CONFIG_SYSTEM_MOCA)
 static void Send_MoCA_Host_Sync_Req(void)
 {
         parameterValStruct_t value = {"Device.MoCA.X_RDKCENTRAL-COM_MoCAHost_Sync", "true", ccsp_boolean};
@@ -3693,7 +3718,7 @@ static void Send_MoCA_Host_Sync_Req(void)
 	}
 }
 #endif
-
+#endif
 static void Send_Eth_Host_Sync_Req(void)
 {
         parameterValStruct_t value = {"Device.Ethernet.X_RDKCENTRAL-COM_EthHost_Sync", "true", ccsp_boolean};
@@ -4144,11 +4169,13 @@ int Hosts_PresenceHandling(PLmObjectHost pHost,HostPresenceDetection presencesta
                 rc = strcpy_s(interface, sizeof(interface), "WiFi");
                 ERR_CHK(rc);
             }
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
             else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"MoCA")))
             {
                 rc = strcpy_s(interface, sizeof(interface),"MoCA");
                 ERR_CHK(rc);
             }
+#endif
             else if ((strstr(pHost->pStringParaValue[LM_HOST_Layer1InterfaceId],"Ethernet")))
             {
                 rc = strcpy_s(interface, sizeof(interface),"Ethernet");

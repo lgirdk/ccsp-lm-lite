@@ -133,7 +133,9 @@ LmObjectHostPossibleDeviceTypeKeyWords,  *PLmObjectHostPossibleDeviceTypeKeyWord
 #define LM_HOST_X_CISCO_COM_NetworkInterface_Unkown     0
 #define LM_HOST_X_CISCO_COM_NetworkInterface_WiFi       1
 #define LM_HOST_X_CISCO_COM_NetworkInterface_Ethernet   2
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 #define LM_HOST_X_CISCO_COM_NetworkInterface_MoCA       3
+#endif
 
 #define LM_HOST_CONNECTION_STATUS_Good                  1
 #define LM_HOST_CONNECTION_STATUS_Poor                  2
@@ -327,7 +329,9 @@ int Hosts_stop_scan();
 int Hosts_EnablePresenceDetectionTask();
 int Hosts_DisablePresenceDetectionTask();
 void EthClient_AddtoQueue(char *phyAddr,int Status );
+#if !defined (NO_MOCA_FEATURE_SUPPORT)
 void MoCA_Server_Sync_Function( char *phyAddr, char *AssociatedDevice, char *ssid, char* parentMac, char* deviceType, int RSSI, int Status );
+#endif
 int LM_get_online_device();
 int LM_get_host_info();
 int LMDmlHostsSetHostComment(char* pMac, char* pComment);
