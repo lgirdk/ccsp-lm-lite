@@ -44,6 +44,7 @@
 #include <netpacket/packet.h>
 #include <sys/un.h>
 #include "secure_wrapper.h"
+#include <stddef.h>
 #include <string.h>
 /*usage of printf -CID:55379, 59688, 61675, 65508*/ 
 #include <stdio.h>
@@ -1311,72 +1312,53 @@ memset(buf,0,sizeof(buf));
    return;
 }
 
-int get_HostName(char *physAddress,char *HostName)
+int get_HostName(char *physAddress, char *HostName, size_t HostNameLen)
 {
-pthread_mutex_lock(&HostNameMutex);
     FILE *fp = NULL;
-    char output[50] = {0};
-    int ret = 1;
     int count = 0;
-    errno_t rc = -1;
+    size_t len;
 
-    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname \n"));
-    while(1)
+    CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Wait for dnsmasq to update hostname\n"));
+
+    while (1)
     {
+        sleep(HOST_NAME_RETRY_INTERVAL);
 
-	/* CID 135289 Waiting while holding a lock */
-	pthread_mutex_unlock(&HostNameMutex);
-	sleep(HOST_NAME_RETRY_INTERVAL);
-	pthread_mutex_lock(&HostNameMutex);
-        if(!(fp = v_secure_popen("r", "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE)))
+        pthread_mutex_lock(&HostNameMutex);
+        if ((fp = v_secure_popen("r", "grep -i %s %s | awk '{print $4}'", physAddress, DNSMASQ_LEASES_FILE)) == NULL)
         {
-            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: v_secure_popen() failed \n" ));
+            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: v_secure_popen() failed\n" ));
             pthread_mutex_unlock(&HostNameMutex);
             return -1;
         }
-      
-    while(fgets(output, sizeof(output), fp)!=NULL);
-    v_secure_pclose(fp);
-    rc = STRCPY_S_NOCLOBBER(HostName, 50,output);
-    if(rc != EOK)
-    {
-       ERR_CHK(rc);
-       pthread_mutex_unlock(&HostNameMutex);
-       return -1;
-    }
-    if((HostName[0] == '*') && (HostName[1] == '\0'))
-    {
-        ret = 0;
-	count++;
-    }
-   else if(strlen(HostName)==0)
-    {
-        ret = 0;
+        while (fgets(HostName, HostNameLen, fp) != NULL)
+        {
+            /* Read all lines */
+        }
+        v_secure_pclose(fp);
+        pthread_mutex_unlock(&HostNameMutex);
 
-	if(count < HOST_NAME_RETRY)
-	{           
-	   count++;
-           CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d for HostName\n",count));
-	}
-	else
-	{
-            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d Hostname not available\n",count));
-            break;
-    	}
-    }
-    else
-	{
-	   ret =1;
-           break;
-	}
+        len = strlen(HostName);
 
-    if(count > HOST_NAME_RETRY)
-	break;
+        if ((len > 0) && (HostName[len - 1] == '\n'))
+        {
+            HostName[len - 1] = 0;  /* Remove trailing newline */
+            len--;
+        }
 
+        if ((len == 0) || ((len == 1) && (HostName[0] == '*')))
+        {
+            if (++count > HOST_NAME_RETRY)
+            {
+                CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d Hostname not available\n", count));
+                return 0;
+            }
+            CcspTraceWarning(("RDKB_CONNECTED_CLIENTS: Retry-%d for HostName\n", count));
+            continue;
+        }
+
+        return 1;
     }
-    
-pthread_mutex_unlock(&HostNameMutex);
-    return ret;
 }
 
 int getIPAddress(char *physAddress,char *IPAddress)

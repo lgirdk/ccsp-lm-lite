@@ -36,6 +36,7 @@
 #ifndef _LM_WRAPPER_H_
 #define _LM_WRAPPER_H_
 
+#include <stddef.h>
 #include <sys/socket.h>
 #include <lm_api.h>
 #if !defined (NO_MOCA_FEATURE_SUPPORT)
@@ -171,7 +172,7 @@ void Wifi_Server_Thread_func();
 #endif
 #endif
 int getIPAddress(char *physAddress,char *IPAddress);
-int get_HostName(char *physAddress,char *HostName);
+int get_HostName(char *physAddress,char *HostName, size_t HostNameLen);
 #if !defined (RESOURCE_OPTIMIZATION)
 int Xlm_wrapper_get_wifi_wsta_list(int *pCount, LM_wifi_wsta_t **ppWstaArray);
 #endif
